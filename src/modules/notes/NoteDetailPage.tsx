@@ -1,0 +1,412 @@
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Button } from "../../components/ui/Button";
+import { ArrowLeft, Save, Trash2, Eye, PenTool, ChevronDown, BrainCircuit, CheckCircle2, Folder, Tag as TagIcon, X } from "lucide-react";
+import { useNotesStore } from "../../store/notesStore";
+import { useReviewStore } from "../../store/reviewStore";
+import { useLibraryStore } from "../../store/libraryStore";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog";
+import { NoteStatus, NoteType } from "../../types";
+import Markdown from "react-markdown";
+
+export function NoteDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  
+  const notes = useNotesStore(state => state.notes);
+  const folders = useNotesStore(state => state.folders);
+  const allTags = useNotesStore(state => state.tags);
+  const updateNote = useNotesStore(state => state.updateNote);
+  const deleteNote = useNotesStore(state => state.deleteNote);
+  const addTag = useNotesStore(state => state.addTag);
+  const books = useLibraryStore(state => state.books);
+  
+  const decks = useReviewStore(state => state.decks);
+  const addFlashcard = useReviewStore(state => state.addFlashcard);
+  
+  const note = notes.find(n => n.id === id);
+  
+  const [title, setTitle] = useState(note?.title || "");
+  const [content, setContent] = useState(note?.content || "");
+  const [type, setType] = useState<NoteType>(note?.type || 'knowledge');
+  const [status, setStatus] = useState<NoteStatus>(note?.status || 'unprocessed');
+  const [folderId, setFolderId] = useState<string | null>(note?.folderId || null);
+  const [noteTags, setNoteTags] = useState<string[]>(note?.tags || []);
+  
+  const [tagInput, setTagInput] = useState("");
+  const [isTagging, setIsTagging] = useState(false);
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
+  
+  const sourceBook = note?.sourceId ? books.find(b => b.id === note.sourceId) : null;
+  
+  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedCards, setGeneratedCards] = useState<Array<{front: string, back: string}>>([]);
+  const [selectedDeckId, setSelectedDeckId] = useState<string>("");
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    if (note) {
+      setTitle(note.title);
+      setContent(note.content);
+      setType(note.type);
+      setStatus(note.status);
+      setFolderId(note.folderId);
+      setNoteTags(note.tags);
+    }
+  }, [note]);
+
+  if (!note) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full space-y-4">
+        <h2 className="text-xl font-medium text-gray-900">Catatan tidak ditemukan</h2>
+        <Button variant="outline" onClick={() => navigate("/notes")}>
+          <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Catatan
+        </Button>
+      </div>
+    );
+  }
+
+  const handleSave = () => {
+    setIsSaving(true);
+    updateNote(note.id, { 
+      title, 
+      content, 
+      type, 
+      status, 
+      folderId,
+      tags: noteTags
+    });
+    setTimeout(() => setIsSaving(false), 500); 
+  };
+
+  const handleDelete = () => {
+    deleteNote(note.id);
+    navigate("/notes");
+  };
+  
+  const handleGenerateCards = async () => {
+    setIsGenerating(true);
+    setGeneratedCards([]);
+    setIsSaved(false);
+    try {
+      const res = await fetch("/api/ai/generate-flashcards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: title + "\n\n" + content }),
+      });
+      const data = await res.json();
+      if (data.flashcards) {
+        setGeneratedCards(data.flashcards);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSaveCardsToDeck = () => {
+    if (generatedCards.length === 0) return;
+    
+    let targetDeckId = selectedDeckId;
+    if (!targetDeckId) {
+      if (decks.length > 0) {
+        targetDeckId = decks[0].id;
+      } else {
+        alert("Pilih atau buat deck terlebih dahulu.");
+        return;
+      }
+    }
+    
+    generatedCards.forEach(card => {
+      addFlashcard({
+        front: card.front,
+        back: card.back,
+        deckId: targetDeckId,
+        noteId: note.id
+      });
+    });
+    
+    setIsSaved(true);
+  };
+
+  const processBidirectionalLinks = (text: string) => {
+    const linkRegex = /\[\[(.*?)\]\]/g;
+    return text.replace(linkRegex, (match, nodeName) => {
+      const linkedNote = notes.find(n => n.title.toLowerCase() === nodeName.toLowerCase());
+      if (linkedNote) {
+        return `[${nodeName}](/notes/${linkedNote.id})`;
+      }
+      return `[${nodeName}](/graph?search=${encodeURIComponent(nodeName)})`;
+    });
+  };
+
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault();
+      const tagsToCreate = tagInput.split(',').map(t => t.trim()).filter(t => t);
+      
+      const currentTags = [...noteTags];
+      tagsToCreate.forEach(t => {
+        const id = addTag(t);
+        if (!currentTags.includes(id)) {
+          currentTags.push(id);
+        }
+      });
+      
+      setNoteTags(currentTags);
+      updateNote(note.id, { tags: currentTags });
+      setTagInput("");
+      setIsTagging(false);
+    } else if (e.key === 'Escape') {
+      setTagInput("");
+      setIsTagging(false);
+    }
+  };
+
+  const removeTag = (tagId: string) => {
+    const currentTags = noteTags.filter(id => id !== tagId);
+    setNoteTags(currentTags);
+    updateNote(note.id, { tags: currentTags });
+  };
+
+  const resolvedTags = noteTags.map(id => allTags.find(t => t.id === id)).filter(Boolean);
+
+  return (
+    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-5xl mx-auto pb-20">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-8 pb-4 border-b border-gray-100">
+        <Button variant="ghost" className="gap-2 -ml-3 text-gray-500 hover:text-gray-900" onClick={() => navigate("/notes")}>
+          <ArrowLeft className="w-4 h-4" /> 
+          <span className="hidden sm:inline">Kembali</span>
+        </Button>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button variant="outline" className="gap-2 text-purple-700 bg-purple-50 border-purple-200 hover:bg-purple-100 hover:border-purple-300" onClick={() => setIsGeneratorOpen(true)}>
+            <BrainCircuit className="w-4 h-4" />
+            <span className="hidden sm:inline">Buat Flashcard AI</span>
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => setPreviewMode(!previewMode)}>
+            {previewMode ? <PenTool className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            <span className="hidden sm:inline">{previewMode ? "Edit" : "Preview"}</span>
+          </Button>
+          <Button variant="ghost" className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setIsDeleteDialogOpen(true)}>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+          <Button onClick={handleSave} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+            <Save className="w-4 h-4" />
+            <span className="hidden sm:inline">{isSaving ? "Tersimpan!" : "Simpan"}</span>
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-6 flex-1 flex flex-col">
+        <div className="space-y-4">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="text-4xl font-bold tracking-tight text-gray-900 bg-transparent border-none outline-none w-full placeholder:text-gray-300 focus:ring-0 p-0"
+            placeholder="Note Title"
+            disabled={previewMode}
+          />
+          
+          <div className="flex flex-wrap gap-2">
+            {resolvedTags.map(tag => (
+              <span key={tag!.id} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-md">
+                #{tag!.name}
+                {!previewMode && (
+                  <button onClick={() => removeTag(tag!.id)} className="text-gray-400 hover:text-red-500 rounded-full ml-1">
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </span>
+            ))}
+            
+            {!previewMode && (
+              isTagging ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleAddTag}
+                  onBlur={() => {
+                    setTagInput("");
+                    setIsTagging(false);
+                  }}
+                  className="px-2.5 py-1 text-xs font-medium border border-indigo-300 rounded-md outline-none focus:ring-1 focus:ring-indigo-500 w-32"
+                  placeholder="Ketik & Enter..."
+                />
+              ) : (
+                <button 
+                  onClick={() => setIsTagging(true)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-dashed border-gray-300 text-gray-500 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  <TagIcon className="w-3 h-3" /> Tambah Tag
+                </button>
+              )
+            )}
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 border-y border-gray-100 py-3">
+          {sourceBook && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md border border-blue-100 cursor-pointer hover:bg-blue-100 transition-colors" onClick={() => navigate(`/library/${sourceBook.id}`)}>
+              <span className="font-medium text-xs uppercase tracking-wider">Sumber:</span>
+              <span className="font-semibold text-sm truncate max-w-[200px]">{sourceBook.title}</span>
+            </div>
+          )}
+          <div className="relative group">
+            <Folder className="w-4 h-4 absolute left-3 top-2 text-gray-400" />
+            <select 
+              value={folderId || ""}
+              onChange={(e) => {
+                 const newFolderId = e.target.value || null;
+                 setFolderId(newFolderId);
+                 updateNote(note.id, { folderId: newFolderId });
+              }}
+              disabled={previewMode}
+              className="appearance-none bg-white border border-gray-200 text-gray-700 py-1.5 pl-9 pr-8 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <option value="">Tanpa Folder</option>
+              {folders.map(f => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-4 h-4 absolute right-2.5 top-2 text-gray-400 pointer-events-none" />
+          </div>
+
+          <div className="relative group">
+            <select 
+              value={type}
+              onChange={(e) => {
+                 setType(e.target.value as NoteType);
+                 updateNote(note.id, { type: e.target.value as NoteType });
+              }}
+              disabled={previewMode}
+              className="appearance-none bg-white border border-gray-200 text-gray-700 py-1.5 pl-3 pr-8 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <option value="knowledge">Knowledge (Fakta, Ilmu)</option>
+              <option value="research">Research (Analisis, Riset)</option>
+              <option value="project">Project (Status, Dokumentasi)</option>
+              <option value="writing">Writing (Draft, Skrip)</option>
+              <option value="personal">Personal (Refleksi, Pengalaman)</option>
+            </select>
+            <ChevronDown className="w-4 h-4 absolute right-2.5 top-2 text-gray-400 pointer-events-none" />
+          </div>
+
+          <div className="relative group">
+            <select 
+              value={status}
+              onChange={(e) => {
+                 setStatus(e.target.value as NoteStatus);
+                 updateNote(note.id, { status: e.target.value as NoteStatus });
+              }}
+              disabled={previewMode}
+              className={`appearance-none border py-1.5 pl-3 pr-8 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${status === 'processed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}
+            >
+              <option value="unprocessed">Unprocessed</option>
+              <option value="processed">Processed</option>
+            </select>
+            <ChevronDown className="w-4 h-4 absolute right-2.5 top-2 text-gray-400 pointer-events-none" />
+          </div>
+
+          <div className="flex gap-4 ml-auto text-xs sm:text-sm">
+            <span>Created: {new Date(note.createdAt).toLocaleDateString()}</span>
+            <span>Modified: {new Date(note.updatedAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        {previewMode ? (
+          <div className="prose prose-gray max-w-none flex-1 font-serif py-4">
+            <Markdown>{processBidirectionalLinks(content)}</Markdown>
+          </div>
+        ) : (
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full flex-1 min-h-[500px] py-4 text-lg leading-relaxed text-gray-700 bg-transparent border-none outline-none resize-none placeholder:text-gray-300 focus:ring-0 p-0 font-serif"
+            placeholder="Start writing... Use [[Node Name]] to link to other concepts."
+          />
+        )}
+      </div>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogHeader>
+          <DialogTitle>Hapus Catatan</DialogTitle>
+        </DialogHeader>
+        <DialogContent>
+          <p className="text-gray-600">Apakah Anda yakin ingin menghapus "{note.title}"? Tindakan ini tidak dapat dibatalkan.</p>
+        </DialogContent>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
+          <Button variant="destructive" onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">Hapus</Button>
+        </DialogFooter>
+      </Dialog>
+      
+      <Dialog open={isGeneratorOpen} onOpenChange={setIsGeneratorOpen} maxWidthClass="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BrainCircuit className="w-5 h-5 text-purple-600" /> 
+            Auto-Flashcard Generator
+          </DialogTitle>
+        </DialogHeader>
+        <DialogContent className="flex flex-col gap-4 py-2">
+          {generatedCards.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600 mb-4 text-sm">AI akan menganalisis catatan ini dan membuat 5-10 kartu Q&A untuk Anda pelajari.</p>
+              <Button onClick={handleGenerateCards} disabled={isGenerating} className="bg-purple-600 hover:bg-purple-700 text-white">
+                {isGenerating ? "Sedang Mengekstrak..." : "Mulai Generate"}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-purple-50 text-purple-800 p-3 rounded-lg text-sm flex items-center justify-between">
+                <span>Berhasil membuat {generatedCards.length} kartu.</span>
+                <Button variant="ghost" size="sm" onClick={() => setGeneratedCards([])} className="h-7 px-2 text-purple-700 hover:bg-purple-100">Buat Ulang</Button>
+              </div>
+              
+              <div className="max-h-60 overflow-y-auto space-y-2 border border-gray-100 rounded-lg p-2 bg-gray-50/50">
+                {generatedCards.map((card, i) => (
+                  <div key={i} className="bg-white p-3 rounded-md border border-gray-200 shadow-sm text-sm space-y-2">
+                    <p><span className="font-semibold text-gray-700">Q:</span> {card.front}</p>
+                    <p className="text-gray-600"><span className="font-semibold text-gray-700">A:</span> {card.back}</p>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="space-y-2 pt-2 border-t border-gray-100">
+                <label className="text-sm font-medium text-gray-700">Simpan ke Deck</label>
+                <div className="relative">
+                  <select 
+                    value={selectedDeckId}
+                    onChange={(e) => setSelectedDeckId(e.target.value)}
+                    className="w-full appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-3 pr-8 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="" disabled>Pilih Deck...</option>
+                    {decks.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 absolute right-3 top-2.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setIsGeneratorOpen(false)}>Batal</Button>
+          {generatedCards.length > 0 && (
+            <Button onClick={handleSaveCardsToDeck} disabled={!selectedDeckId || isSaved} className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
+              {isSaved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              {isSaved ? "Tersimpan" : "Simpan ke Deck"}
+            </Button>
+          )}
+        </DialogFooter>
+      </Dialog>
+    </div>
+  );
+}
