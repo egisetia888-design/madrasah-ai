@@ -1,6 +1,6 @@
 {
   "name": "Remix: Madrasah",
-  "description": "Personal Knowledge Operating System",
+  "description": "Personal Knowledge Operating System (PKOS) modern yang dioptimalkan penuh untuk belajar, mencatatkan pengetahuan, dan spaced repetition menggunakan kecerdasan buatan OpenRouter AI.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

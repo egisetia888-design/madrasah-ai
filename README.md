@@ -41,7 +41,7 @@ Seluruh komponen dalam aplikasi ini telah disinkronkan secara total untuk pengal
 ## 🚀 Fitur Utama & Modul Sistem
 
 - **🕋 Beranda & Dasbor Utama**: Pusat pantauan aktivitas harian, statistik belajar, jam Hijriah real-time, serta kutipan inspirasi yang memotivasi proses belajar harian.
-- **🗺️ Jalur Belajar (Curriculum)**: Rencanakan jalur studi Anda sendiri secara mandiri atau gunakan **AI Syllabus Planner** berbasis Gemini AI untuk menyusun silabus belajar dari tingkat pemula hingga ahli dalam hitungan detik.
+- **🗺️ Jalur Belajar (Curriculum)**: Rencanakan jalur studi Anda sendiri secara mandiri atau gunakan **AI Syllabus Planner** berbasis OpenRouter AI untuk menyusun silabus belajar dari tingkat pemula hingga ahli dalam hitungan detik.
 - **🧠 Otak Kedua (Notes)**: Pencatatan kaya fitur dengan dukungan Markdown, pengelompokan direktori (Folder), penandaan tag, serta integrasi **Asisten AI Madrasah** untuk merangkum dan menghubungkan gagasan Anda.
 - **📚 Pustaka (Library)**: Kelola daftar buku, artikel, dokumen penting lengkap dengan status pembacaan dan catatan eksklusif per buku.
 - **📊 Graf Pengetahuan (Knowledge Graph)**: Visualisasi keterkaitan antar catatan dan konsep secara dinamis menggunakan D3.js untuk mempermudah eksplorasi wawasan baru.
@@ -58,7 +58,8 @@ Aplikasi ini mengusung fondasi tumpukan teknologi modern berkinerja tinggi:
 - **State Management**: Zustand (untuk pengelolaan status global yang ringan dan responsif).
 - **Styling**: Tailwind CSS v4 (mengoptimalkan utilitas modern langsung pada build CSS terintegrasi).
 - **Animasi**: Motion (untuk transisi halaman dan elemen yang lembut).
-- **Backend**: Express.js (melayani REST API serta menjembatani integrasi rahasia dengan Google GenAI SDK tanpa mengekspos API Key ke peramban).
+- **Backend**: Express.js (melayani REST API serta menjembatani integrasi rahasia dengan OpenRouter API secara aman tanpa mengekspos API Key ke peramban).
+- **Deployment**: Vercel (mendukung serverless functions yang siap di-deploy secara global).
 
 ---
 
@@ -75,9 +76,10 @@ Pastikan Anda telah memasang **Node.js** (versi 18+) di komputer Anda.
    ```
 
 2. **Konfigurasi Lingkungan (.env)**:
-   Salin `.env.example` menjadi `.env` dan masukkan kunci API Gemini Anda:
+   Salin `.env.example` menjadi `.env` dan masukkan kunci API OpenRouter Anda:
    ```env
-   GEMINI_API_KEY="AIzaSy..."
+   OPENROUTER_API_KEY="sk-or-v1-..."
+   OPENROUTER_MODEL="google/gemini-2.5-flash"
    ```
 
 3. **Jalankan Server Pengembangan**:
