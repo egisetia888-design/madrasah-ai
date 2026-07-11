@@ -1,19 +1,22 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const ai = new GoogleGenAI({ 
-  apiKey: process.env.GEMINI_API_KEY || "dummy_key", 
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
+function cleanAndParseJson(text: string) {
+  let cleanText = text.trim();
+  // Remove markdown code block markers if present
+  if (cleanText.startsWith("```")) {
+    cleanText = cleanText.replace(/^```[a-zA-Z]*\n/, "");
+    // Also handle trailing block marker
+    if (cleanText.endsWith("```")) {
+      cleanText = cleanText.slice(0, -3);
     }
   }
-});
+  return JSON.parse(cleanText.trim());
+}
 
 async function startServer() {
   const app = express();
@@ -24,8 +27,8 @@ async function startServer() {
   // API Routes
   app.post("/api/ai/zettelkasten", async (req, res) => {
     try {
-      if (!process.env.GEMINI_API_KEY) {
-        return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+      if (!process.env.OPENROUTER_API_KEY) {
+        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
       }
 
       const { prompt, notes } = req.body;
@@ -42,15 +45,31 @@ async function startServer() {
       Respond directly and helpfully in Indonesian. Format your response cleanly using Markdown.
       `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        config: {
-          systemInstruction,
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
+          "X-Title": "Remix Madrasah"
         },
+        body: JSON.stringify({
+          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: prompt }
+          ]
+        })
       });
 
-      res.json({ result: response.text });
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
+      }
+
+      const data = await response.json() as any;
+      const text = data.choices?.[0]?.message?.content || "";
+      res.json({ result: text });
     } catch (error: any) {
       console.error("AI Assistant Error:", error);
       res.status(500).json({ error: error.message || "Failed to process AI request" });
@@ -59,8 +78,8 @@ async function startServer() {
 
   app.post("/api/ai/suggest-tags", async (req, res) => {
     try {
-      if (!process.env.GEMINI_API_KEY) {
-        return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+      if (!process.env.OPENROUTER_API_KEY) {
+        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
       }
 
       const { content, notes } = req.body;
@@ -80,17 +99,32 @@ async function startServer() {
       }
       `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: `New snippet:\n${content}`,
-        config: {
-          systemInstruction,
-          responseMimeType: "application/json",
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
+          "X-Title": "Remix Madrasah"
         },
+        body: JSON.stringify({
+          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: `New snippet:\n${content}` }
+          ],
+          response_format: { type: "json_object" }
+        })
       });
 
-      const jsonStr = response.text || "{}";
-      res.json(JSON.parse(jsonStr));
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
+      }
+
+      const data = await response.json() as any;
+      const text = data.choices?.[0]?.message?.content || "{}";
+      res.json(cleanAndParseJson(text));
     } catch (error: any) {
       console.error("AI Suggestion Error:", error);
       res.status(500).json({ error: error.message || "Failed to generate suggestions" });
@@ -99,8 +133,8 @@ async function startServer() {
 
   app.post("/api/ai/generate-flashcards", async (req, res) => {
     try {
-      if (!process.env.GEMINI_API_KEY) {
-        return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+      if (!process.env.OPENROUTER_API_KEY) {
+        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
       }
 
       const { content } = req.body;
@@ -117,17 +151,32 @@ async function startServer() {
       }
       `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: `Create flashcards from this note:\n\n${content}`,
-        config: {
-          systemInstruction,
-          responseMimeType: "application/json",
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
+          "X-Title": "Remix Madrasah"
         },
+        body: JSON.stringify({
+          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: `Create flashcards from this note:\n\n${content}` }
+          ],
+          response_format: { type: "json_object" }
+        })
       });
 
-      const jsonStr = response.text || "{}";
-      res.json(JSON.parse(jsonStr));
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
+      }
+
+      const data = await response.json() as any;
+      const text = data.choices?.[0]?.message?.content || "{}";
+      res.json(cleanAndParseJson(text));
     } catch (error: any) {
       console.error("AI Flashcard Generation Error:", error);
       res.status(500).json({ error: error.message || "Failed to generate flashcards" });
@@ -136,8 +185,8 @@ async function startServer() {
 
   app.post("/api/ai/grade-flashcard", async (req, res) => {
     try {
-      if (!process.env.GEMINI_API_KEY) {
-        return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+      if (!process.env.OPENROUTER_API_KEY) {
+        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
       }
 
       const { question, correctAnswer, userAnswer } = req.body;
@@ -156,7 +205,7 @@ async function startServer() {
       3: Correct, but with significant difficulty or partial completeness.
       4: Correct, after some hesitation.
       5: Perfect, fluent recall.
-
+ 
       Respond ONLY with a raw JSON object in the following format, without any markdown formatting or code blocks:
       {
         "isCorrect": boolean,
@@ -165,17 +214,32 @@ async function startServer() {
       }
       `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: `Question: ${question}\nCorrect Answer: ${correctAnswer}\nUser's Answer: ${userAnswer}`,
-        config: {
-          systemInstruction,
-          responseMimeType: "application/json",
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
+          "X-Title": "Remix Madrasah"
         },
+        body: JSON.stringify({
+          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: `Question: ${question}\nCorrect Answer: ${correctAnswer}\nUser's Answer: ${userAnswer}` }
+          ],
+          response_format: { type: "json_object" }
+        })
       });
 
-      const jsonStr = response.text || "{}";
-      res.json(JSON.parse(jsonStr));
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
+      }
+
+      const data = await response.json() as any;
+      const text = data.choices?.[0]?.message?.content || "{}";
+      res.json(cleanAndParseJson(text));
     } catch (error: any) {
       console.error("AI Grading Error:", error);
       res.status(500).json({ error: error.message || "Failed to grade answer" });
@@ -184,8 +248,8 @@ async function startServer() {
 
   app.post("/api/ai/generate-syllabus", async (req, res) => {
     try {
-      if (!process.env.GEMINI_API_KEY) {
-        return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+      if (!process.env.OPENROUTER_API_KEY) {
+        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
       }
 
       const { topic } = req.body;
@@ -194,12 +258,12 @@ async function startServer() {
       You are an expert AI Syllabus Planner and Curriculum Designer.
       The user will provide a topic or skill they want to master (e.g., "Dasar-dasar Machine Learning", "Sejarah Filsafat Barat").
       Your job is to generate a structured learning path for this topic, starting from beginner to advanced.
-
+ 
       You must break the topic down into 3 to 5 logical 'Phases' (Fase Belajar).
       For each Phase, provide 3 to 6 'Competencies' (Kompetensi/Tugas) that the user needs to achieve.
-
+ 
       Provide all responses in Indonesian.
-
+ 
       Respond ONLY with a raw JSON object in the following format, without any markdown formatting or code blocks:
       {
         "title": "A clear, inspiring title for the learning path",
@@ -224,17 +288,32 @@ async function startServer() {
       }
       `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: `Topic: ${topic}`,
-        config: {
-          systemInstruction,
-          responseMimeType: "application/json",
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
+          "X-Title": "Remix Madrasah"
         },
+        body: JSON.stringify({
+          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: `Topic: ${topic}` }
+          ],
+          response_format: { type: "json_object" }
+        })
       });
 
-      const jsonStr = response.text || "{}";
-      res.json(JSON.parse(jsonStr));
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
+      }
+
+      const data = await response.json() as any;
+      const text = data.choices?.[0]?.message?.content || "{}";
+      res.json(cleanAndParseJson(text));
     } catch (error: any) {
       console.error("AI Syllabus Generation Error:", error);
       res.status(500).json({ error: error.message || "Failed to generate syllabus" });
@@ -243,8 +322,8 @@ async function startServer() {
 
   app.post("/api/ai/summarize-literature", async (req, res) => {
     try {
-      if (!process.env.GEMINI_API_KEY) {
-        return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+      if (!process.env.OPENROUTER_API_KEY) {
+        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
       }
 
       const { content } = req.body;
@@ -256,9 +335,9 @@ async function startServer() {
       1. Masalah Utama (The Main Problem)
       2. Metodologi (The Methodology)
       3. Kesimpulan (The Conclusion)
-
+ 
       Provide all responses in Indonesian.
-
+ 
       Respond ONLY with a raw JSON object in the following format, without any markdown formatting or code blocks:
       {
         "problem": "Masalah utama yang dibahas...",
@@ -267,17 +346,32 @@ async function startServer() {
       }
       `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: `Literature Content:\n${content}`,
-        config: {
-          systemInstruction,
-          responseMimeType: "application/json",
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
+          "X-Title": "Remix Madrasah"
         },
+        body: JSON.stringify({
+          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: `Literature Content:\n${content}` }
+          ],
+          response_format: { type: "json_object" }
+        })
       });
 
-      const jsonStr = response.text || "{}";
-      res.json(JSON.parse(jsonStr));
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
+      }
+
+      const data = await response.json() as any;
+      const text = data.choices?.[0]?.message?.content || "{}";
+      res.json(cleanAndParseJson(text));
     } catch (error: any) {
       console.error("AI Literature Summarizer Error:", error);
       res.status(500).json({ error: error.message || "Failed to summarize literature" });
