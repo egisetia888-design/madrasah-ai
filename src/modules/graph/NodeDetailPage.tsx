@@ -83,7 +83,7 @@ export function NodeDetailPage() {
              </h2>
              <div className="space-y-4 pt-2">
                 <div className="flex gap-4">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-500 mt-1.5 shrink-0"></div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Node referenced in new note</p>
                     <p className="text-xs text-gray-500">Today</p>
@@ -109,7 +109,7 @@ export function NodeDetailPage() {
              <div className="flex flex-col gap-2">
                {relatedNodesIds.length > 0 ? (
                  relatedNodesIds.map(rId => (
-                   <div key={rId} onClick={() => navigate(`/graph/${rId}`)} className="text-sm text-blue-600 hover:underline cursor-pointer">
+                   <div key={rId} onClick={() => navigate(`/graph/${rId}`)} className="text-sm text-gray-900 hover:underline cursor-pointer">
                      {rId.startsWith('tag-') ? rId.replace('tag-', '#') : 'Node: ' + rId.substring(0,8)}
                    </div>
                  ))

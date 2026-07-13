@@ -84,10 +84,10 @@ export function LibraryPage() {
 
   const getStatusColor = (status: BookStatus) => {
     switch (status) {
-      case 'reading': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'finished': return 'text-green-600 bg-green-50 border-green-200';
+      case 'reading': return 'text-gray-900 bg-gray-50 border-gray-200';
+      case 'finished': return 'text-gray-900 bg-gray-50 border-gray-200';
       case 'wishlist': return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'summarized': return 'text-purple-600 bg-purple-50 border-purple-200';
+      case 'summarized': return 'text-gray-900 bg-gray-50 border-gray-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   }
@@ -212,12 +212,12 @@ export function LibraryPage() {
                     
                     {(book.status === 'reading' || progressPct > 0) && (
                       <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-200/80 backdrop-blur-sm z-10">
-                        <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${progressPct}%` }} />
+                        <div className="h-full bg-gray-900 transition-all duration-500" style={{ width: `${progressPct}%` }} />
                       </div>
                     )}
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">{book.title}</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight group-hover:text-gray-900 transition-colors">{book.title}</h4>
                     <p className="text-xs text-gray-500 mt-1 line-clamp-1 font-medium">{getAuthorName(book.authorId)}</p>
                     {book.status === 'reading' && book.totalPages && (
                        <p className="text-[10px] text-gray-400 mt-1.5 font-mono">{book.progress} / {book.totalPages} hal ({progressPct}%)</p>
@@ -237,7 +237,7 @@ export function LibraryPage() {
         <form className="flex flex-col flex-1 min-h-0 overflow-hidden" onSubmit={handleAddBook}>
           <DialogContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Judul Buku <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium text-gray-700">Judul Buku <span className="text-gray-500">*</span></label>
               <input 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}

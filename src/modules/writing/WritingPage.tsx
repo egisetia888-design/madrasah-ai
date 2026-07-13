@@ -132,7 +132,7 @@ export function WritingPage() {
         <form className="flex flex-col flex-1 min-h-0 overflow-hidden" onSubmit={handleAddDraft}>
           <DialogContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Judul <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium text-gray-700">Judul <span className="text-gray-500">*</span></label>
               <input 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}

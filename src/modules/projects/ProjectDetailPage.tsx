@@ -121,10 +121,10 @@ export function ProjectDetailPage() {
 
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
-      case 'active': return 'text-blue-700 bg-blue-50 border-blue-200';
-      case 'completed': return 'text-green-700 bg-green-50 border-green-200';
+      case 'active': return 'text-gray-800 bg-gray-50 border-gray-200';
+      case 'completed': return 'text-gray-800 bg-gray-50 border-gray-200';
       case 'planned': return 'text-gray-700 bg-gray-50 border-gray-200';
-      case 'review': return 'text-purple-700 bg-purple-50 border-purple-200';
+      case 'review': return 'text-gray-800 bg-gray-50 border-gray-200';
       case 'archived': return 'text-orange-700 bg-orange-50 border-orange-200';
       default: return 'text-gray-700 bg-gray-50 border-gray-200';
     }
@@ -152,8 +152,8 @@ export function ProjectDetailPage() {
   const getTaskStatusColor = (status: TaskStatus) => {
     switch (status) {
       case 'todo': return 'text-gray-600 bg-gray-100 border-gray-200';
-      case 'in-progress': return 'text-blue-700 bg-blue-100 border-blue-200';
-      case 'done': return 'text-green-700 bg-green-100 border-green-200 line-through opacity-70';
+      case 'in-progress': return 'text-gray-800 bg-gray-100 border-gray-200';
+      case 'done': return 'text-gray-800 bg-gray-100 border-gray-200 line-through opacity-70';
     }
   }
 
@@ -171,7 +171,7 @@ export function ProjectDetailPage() {
                  {getStatusLabel(project.status)}
                </span>
                {project.dueDate && (
-                 <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-md border", isOverdue ? 'text-red-700 bg-red-50 border-red-200' : 'text-gray-600 bg-gray-50 border-gray-200')}>
+                 <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-md border", isOverdue ? 'text-gray-800 bg-gray-50 border-gray-200' : 'text-gray-600 bg-gray-50 border-gray-200')}>
                    <Calendar className="w-3.5 h-3.5" /> 
                    {isOverdue ? 'Tenggat Terlewat: ' : 'Tenggat: '}
                    {new Date(project.dueDate).toLocaleDateString()}
@@ -195,7 +195,7 @@ export function ProjectDetailPage() {
         {/* Left Column: Progress & Stats */}
         <div className="lg:col-span-1 space-y-6">
           <div className="p-6 border border-gray-200 rounded-2xl bg-white space-y-5 shadow-sm relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-1 bg-blue-500 h-full"></div>
+             <div className="absolute top-0 left-0 w-1 bg-gray-500 h-full"></div>
              
              <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
@@ -206,7 +206,7 @@ export function ProjectDetailPage() {
              </div>
              
              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }}></div>
+                <div className="h-full bg-gray-900 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }}></div>
              </div>
              
              <div className="grid grid-cols-3 gap-2 text-center pt-2">
@@ -214,9 +214,9 @@ export function ProjectDetailPage() {
                   <span className="block text-xl font-bold text-gray-900">{doneTasks}</span>
                   <span className="text-[10px] text-gray-500 uppercase font-medium tracking-wider">Selesai</span>
                 </div>
-                <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
-                  <span className="block text-xl font-bold text-blue-700">{inProgressTasks}</span>
-                  <span className="text-[10px] text-blue-500 uppercase font-medium tracking-wider">Proses</span>
+                <div className="p-2 bg-gray-50 rounded-lg border border-gray-100">
+                  <span className="block text-xl font-bold text-gray-800">{inProgressTasks}</span>
+                  <span className="text-[10px] text-gray-500 uppercase font-medium tracking-wider">Proses</span>
                 </div>
                 <div className="p-2 bg-gray-50 rounded-lg border border-gray-100">
                   <span className="block text-xl font-bold text-gray-900">{todoTasks}</span>
@@ -245,7 +245,7 @@ export function ProjectDetailPage() {
             </div>
             
             <div className="pt-4 mt-4 border-t border-gray-100">
-               <Button variant="ghost" className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 gap-2" onClick={() => setIsDeleteDialogOpen(true)}>
+               <Button variant="ghost" className="w-full text-gray-900 hover:text-gray-800 hover:bg-gray-50 gap-2" onClick={() => setIsDeleteDialogOpen(true)}>
                  <Trash2 className="w-4 h-4" /> Hapus Proyek
                </Button>
             </div>
@@ -267,11 +267,11 @@ export function ProjectDetailPage() {
              {projectTasks.length > 0 ? (
                <div className="space-y-3">
                  {projectTasks.map(task => (
-                   <div key={task.id} className={cn("p-4 border rounded-xl flex items-start gap-4 transition-all group", task.status === 'done' ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm')}>
+                   <div key={task.id} className={cn("p-4 border rounded-xl flex items-start gap-4 transition-all group", task.status === 'done' ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm')}>
                      
                      <button 
                        onClick={() => updateTaskStatus(task.id, task.status === 'done' ? 'todo' : 'done')}
-                       className={cn("mt-0.5 shrink-0 transition-colors", task.status === 'done' ? 'text-green-500' : 'text-gray-300 hover:text-blue-500')}
+                       className={cn("mt-0.5 shrink-0 transition-colors", task.status === 'done' ? 'text-gray-500' : 'text-gray-300 hover:text-gray-500')}
                      >
                        {task.status === 'done' ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
                      </button>
@@ -286,7 +286,7 @@ export function ProjectDetailPage() {
                              onChange={(e) => setEditTaskTitle(e.target.value)}
                              onBlur={saveEditedTask}
                              onKeyDown={(e) => e.key === 'Enter' && saveEditedTask()}
-                             className="flex-1 px-2 py-1 text-sm border-b-2 border-blue-500 outline-none bg-blue-50/50"
+                             className="flex-1 px-2 py-1 text-sm border-b-2 border-gray-500 outline-none bg-gray-50/50"
                            />
                          </div>
                        ) : (
@@ -306,12 +306,12 @@ export function ProjectDetailPage() {
                                <option value="done">Done</option>
                              </select>
                              
-                             <button onClick={() => startEditingTask(task)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                             <button onClick={() => startEditingTask(task)} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded transition-colors">
                                <Edit2 className="w-4 h-4" />
                              </button>
                              <button onClick={() => {
                                if(window.confirm('Hapus tugas ini?')) deleteTask(task.id);
-                             }} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                             }} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded transition-colors">
                                <Trash2 className="w-4 h-4" />
                              </button>
                            </div>
@@ -343,7 +343,7 @@ export function ProjectDetailPage() {
         </DialogHeader>
         <DialogContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Judul Proyek <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-gray-700">Judul Proyek <span className="text-gray-500">*</span></label>
             <input 
               type="text" 
               value={editTitle}
@@ -401,7 +401,7 @@ export function ProjectDetailPage() {
         <form className="flex flex-col flex-1 min-h-0 overflow-hidden" onSubmit={handleAddTask}>
           <DialogContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Nama Tugas <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium text-gray-700">Nama Tugas <span className="text-gray-500">*</span></label>
               <input 
                 autoFocus
                 type="text" 
@@ -429,7 +429,7 @@ export function ProjectDetailPage() {
         </DialogContent>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
-          <Button variant="destructive" onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">Hapus Proyek</Button>
+          <Button variant="destructive" onClick={handleDelete} className="bg-gray-900 hover:bg-gray-800 text-white">Hapus Proyek</Button>
         </DialogFooter>
       </Dialog>
     </div>

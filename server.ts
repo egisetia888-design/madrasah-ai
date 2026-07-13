@@ -1,29 +1,68 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
+import rateLimit from "express-rate-limit";
 
 dotenv.config();
 
-function cleanAndParseJson(text: string) {
-  let cleanText = text.trim();
-  // Remove markdown code block markers if present
-  if (cleanText.startsWith("```")) {
-    cleanText = cleanText.replace(/^```[a-zA-Z]*\n/, "");
-    // Also handle trailing block marker
-    if (cleanText.endsWith("```")) {
-      cleanText = cleanText.slice(0, -3);
+// Simple in-memory cache for AI responses
+const aiCache = new Map<string, { timestamp: number, data: any }>();
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour
+
+function getCacheKey(endpoint: string, body: any) {
+  return `${endpoint}:${JSON.stringify(body)}`;
+}
+
+function cleanAndParseJson(text: string, fallback: any = {}) {
+  try {
+    let cleanText = text.trim();
+    if (cleanText.startsWith("```")) {
+      cleanText = cleanText.replace(/^```[a-zA-Z]*\n/, "");
+      if (cleanText.endsWith("```")) {
+        cleanText = cleanText.slice(0, -3);
+      }
     }
+    return JSON.parse(cleanText.trim());
+  } catch (error) {
+    console.error("JSON Parsing Error on AI output:", text.substring(0, 100) + "...");
+    return fallback;
   }
-  return JSON.parse(cleanText.trim());
 }
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  // Set up rate limiting
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: { error: "Too many requests from this IP, please try again after 15 minutes." }
+  });
 
-  // API Routes
+  const aiLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 15, // Limit each IP to 15 AI requests per minute
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Terlalu banyak permintaan ke AI. Silakan tunggu beberapa saat." }
+  });
+
+  app.use(express.json());
+  app.use("/api/", apiLimiter);
+  app.use("/api/ai/", aiLimiter);
+
+  // Logging middleware for audit trail
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+      console.log(`[API Audit] ${new Date().toISOString()} | ${req.method} ${req.path} | IP: ${req.ip}`);
+    }
+    next();
+  });
+
+  // AI Routes
   app.post("/api/ai/zettelkasten", async (req, res) => {
     try {
       if (!process.env.OPENROUTER_API_KEY) {
@@ -31,6 +70,13 @@ async function startServer() {
       }
 
       const { prompt, notes } = req.body;
+      const cacheKey = getCacheKey("zettelkasten", { prompt, notesCount: notes?.length });
+      
+      const cached = aiCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log(`[Cache Hit] /api/ai/zettelkasten`);
+        return res.json(cached.data);
+      }
       
       const systemInstruction = `
       You are a Smart Zettelkasten Assistant. Your job is to analyze the user's notes and help them:
@@ -68,7 +114,10 @@ async function startServer() {
 
       const data = await response.json() as any;
       const text = data.choices?.[0]?.message?.content || "";
-      res.json({ result: text });
+      const resultData = { result: text };
+      
+      aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
+      res.json(resultData);
     } catch (error: any) {
       console.error("AI Assistant Error:", error);
       res.status(500).json({ error: error.message || "Failed to process AI request" });
@@ -82,6 +131,13 @@ async function startServer() {
       }
 
       const { content, notes } = req.body;
+      const cacheKey = getCacheKey("suggest-tags", { content });
+      
+      const cached = aiCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log(`[Cache Hit] /api/ai/suggest-tags`);
+        return res.json(cached.data);
+      }
       
       const systemInstruction = `
       You are a Smart Zettelkasten Assistant. Your job is to analyze a new knowledge snippet from the user and:
@@ -123,7 +179,10 @@ async function startServer() {
 
       const data = await response.json() as any;
       const text = data.choices?.[0]?.message?.content || "{}";
-      res.json(cleanAndParseJson(text));
+      const resultData = cleanAndParseJson(text, { tags: [], connections: [] });
+      
+      aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
+      res.json(resultData);
     } catch (error: any) {
       console.error("AI Suggestion Error:", error);
       res.status(500).json({ error: error.message || "Failed to generate suggestions" });
@@ -137,6 +196,13 @@ async function startServer() {
       }
 
       const { content } = req.body;
+      const cacheKey = getCacheKey("generate-flashcards", { content });
+      
+      const cached = aiCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log(`[Cache Hit] /api/ai/generate-flashcards`);
+        return res.json(cached.data);
+      }
       
       const systemInstruction = `
       You are an expert at creating Spaced Repetition Flashcards. Your job is to analyze the provided note content and extract 5-10 crucial Question & Answer pairs.
@@ -175,7 +241,10 @@ async function startServer() {
 
       const data = await response.json() as any;
       const text = data.choices?.[0]?.message?.content || "{}";
-      res.json(cleanAndParseJson(text));
+      const resultData = cleanAndParseJson(text, { flashcards: [] });
+      
+      aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
+      res.json(resultData);
     } catch (error: any) {
       console.error("AI Flashcard Generation Error:", error);
       res.status(500).json({ error: error.message || "Failed to generate flashcards" });
@@ -189,6 +258,13 @@ async function startServer() {
       }
 
       const { question, correctAnswer, userAnswer } = req.body;
+      const cacheKey = getCacheKey("grade-flashcard", { question, correctAnswer, userAnswer });
+      
+      const cached = aiCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log(`[Cache Hit] /api/ai/grade-flashcard`);
+        return res.json(cached.data);
+      }
       
       const systemInstruction = `
       You are an intelligent Grading Assistant for spaced repetition.
@@ -238,7 +314,10 @@ async function startServer() {
 
       const data = await response.json() as any;
       const text = data.choices?.[0]?.message?.content || "{}";
-      res.json(cleanAndParseJson(text));
+      const resultData = cleanAndParseJson(text, { isCorrect: false, quality: 1, feedback: "Gagal memproses penilaian dari AI." });
+      
+      aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
+      res.json(resultData);
     } catch (error: any) {
       console.error("AI Grading Error:", error);
       res.status(500).json({ error: error.message || "Failed to grade answer" });
@@ -252,6 +331,13 @@ async function startServer() {
       }
 
       const { topic } = req.body;
+      const cacheKey = getCacheKey("generate-syllabus", { topic });
+      
+      const cached = aiCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log(`[Cache Hit] /api/ai/generate-syllabus`);
+        return res.json(cached.data);
+      }
       
       const systemInstruction = `
       You are an expert AI Syllabus Planner and Curriculum Designer.
@@ -312,7 +398,10 @@ async function startServer() {
 
       const data = await response.json() as any;
       const text = data.choices?.[0]?.message?.content || "{}";
-      res.json(cleanAndParseJson(text));
+      const resultData = cleanAndParseJson(text, { title: topic, description: "Gagal membuat silabus.", phases: [] });
+      
+      aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
+      res.json(resultData);
     } catch (error: any) {
       console.error("AI Syllabus Generation Error:", error);
       res.status(500).json({ error: error.message || "Failed to generate syllabus" });
@@ -326,6 +415,13 @@ async function startServer() {
       }
 
       const { content } = req.body;
+      const cacheKey = getCacheKey("summarize-literature", { content });
+      
+      const cached = aiCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log(`[Cache Hit] /api/ai/summarize-literature`);
+        return res.json(cached.data);
+      }
       
       const systemInstruction = `
       You are an expert academic assistant.
@@ -370,7 +466,10 @@ async function startServer() {
 
       const data = await response.json() as any;
       const text = data.choices?.[0]?.message?.content || "{}";
-      res.json(cleanAndParseJson(text));
+      const resultData = cleanAndParseJson(text, { problem: "Tidak dapat menyimpulkan masalah utama.", methodology: "Tidak dapat menyimpulkan metodologi.", conclusion: "Tidak dapat menyimpulkan kesimpulan." });
+      
+      aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
+      res.json(resultData);
     } catch (error: any) {
       console.error("AI Literature Summarizer Error:", error);
       res.status(500).json({ error: error.message || "Failed to summarize literature" });

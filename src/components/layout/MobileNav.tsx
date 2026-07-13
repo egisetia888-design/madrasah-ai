@@ -1,119 +1,172 @@
-import { useState } from "react"
-import { NavLink } from "react-router-dom"
-import { LayoutDashboard, Library, PenTool, Map, Briefcase, FileText, Network, FlaskConical, Menu, X, Brain, BarChart2, Settings, LogOut } from "lucide-react"
+import { useState, useEffect } from "react"
+import { NavLink, useLocation } from "react-router-dom"
+import { LayoutDashboard, Library, PenTool, Map, Briefcase, FileText, Network, FlaskConical, Menu, X, Brain, BarChart2, Settings, Command } from "lucide-react"
 import { cn } from "../../utils/cn"
+import { useUIStore } from "../../store/uiStore"
 
-const navItems = [
+const workspaceItems = [
   { name: "Beranda", href: "/", icon: LayoutDashboard },
-  { name: "Kurikulum", href: "/curriculum", icon: Map },
   { name: "Pustaka", href: "/library", icon: Library },
-  { name: "Otak Kedua", href: "/notes", icon: PenTool },
+  { name: "Catatan", href: "/notes", icon: FileText },
+  { name: "Graf Analisa", href: "/graph", icon: Network },
+  { name: "Review", href: "/review", icon: Brain },
+  { name: "Tulisan", href: "/writing", icon: PenTool },
   { name: "Proyek", href: "/projects", icon: Briefcase },
-  { name: "Menulis", href: "/writing", icon: FileText },
-  { name: "Graf", href: "/graph", icon: Network },
-  { name: "Riset", href: "/research", icon: FlaskConical },
-  { name: "Latihan", href: "/review", icon: Brain },
-  { name: "Analitik", href: "/analytics", icon: BarChart2 },
+  { name: "Kurikulum", href: "/curriculum", icon: Map },
 ]
 
 const mainNavItems = [
-  navItems[0], // Beranda
-  navItems[1], // Kurikulum
-  navItems[2], // Pustaka
-  navItems[3], // Otak Kedua (Catatan)
+  workspaceItems[0], // Beranda
+  workspaceItems[1], // Pustaka
+  workspaceItems[2], // Catatan
+  workspaceItems[5], // Tulisan
 ]
 
 export function MobileNav() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const setSearchOpen = useUIStore(state => state.setSearchOpen)
+
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
 
   return (
     <>
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200 z-50 pb-safe">
-        <div className="flex items-center justify-between px-4 py-2">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-200 z-50 pb-safe">
+        <div className="flex items-center justify-around px-2 py-2">
           {mainNavItems.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
-              onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  "flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all flex-1",
+                  "flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all min-w-[64px]",
                   isActive
-                    ? "text-gray-900 scale-105"
-                    : "text-gray-400 hover:text-gray-900 hover:bg-gray-50"
+                    ? "text-gray-900"
+                    : "text-gray-400 hover:text-gray-900"
                 )
               }
             >
-              <item.icon className="w-5 h-5" strokeWidth={2.5} />
-              <span className="text-[10px] font-semibold">{item.name}</span>
+              {({ isActive }) => (
+                <>
+                  <item.icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
+                  <span className={cn("text-[10px] font-medium tracking-tight", isActive && "font-semibold")}>{item.name}</span>
+                </>
+              )}
             </NavLink>
           ))}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className={cn(
-              "flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all flex-1",
+              "flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all min-w-[64px]",
               menuOpen
-                ? "text-gray-900 scale-105"
-                : "text-gray-400 hover:text-gray-900 hover:bg-gray-50"
+                ? "text-gray-900"
+                : "text-gray-400 hover:text-gray-900"
             )}
           >
-            {menuOpen ? <X className="w-5 h-5" strokeWidth={2.5} /> : <Menu className="w-5 h-5" strokeWidth={2.5} />}
-            <span className="text-[10px] font-semibold">Menu</span>
+            {menuOpen ? <X className="w-6 h-6" strokeWidth={2.5} /> : <Menu className="w-6 h-6" strokeWidth={2} />}
+            <span className={cn("text-[10px] font-medium tracking-tight", menuOpen && "font-semibold")}>Menu</span>
           </button>
         </div>
       </nav>
 
       {/* Mobile Menu Overlay */}
       {menuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-white/95 backdrop-blur-sm pt-20 pb-24 px-4 overflow-y-auto animate-in fade-in slide-in-from-bottom-8 duration-200">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 px-2">Modul Lainnya</h2>
-          <div className="grid grid-cols-2 gap-2">
-            {navItems.filter(i => !mainNavItems.includes(i)).map((item) => (
-              <NavLink
-                key={item.name}
-                to={item.href}
-                onClick={() => setMenuOpen(false)}
-                className={({ isActive }) =>
-                  cn(
-                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all border",
-                    isActive
-                      ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 shadow-sm"
-                  )
-                }
+        <div className="md:hidden fixed inset-0 z-40 bg-gray-50/95 backdrop-blur-md pt-16 pb-24 px-4 overflow-y-auto animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-8 px-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center shadow-sm">
+                  <span className="text-white font-bold text-lg font-display">M</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 tracking-tight font-display">Madrasah</h2>
+                  <p className="text-xs text-gray-500">Workspace</p>
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => {
+                  setMenuOpen(false);
+                  setSearchOpen(true);
+                }} 
+                className="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 rounded-full text-gray-600 shadow-sm"
               >
-                <item.icon className="w-6 h-6" strokeWidth={2} />
-                <span className="text-sm font-medium">{item.name}</span>
-              </NavLink>
-            ))}
-          </div>
+                <Command className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+              <div className="px-4 py-3 bg-gray-50/50 border-b border-gray-100">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Semua Modul</span>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {workspaceItems.filter(i => !mainNavItems.includes(i)).map((item) => (
+                  <NavLink
+                    key={item.name}
+                    to={item.href}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-4 p-4 transition-colors",
+                        isActive
+                          ? "bg-gray-50/50"
+                          : "hover:bg-gray-50 active:bg-gray-100"
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                          isActive ? "bg-gray-100 text-gray-900" : "bg-gray-100 text-gray-500"
+                        )}>
+                          <item.icon className="w-5 h-5" strokeWidth={2} />
+                        </div>
+                        <span className={cn("text-base font-medium", isActive ? "text-gray-950" : "text-gray-700")}>{item.name}</span>
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-200 space-y-2">
-            <NavLink
-              to="/settings"
-              onClick={() => setMenuOpen(false)}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors border",
-                  isActive
-                    ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                    : "bg-gray-50 text-gray-700 border-gray-100 hover:border-gray-200 shadow-sm"
-                )
-              }
-            >
-              <Settings className="w-5 h-5" />
-              Pengaturan Sistem
-            </NavLink>
-            <button 
-              onClick={() => {
-                setMenuOpen(false);
-                alert("Anda telah keluar dari Madrasah (Simulasi).");
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-100 shadow-sm text-left cursor-pointer"
-            >
-              <LogOut className="w-5 h-5" />
-              Keluar Sesi
-            </button>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50/50 border-b border-gray-100">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Sistem</span>
+              </div>
+              <div className="divide-y divide-gray-50">
+                <NavLink
+                  to="/analytics"
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-4 p-4 transition-colors",
+                      isActive ? "bg-gray-50/50" : "hover:bg-gray-50 active:bg-gray-100"
+                    )
+                  }
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center">
+                    <BarChart2 className="w-5 h-5" strokeWidth={2} />
+                  </div>
+                  <span className="text-base font-medium text-gray-700">Analitik</span>
+                </NavLink>
+                <NavLink
+                  to="/settings"
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-4 p-4 transition-colors",
+                      isActive ? "bg-gray-50/50" : "hover:bg-gray-50 active:bg-gray-100"
+                    )
+                  }
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center">
+                    <Settings className="w-5 h-5" strokeWidth={2} />
+                  </div>
+                  <span className="text-base font-medium text-gray-700">Pengaturan</span>
+                </NavLink>
+              </div>
+            </div>
           </div>
         </div>
       )}

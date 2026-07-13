@@ -2,8 +2,7 @@ import { useEffect } from "react"
 import { Outlet } from "react-router-dom"
 import { Sidebar } from "./Sidebar"
 import { MobileNav } from "./MobileNav"
-import { GlobalSearch } from "./GlobalSearch"
-import { QuickAdd } from "./QuickAdd"
+import { CommandPalette } from "./CommandPalette"
 import { OnboardingTour } from "./OnboardingTour"
 import { HijriClock } from "./HijriClock"
 import { Search } from "lucide-react"
@@ -57,8 +56,7 @@ export function MainLayout() {
         </div>
       </main>
       <MobileNav />
-      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
-      <QuickAdd />
+      <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
       <OnboardingTour />
     </div>
   )

@@ -164,7 +164,6 @@ export function NotesPage() {
   const getTypeLabel = (type: NoteType) => {
     switch(type) {
       case 'knowledge': return 'Fakta & Ilmu';
-      case 'research': return 'Riset';
       case 'project': return 'Proyek';
       case 'writing': return 'Tulisan';
       case 'personal': return 'Personal';
@@ -180,7 +179,7 @@ export function NotesPage() {
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button variant="outline" className="gap-2" onClick={() => setIsAssistantOpen(true)}>
-            <Sparkles className="w-4 h-4 text-indigo-500" />
+            <Sparkles className="w-4 h-4 text-gray-500" />
             <span className="hidden sm:inline">Tanya AI</span>
           </Button>
           <Button className="gap-2" onClick={() => setIsAddOpen(true)}>
@@ -365,7 +364,7 @@ export function NotesPage() {
                   >
                     {note.status === 'processed' && (
                       <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden">
-                        <div className="absolute top-3 -right-6 w-24 bg-green-500 text-white text-[10px] font-bold uppercase tracking-widest text-center py-1 rotate-45">
+                        <div className="absolute top-3 -right-6 w-24 bg-gray-500 text-white text-[10px] font-bold uppercase tracking-widest text-center py-1 rotate-45">
                           Processed
                         </div>
                       </div>
@@ -373,7 +372,7 @@ export function NotesPage() {
                     
                     <div className="flex items-start justify-between mb-3 gap-4">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-indigo-600 transition-colors">
+                        <h3 className="font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-gray-900 transition-colors">
                           {note.title}
                         </h3>
                         {folder && (
@@ -409,7 +408,7 @@ export function NotesPage() {
                       
                       <div className="flex items-center justify-between text-xs text-gray-400 font-medium">
                         <span className="flex items-center gap-1.5">
-                          <span className={cn("w-2 h-2 rounded-full", note.status === 'processed' ? "bg-green-500" : "bg-gray-300")} />
+                          <span className={cn("w-2 h-2 rounded-full", note.status === 'processed' ? "bg-gray-500" : "bg-gray-300")} />
                           {note.status === 'processed' ? 'Sudah Diproses' : 'Belum Diproses'}
                         </span>
                         <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
@@ -456,7 +455,7 @@ export function NotesPage() {
         <form onSubmit={handleAddNote} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <DialogContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Judul <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium text-gray-700">Judul <span className="text-gray-500">*</span></label>
               <input 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -476,7 +475,6 @@ export function NotesPage() {
                   className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
                 >
                   <option value="knowledge">Knowledge (Fakta, Ilmu)</option>
-                  <option value="research">Research (Analisis, Riset)</option>
                   <option value="project">Project (Status, Dokumentasi)</option>
                   <option value="writing">Writing (Draft, Skrip)</option>
                   <option value="personal">Personal (Refleksi, Pengalaman)</option>
@@ -529,7 +527,7 @@ export function NotesPage() {
                   size="sm" 
                   onClick={handleSuggest} 
                   disabled={isSuggesting || !content.trim()}
-                  className="h-8 gap-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200 hover:border-indigo-300"
+                  className="h-8 gap-2 bg-gray-50 text-gray-800 hover:bg-gray-100 border-gray-200 hover:border-gray-300"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   {isSuggesting ? "Menganalisis..." : "Generate Saran Tag & Relasi"}
@@ -549,8 +547,8 @@ export function NotesPage() {
                           className={cn(
                             "px-2.5 py-1 text-xs font-medium rounded-md cursor-pointer transition-colors border",
                             selectedTags.includes(tagId) 
-                              ? 'bg-indigo-600 border-indigo-600 text-white' 
-                              : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-300'
+                              ? 'bg-gray-900 border-gray-900 text-white' 
+                              : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
                           )}
                         >
                           #{tag}
@@ -572,19 +570,19 @@ export function NotesPage() {
       <Dialog open={isAssistantOpen} onOpenChange={setIsAssistantOpen} maxWidthClass="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-gray-900">
-            <Sparkles className="w-5 h-5 text-indigo-500" /> Asisten Pengetahuan AI
+            <Sparkles className="w-5 h-5 text-gray-500" /> Asisten Pengetahuan AI
           </DialogTitle>
         </DialogHeader>
         <DialogContent className="flex flex-col gap-6">
-          <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
-            <p className="text-sm text-indigo-900 leading-relaxed">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <p className="text-sm text-gray-950 leading-relaxed">
               Tanyakan apapun tentang catatan Anda. Asisten AI ini dapat menghubungkan konsep-konsep yang berbeda, merangkum pengetahuan Anda, atau membantu Anda menemukan ide tulisan baru berdasarkan apa yang sudah Anda pelajari.
             </p>
           </div>
           
           <div className="flex-1 overflow-y-auto min-h-[200px] border border-gray-100 rounded-xl bg-gray-50/50 p-4">
             {aiResponse ? (
-               <div className="prose prose-sm md:prose-base prose-indigo max-w-none text-gray-700">
+               <div className="prose prose-sm md:prose-base prose-gray max-w-none text-gray-700">
                  <Markdown>{aiResponse}</Markdown>
                </div>
             ) : (
@@ -595,7 +593,7 @@ export function NotesPage() {
             )}
             {isLoading && (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
               </div>
             )}
           </div>
@@ -605,11 +603,11 @@ export function NotesPage() {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               type="text" 
-              className="flex-1 h-11 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-transparent" 
+              className="flex-1 h-11 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:border-transparent" 
               placeholder="Contoh: Apa hubungan catatan A dan B?"
               required
             />
-            <Button type="submit" disabled={isLoading || !prompt.trim()} className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700">
+            <Button type="submit" disabled={isLoading || !prompt.trim()} className="h-11 px-6 bg-gray-900 hover:bg-gray-800">
               {isLoading ? 'Berpikir...' : 'Tanya AI'}
             </Button>
           </form>

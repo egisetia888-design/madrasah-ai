@@ -63,7 +63,7 @@ export function DeckDetailPage() {
           Kembali
         </Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setIsDeleteDialogOpen(true)}>
+          <Button variant="ghost" className="gap-2 text-gray-900 hover:text-gray-800 hover:bg-gray-50" onClick={() => setIsDeleteDialogOpen(true)}>
             <Trash2 className="w-4 h-4" />
             <span className="hidden sm:inline">Hapus Dek</span>
           </Button>
@@ -76,7 +76,7 @@ export function DeckDetailPage() {
           <p className="text-gray-600">{deck.description}</p>
         )}
         <div className="flex items-center gap-4 text-sm text-gray-500">
-          <div className="flex items-center gap-1.5 font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded">
+          <div className="flex items-center gap-1.5 font-medium text-gray-900 bg-gray-50 px-2 py-1 rounded">
             <RotateCcw className="w-4 h-4" />
             {dueCards.length} Jatuh Tempo
           </div>
@@ -126,7 +126,7 @@ export function DeckDetailPage() {
         <form className="flex flex-col flex-1 min-h-0 overflow-hidden" onSubmit={handleAddCard}>
           <DialogContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Depan <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium text-gray-700">Depan <span className="text-gray-500">*</span></label>
               <textarea 
                 value={front}
                 onChange={(e) => setFront(e.target.value)}
@@ -136,7 +136,7 @@ export function DeckDetailPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Belakang <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium text-gray-700">Belakang <span className="text-gray-500">*</span></label>
               <textarea 
                 value={back}
                 onChange={(e) => setBack(e.target.value)}
@@ -166,7 +166,7 @@ export function DeckDetailPage() {
         </DialogContent>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
-          <Button variant="destructive" onClick={handleDeleteDeck} className="bg-red-600 hover:bg-red-700 text-white">Hapus Dek</Button>
+          <Button variant="destructive" onClick={handleDeleteDeck} className="bg-gray-900 hover:bg-gray-800 text-white">Hapus Dek</Button>
         </DialogFooter>
       </Dialog>
     </div>

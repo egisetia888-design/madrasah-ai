@@ -62,10 +62,10 @@ export function ProjectsPage() {
 
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
-      case 'active': return 'text-blue-700 bg-blue-50 border-blue-200';
-      case 'completed': return 'text-green-700 bg-green-50 border-green-200';
+      case 'active': return 'text-gray-800 bg-gray-50 border-gray-200';
+      case 'completed': return 'text-gray-800 bg-gray-50 border-gray-200';
       case 'planned': return 'text-gray-700 bg-gray-50 border-gray-200';
-      case 'review': return 'text-purple-700 bg-purple-50 border-purple-200';
+      case 'review': return 'text-gray-800 bg-gray-50 border-gray-200';
       case 'archived': return 'text-orange-700 bg-orange-50 border-orange-200';
       default: return 'text-gray-700 bg-gray-50 border-gray-200';
     }
@@ -160,7 +160,7 @@ export function ProjectsPage() {
                 <div key={project.id} onClick={() => navigate(`/projects/${project.id}`)} className="group border border-gray-200 rounded-2xl bg-white p-6 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer flex flex-col relative overflow-hidden">
                   {(project.status === 'active' || progressPct > 0) && (
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-gray-100 z-10">
-                      <div className={cn("h-full transition-all duration-500", project.status === 'completed' ? 'bg-green-500' : 'bg-blue-500')} style={{ width: `${progressPct}%` }} />
+                      <div className={cn("h-full transition-all duration-500", project.status === 'completed' ? 'bg-gray-500' : 'bg-gray-500')} style={{ width: `${progressPct}%` }} />
                     </div>
                   )}
                   
@@ -173,7 +173,7 @@ export function ProjectsPage() {
                     </button>
                   </div>
                   
-                  <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">{project.title}</h3>
+                  <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 group-hover:text-gray-900 transition-colors line-clamp-2">{project.title}</h3>
                   <p className="text-sm text-gray-600 line-clamp-3 flex-1 mb-6 leading-relaxed">{project.description || "Tidak ada deskripsi."}</p>
                   
                   <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-gray-100">
@@ -186,7 +186,7 @@ export function ProjectsPage() {
                     
                     <div className="flex items-center justify-between text-xs text-gray-400 font-medium pt-1">
                       {project.dueDate ? (
-                        <span className={cn("flex items-center gap-1.5", isOverdue ? 'text-red-600' : 'text-gray-500')}>
+                        <span className={cn("flex items-center gap-1.5", isOverdue ? 'text-gray-900' : 'text-gray-500')}>
                           <Calendar className="w-3.5 h-3.5" /> 
                           {isOverdue ? 'Terlewat: ' : 'Tenggat: '}
                           {new Date(project.dueDate).toLocaleDateString()}
@@ -213,7 +213,7 @@ export function ProjectsPage() {
         <form className="flex flex-col flex-1 min-h-0 overflow-hidden" onSubmit={handleAddProject}>
           <DialogContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Judul Proyek <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium text-gray-700">Judul Proyek <span className="text-gray-500">*</span></label>
               <input 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}

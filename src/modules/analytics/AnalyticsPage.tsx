@@ -29,7 +29,6 @@ export function AnalyticsPage() {
 
   const notesDistribution = [
     { name: 'Knowledge', value: notes.filter(n => n.type === 'knowledge').length },
-    { name: 'Research', value: notes.filter(n => n.type === 'research').length },
     { name: 'Project', value: notes.filter(n => n.type === 'project').length },
     { name: 'Writing', value: notes.filter(n => n.type === 'writing').length },
     { name: 'Personal', value: notes.filter(n => n.type === 'personal').length }

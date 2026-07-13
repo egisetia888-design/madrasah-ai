@@ -46,4 +46,12 @@ Dokumen ini berisi panduan dan aturan baku khusus untuk AI Coding Agent yang mem
 
 ---
 
+## 📚 4. Pemeliharaan Dokumentasi Resmi (Documentation Hygiene)
+
+- **Single Source of Truth**:
+  - Seluruh dokumentasi proyek tersimpan secara modular di dalam direktori `/docs/`. Jika Anda menambah, mengubah, atau menghapus modul fungsional atau skema API, Anda **wajib** memperbarui berkas terkait di `/docs/` agar dokumentasi tetap akurat merepresentasikan kode aktual.
+  - Jangan biarkan dokumentasi menjadi usang. Setiap Pull Request atau perubahan kode yang signifikan harus disertai dengan pembaruan dokumentasi yang relevan di `/docs/`.
+
+---
+
 *Setiap perubahan kode yang Anda lakukan harus berkontribusi pada kesederhanaan, keindahan, dan keandalan sistem operasi pengetahuan pribadi ini.*

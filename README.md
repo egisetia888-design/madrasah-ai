@@ -1,98 +1,68 @@
-# Remix: Madrasah 🕋
-> **Personal Knowledge Operating System (PKOS)**
+# 🕋 Remix: Madrasah
 
-**Remix: Madrasah** adalah sistem operasi pengetahuan pribadi (Personal Knowledge Operating System) modern yang dirancang khusus untuk mengintegrasikan proses pembelajaran, pencatatan, penataan kurikulum, penulisan kreatif, tinjauan berbasis repetisi berjarak (spaced repetition), serta eksplorasi hubungan antar-konsep melalui Graf Pengetahuan (Knowledge Graph) yang dinamis. 
+> **Personal Knowledge Operating System (PKOS) — Monochrome Slate Edition**
 
-Aplikasi ini dioptimalkan sepenuhnya untuk perangkat desktop maupun mobile secara totalitas, menghadirkan harmoni visual yang tinggi, tipografi presisi, dan fungsionalitas cerdas berbasis AI.
+**Remix: Madrasah** adalah sistem operasi pengetahuan pribadi (Personal Knowledge Operating System) modern yang dirancang khusus untuk mengintegrasikan seluruh siklus hidup intelektual individu. Aplikasi ini menggabungkan penataan kurikulum belajar, manajemen literatur pustaka, pencatatan Markdown berbasis Zettelkasten, penulisan bebas gangguan, serta pelatihan retensi ingatan jangka panjang melalui kartu flash (*spaced repetition*) dalam satu antarmuka monokromatik yang hening dan tanpa distraksi.
 
----
-
-## 🎨 Identitas Visual & Bahasa Desain
-
-Bahasa desain **Remix: Madrasah** berlandaskan pada keselarasan, minimalisme, dan fungsionalitas intuitif tanpa ornamen berlebih (Anti-AI-Slop).
-
-- **Tema Warna**: *Cosmic Slate & Clean White*
-  - Latar belakang utama menggunakan abu-abu ultra-lembut (`bg-gray-50/50`) dipadu dengan kartu putih murni (`bg-white`) berbayang halus (`shadow-sm`) dan berlekuk lembut (`rounded-2xl`).
-  - Aksen gelap elegan (`text-gray-900`, `bg-gray-900`) memberikan kontras tinggi dan keterbacaan optimal.
-- **Tipografi Harmonis**:
-  - **Display (Judul)**: Menggunakan **Plus Jakarta Sans** yang modern dan berkarakter, memberikan kesan ramah sekaligus profesional pada setiap tajuk utama.
-  - **Sanskrit (Isi Utama)**: Menggunakan **Inter** untuk keterbacaan teks paragraf yang sangat tajam di berbagai ukuran layar.
-  - **Monospace (Data/Meta)**: Menggunakan **JetBrains Mono** untuk representasi kode, penanda waktu, atau teks metadata yang rapi.
-- **Set Ikon**: Konsisten 100% menggunakan keluarga ikon dari **Lucide React** dengan ketebalan dan gaya visual yang seragam.
+Aplikasi ini dioptimalkan sepenuhnya untuk perangkat desktop maupun mobile secara responsif, menghadirkan harmoni visual tinggi, tipografi presisi, dan fungsionalitas cerdas berbasis AI.
 
 ---
 
-## 📱 Sinkronisasi & Optimalisasi Mobile-Web
+## 📚 Daftar Isi Dokumentasi Resmi (Single Source of Truth)
 
-Seluruh komponen dalam aplikasi ini telah disinkronkan secara total untuk pengalaman lintas perangkat (Cross-Device Mastery):
+Untuk memudahkan penelusuran, arsitektur informasi, dan pemeliharaan jangka panjang, dokumentasi Madrasah telah direstrukturisasi secara modular ke dalam direktori `/docs` berikut:
 
-1. **Navigasi Layar Bawah (Mobile Navigation)**:
-   - Akses cepat untuk menu-menu utama (**Beranda, Kurikulum, Pustaka, Otak Kedua**) yang selalu dalam jangkauan ibu jari saat dibuka di smartphone.
-   - Pintu masuk tambahan menuju **Pengaturan Sistem** dan **Keluar Sesi** yang elegan pada laci menu tambahan.
-2. **Lapisan Interaktif (Z-Index Harmony)**:
-   - Komponen dialog, modal, dan jendela AI Syllabus Planner diatur pada indeks lapisan tinggi (`z-[100]`) di atas bilah navigasi mobile agar konten tidak saling tumpang tindih dan dapat beroperasi 100% tanpa hambatan visual.
-3. **Penyaring Pintar Mobile (Mobile Filter Toggle)**:
-   - Panel pencarian dan filter pada halaman **Catatan (Otak Kedua)** yang awalnya memenuhi ruang samping di layar lebar, kini dikompresi menjadi tombol lipat (*accordion drawer*) interaktif yang bersih dan hemat ruang di layar mobile.
-4. **Graf Responsif**:
-   - Visualisasi graf relasi pengetahuan yang fleksibel menyesuaikan tinggi jendela serta panel detail simpul (*node detail*) yang bergeser mulus dari bawah layar (*bottom sheet*) khusus untuk tampilan mobile.
+### [🕋 01. Identitas, Visi, dan Filosofi Produk](docs/01_identity_and_philosophy.md)
+*Menjelaskan makna nama "Madrasah", visi demokratisasi manajemen pengetahuan pribadi tingkat lanjut, filosofi belajar terstruktur, serta segmentasi target pengguna.*
 
----
+### [🎨 02. Desain dan Sistem Pengalaman Pengguna (UI/UX)](docs/02_design_and_ux.md)
+*Dokumentasi prinsip estetika monokrom murni (Monochrome Zen), penolakan terhadap ornamen hiasan teknis palsu (Anti-AI-Slop), spesifikasi tipografi, lengkukan elemen, penataan layering z-index, serta standarisasi responsivitas seluler.*
 
-## 🚀 Fitur Utama & Modul Sistem
+### [🛠️ 03. Arsitektur Sistem dan Struktur Proyek](docs/03_architecture_and_project_structure.md)
+*Rincian diagram hubungan klien-server, struktur direktori proyek aktual, justifikasi pemilihan pustaka teknologi utama (React, Zustand, Tailwind v4, D3.js, Express), serta standar tipe TypeScript yang ketat.*
 
-- **🕋 Beranda & Dasbor Utama**: Pusat pantauan aktivitas harian, statistik belajar, jam Hijriah real-time, serta kutipan inspirasi yang memotivasi proses belajar harian.
-- **🗺️ Jalur Belajar (Curriculum)**: Rencanakan jalur studi Anda sendiri secara mandiri atau gunakan **AI Syllabus Planner** berbasis OpenRouter AI untuk menyusun silabus belajar dari tingkat pemula hingga ahli dalam hitungan detik.
-- **🧠 Otak Kedua (Notes)**: Pencatatan kaya fitur dengan dukungan Markdown, pengelompokan direktori (Folder), penandaan tag, serta integrasi **Asisten AI Madrasah** untuk merangkum dan menghubungkan gagasan Anda.
-- **📚 Pustaka (Library)**: Kelola daftar buku, artikel, dokumen penting lengkap dengan status pembacaan dan catatan eksklusif per buku.
-- **📊 Graf Pengetahuan (Knowledge Graph)**: Visualisasi keterkaitan antar catatan dan konsep secara dinamis menggunakan D3.js untuk mempermudah eksplorasi wawasan baru.
-- **🔁 Tinjauan Memori (Spaced Repetition)**: Pertahankan ingatan Anda jangka panjang dengan sistem Flashcard pintar yang melacak kekuatan memori Anda.
-- **✍️ Studio Penulisan (Writing Room)**: Ruang sunyi bebas gangguan untuk merangkai naskah, artikel, atau tulisan akademis berdasarkan referensi catatan Anda.
+### [📦 04. Panduan Modul dan Fitur Sistem](docs/04_modules_and_features.md)
+*Penjelasan fungsional lengkap mengenai empat pilar utama Madrasah: Beranda (Mission Control), Analitik Produktivitas, Kurikulum (Syllabus Planner), Pustaka, Otak Kedua (Zettelkasten), Graf Pengetahuan (Knowledge Graph), Latihan (Spaced Repetition), Proyek Kerja, dan Studio Menulis.*
 
----
+### [📊 05. Model Data dan Integrasi API Backend](docs/05_data_model_and_api.md)
+*Definisi skema antarmuka TypeScript untuk seluruh entitas sistem, dokumentasi rute API backend Express, mekanisme pembatasan frekuensi (rate limiting), cache memori (TTL 1 jam), dan penanganan penguraian JSON AI yang tangguh.*
 
-## 🛠️ Arsitektur Teknologi
+### [⚙️ 06. Panduan Operasional, Instalasi, dan Deployment](docs/06_operation_and_deployment.md)
+*Panduan instalasi prasyarat lokal, konfigurasi berkas variabel lingkungan (.env), optimasi RAM server, serta alur build produksi full-stack menggunakan bundler esbuild untuk penyajian container di Google Cloud Run.*
 
-Aplikasi ini mengusung fondasi tumpukan teknologi modern berkinerja tinggi:
+### [🗺️ 07. Peta Jalan Pengembangan (Roadmap) dan Changelog](docs/07_roadmap_and_changelog.md)
+*Melacak sejarah rilis perubahan sistem (changelog) serta memetakan rencana masa depan rilis fungsionalitas multi-user, database cloud terdistribusi, dan ekosistem publikasi.*
 
-- **Frontend**: React 19, Vite 6, TypeScript 5.
-- **State Management**: Zustand (untuk pengelolaan status global yang ringan dan responsif).
-- **Styling**: Tailwind CSS v4 (mengoptimalkan utilitas modern langsung pada build CSS terintegrasi).
-- **Animasi**: Motion (untuk transisi halaman dan elemen yang lembut).
-- **Backend**: Express.js (melayani REST API serta menjembatani integrasi rahasia dengan OpenRouter API secara aman tanpa mengekspos API Key ke peramban).
-- **Deployment**: Vercel (mendukung serverless functions yang siap di-deploy secara global).
+### [❓ 08. Pertanyaan Umum (FAQ) dan Panduan Pemecahan Masalah](docs/08_faq_and_troubleshooting.md)
+*Jawaban atas pertanyaan privasi data, justifikasi filosofis warna monokrom, serta solusi pemecahan masalah praktis untuk kegagalan respons AI, kehilangan data lokal, atau kelambatan performa visualisasi graf.*
+
+### [🤝 09. Panduan Kontribusi Pengembang (Contribution Guidelines)](docs/09_contribution_guidelines.md)
+*Siklus kontribusi kode pengembang, konvensi pesan komit berbasis Conventional Commits, standar pengujian linter mandiri, serta praktik kebersihan kode sebelum mengajukan Pull Request.*
 
 ---
 
-## 💻 Panduan Pengembangan Lokal
+## ⚡ Langkah Cepat Memulai (Quick Start)
 
-### Prasyarat
-Pastikan Anda telah memasang **Node.js** (versi 18+) di komputer Anda.
+### 1. Unduh Dependensi
+```bash
+npm install
+```
 
-### Langkah Memulai
+### 2. Konfigurasi Variabel Lingkungan
+Salin `.env.example` menjadi `.env` dan masukkan kunci API OpenRouter Anda:
+```bash
+cp .env.example .env
+```
+Isi variabel di dalam `.env`:
+```env
+OPENROUTER_API_KEY="sk-or-v1-your-key-here"
+```
 
-1. **Pasang Dependensi**:
-   ```bash
-   npm install
-   ```
-
-2. **Konfigurasi Lingkungan (.env)**:
-   Salin `.env.example` menjadi `.env` dan masukkan kunci API OpenRouter Anda:
-   ```env
-   OPENROUTER_API_KEY="sk-or-v1-..."
-   OPENROUTER_MODEL="google/gemini-2.5-flash"
-   ```
-
-3. **Jalankan Server Pengembangan**:
-   ```bash
-   npm run dev
-   ```
-   Aplikasi akan berjalan di `http://localhost:3000`.
-
-4. **Kompilasi Produksi**:
-   Untuk membangun aplikasi siap pakai di lingkungan produksi:
-   ```bash
-   npm run build
-   ```
+### 3. Jalankan Server Lokal
+```bash
+npm run dev
+```
+Aplikasi Anda akan segera mengudara secara terintegrasi pada port **3000** di alamat: **`http://localhost:3000`**.
 
 ---
 

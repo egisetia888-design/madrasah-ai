@@ -12,30 +12,29 @@ const steps = [
     description: "Madrasah bukan sekadar aplikasi catatan biasa, melainkan External Brain (Otak Kedua) Anda. Bebaskan pikiran Anda untuk mencipta, biarkan sistem yang mengingat.",
     highlights: ["Sistem Zettelkasten", "Spaced Repetition", "Knowledge Graph"],
     icon: Brain,
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-100",
+    color: "text-gray-900",
+    bgColor: "bg-gray-100",
   },
   {
     title: "Pustaka & Kurikulum",
     description: "Kumpulkan buku, kitab, jurnal, dan artikel. Susun peta jalan belajar Anda secara terstruktur dengan fitur Kurikulum.",
     highlights: ["Manajemen Literatur", "Peta Jalan Belajar", "Tracking Progres"],
     icon: Library,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-100",
+    color: "text-gray-900",
+    bgColor: "bg-gray-100",
   },
   {
     title: "Menulis & Terhubung",
     description: "Catat Ide (Fakta, Riset, Proyek) lalu hubungkan semuanya. Graf Pengetahuan akan memvisualisasikan wawasan baru dari koneksi antar ide Anda.",
     highlights: ["Catatan Terstruktur", "Backlinking", "Visualisasi Relasi"],
     icon: Network,
-    color: "text-purple-600",
-    bgColor: "bg-purple-100",
+    color: "text-gray-900",
+    bgColor: "bg-gray-100",
   }
 ];
 
 export function OnboardingTour() {
   const { isTourOpen, hasSeenTour, startTour, completeTour } = useTourStore();
-  const setQuickAddOpen = useUIStore(state => state.setQuickAddOpen);
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
@@ -60,7 +59,6 @@ export function OnboardingTour() {
     completeTour();
     setCurrentStep(0);
     setTimeout(() => {
-      setQuickAddOpen(true);
     }, 300);
   }
 
@@ -78,9 +76,9 @@ export function OnboardingTour() {
         <div className="md:w-5/12 bg-gray-50 flex flex-col items-center justify-center p-10 border-b md:border-b-0 md:border-r border-gray-100 relative overflow-hidden">
           {/* Decorative Background Elements */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-30 pointer-events-none">
-             <div className="absolute -top-10 -left-10 w-40 h-40 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
-             <div className="absolute top-0 -right-10 w-40 h-40 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-             <div className="absolute -bottom-10 left-20 w-40 h-40 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+             <div className="absolute -top-10 -left-10 w-40 h-40 bg-gray-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+             <div className="absolute top-0 -right-10 w-40 h-40 bg-gray-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+             <div className="absolute -bottom-10 left-20 w-40 h-40 bg-gray-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
           </div>
 
           <div className="relative z-10 flex flex-col items-center">
@@ -122,8 +120,8 @@ export function OnboardingTour() {
             <div className="space-y-3 mb-8">
               {steps[currentStep].highlights.map((highlight, idx) => (
                 <div key={idx} className="flex items-center gap-3 text-gray-700 font-medium">
-                  <div className="w-5 h-5 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 text-indigo-600" />
+                  <div className="w-5 h-5 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-gray-900" />
                   </div>
                   {highlight}
                 </div>
@@ -139,7 +137,7 @@ export function OnboardingTour() {
                   key={idx} 
                   className={cn(
                     "h-2 rounded-full transition-all duration-300", 
-                    idx === currentStep ? "w-8 bg-indigo-600" : "w-2 bg-gray-200 cursor-pointer hover:bg-gray-300"
+                    idx === currentStep ? "w-8 bg-gray-900" : "w-2 bg-gray-200 cursor-pointer hover:bg-gray-300"
                   )}
                   onClick={() => setCurrentStep(idx)}
                 />
@@ -162,7 +160,7 @@ export function OnboardingTour() {
                   Lanjut <ArrowRight className="w-4 h-4" />
                 </Button>
               ) : (
-                <Button onClick={handleStartWriting} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white gap-2 px-6 shadow-sm">
+                <Button onClick={handleStartWriting} className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white gap-2 px-6 shadow-sm">
                   <Plus className="w-4 h-4" /> Mulai Catatan Pertama
                 </Button>
               )}

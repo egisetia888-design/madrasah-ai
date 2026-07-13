@@ -13,13 +13,20 @@ export function SettingsPage() {
     try {
       setExportStatus('Mengekspor data...');
       const keys = await localforage.keys();
-      const exportData: Record<string, any> = {};
+      const rawData: Record<string, any> = {};
       
       for (const key of keys) {
-        exportData[key] = await localforage.getItem(key);
+        rawData[key] = await localforage.getItem(key);
       }
       
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const exportPayload = {
+        _madrasah_backup: true,
+        version: 1,
+        timestamp: new Date().toISOString(),
+        data: rawData
+      };
+      
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -47,9 +54,30 @@ export function SettingsPage() {
       try {
         setImportStatus('Mengimpor data...');
         const json = event.target?.result as string;
-        const data = JSON.parse(json);
+        const parsed = JSON.parse(json);
         
-        for (const [key, value] of Object.entries(data)) {
+        let dataToImport = parsed;
+        
+        // Schema Validation and Versioning Strategy
+        if (parsed && typeof parsed === 'object' && parsed._madrasah_backup) {
+          if (parsed.version > 1) {
+            throw new Error("Versi backup lebih baru dari versi aplikasi.");
+          }
+          dataToImport = parsed.data;
+        } else {
+          // Legacy format fallback: validate it looks like a store dump
+          if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+            throw new Error("Format JSON tidak dikenali.");
+          }
+          dataToImport = parsed;
+        }
+        
+        const keys = Object.keys(dataToImport || {});
+        if (keys.length === 0) {
+          throw new Error("File backup kosong atau tidak valid.");
+        }
+        
+        for (const [key, value] of Object.entries(dataToImport)) {
           await localforage.setItem(key, value);
         }
         
@@ -124,7 +152,7 @@ export function SettingsPage() {
                   Ekspor Backup
                 </Button>
                 {exportStatus && (
-                  <p className="text-xs mt-2 text-green-600 flex items-center gap-1">
+                  <p className="text-xs mt-2 text-gray-900 flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> {exportStatus}
                   </p>
                 )}
@@ -148,7 +176,7 @@ export function SettingsPage() {
                   </Button>
                 </div>
                 {importStatus && (
-                  <p className={`text-xs mt-2 flex items-center gap-1 ${importStatus.includes('Gagal') ? 'text-red-600' : 'text-green-600'}`}>
+                  <p className={`text-xs mt-2 flex items-center gap-1 ${importStatus.includes('Gagal') ? 'text-gray-900' : 'text-gray-900'}`}>
                     <CheckCircle2 className="w-3 h-3" /> {importStatus}
                   </p>
                 )}
@@ -158,14 +186,14 @@ export function SettingsPage() {
             <div className="pt-6 border-t border-gray-100">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-medium text-red-600 flex items-center gap-1.5">
+                  <h3 className="font-medium text-gray-900 flex items-center gap-1.5">
                     <AlertTriangle className="w-4 h-4" /> Zona Bahaya
                   </h3>
                   <p className="text-sm text-gray-500 mt-1 max-w-md">
                     Menghapus seluruh data akan menghilangkan semua catatan, proyek, dan pengaturan secara permanen. Pastikan Anda telah melakukan ekspor data sebelumnya.
                   </p>
                 </div>
-                <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300" onClick={handleClearData}>
+                <Button variant="outline" className="text-gray-900 border-gray-200 hover:bg-gray-50 hover:text-gray-800 hover:border-gray-300" onClick={handleClearData}>
                   <Trash2 className="w-4 h-4 mr-2" />
                   Hapus Semua Data
                 </Button>

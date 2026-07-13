@@ -8,7 +8,6 @@ import { useNotesStore } from "../../store/notesStore"
 import { useWritingStore } from "../../store/writingStore"
 import { useProjectsStore } from "../../store/projectsStore"
 import { useLibraryStore } from "../../store/libraryStore"
-import { useResearchStore } from "../../store/researchStore"
 import { cn } from "../../utils/cn"
 import Markdown from "react-markdown"
 
@@ -25,7 +24,6 @@ export function KnowledgeGraphPage() {
   const drafts = useWritingStore(state => state.drafts)
   const projects = useProjectsStore(state => state.projects)
   const books = useLibraryStore(state => state.books)
-  const papers = useResearchStore(state => state.papers)
   
   // State
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "")
@@ -79,11 +77,8 @@ export function KnowledgeGraphPage() {
     if (selectedNode.type === 'book') {
       return projects.find(p => p.id === selectedNode.id) || books.find(b => b.id === selectedNode.id);
     }
-    if (selectedNode.type === 'author') {
-      return papers.find(p => p.id === selectedNode.id);
-    }
     return null;
-  }, [selectedNode, notes, drafts, projects, books, papers]);
+  }, [selectedNode, notes, drafts, projects, books]);
 
   useEffect(() => {
     if (viewMode !== 'graph') return;
@@ -248,10 +243,10 @@ export function KnowledgeGraphPage() {
   
   const getTypeIcon = (type: string) => {
     switch(type) {
-      case 'note': return <FileText className="w-4 h-4 text-green-600" />
-      case 'concept': return <Hash className="w-4 h-4 text-purple-600" />
-      case 'book': return <Book className="w-4 h-4 text-blue-600" />
-      case 'author': return <User className="w-4 h-4 text-yellow-600" />
+      case 'note': return <FileText className="w-4 h-4 text-gray-900" />
+      case 'concept': return <Hash className="w-4 h-4 text-gray-900" />
+      case 'book': return <Book className="w-4 h-4 text-gray-900" />
+      case 'author': return <User className="w-4 h-4 text-gray-900" />
       default: return <Network className="w-4 h-4 text-gray-600" />
     }
   }
@@ -305,16 +300,16 @@ export function KnowledgeGraphPage() {
           {viewMode === 'graph' && (
             <div className="absolute top-4 left-4 right-4 z-10 flex flex-wrap gap-3 items-center justify-between pointer-events-none">
               <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md border border-gray-200 rounded-lg p-1.5 shadow-sm pointer-events-auto">
-                <button onClick={() => toggleFilter('note')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.note ? "bg-green-50 text-green-700" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
+                <button onClick={() => toggleFilter('note')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.note ? "bg-gray-50 text-gray-800" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
                   <FileText className="w-3.5 h-3.5" /> Catatan
                 </button>
-                <button onClick={() => toggleFilter('concept')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.concept ? "bg-purple-50 text-purple-700" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
+                <button onClick={() => toggleFilter('concept')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.concept ? "bg-gray-50 text-gray-800" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
                   <Hash className="w-3.5 h-3.5" /> Konsep
                 </button>
-                <button onClick={() => toggleFilter('book')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.book ? "bg-blue-50 text-blue-700" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
+                <button onClick={() => toggleFilter('book')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.book ? "bg-gray-50 text-gray-800" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
                   <Book className="w-3.5 h-3.5" /> Pustaka
                 </button>
-                <button onClick={() => toggleFilter('author')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.author ? "bg-yellow-50 text-yellow-700" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
+                <button onClick={() => toggleFilter('author')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.author ? "bg-gray-50 text-gray-800" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
                   <User className="w-3.5 h-3.5" /> Penulis
                 </button>
               </div>
@@ -367,7 +362,7 @@ export function KnowledgeGraphPage() {
                     .map(node => {
                       const connections = edges.filter(e => e.source === node.id || e.target === node.id).length;
                       return (
-                        <tr key={node.id} onClick={() => setSelectedNodeId(node.id)} className={cn("bg-white hover:bg-indigo-50/50 cursor-pointer transition-colors", selectedNodeId === node.id && "bg-indigo-50")}>
+                        <tr key={node.id} onClick={() => setSelectedNodeId(node.id)} className={cn("bg-white hover:bg-gray-50/50 cursor-pointer transition-colors", selectedNodeId === node.id && "bg-gray-50")}>
                           <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-3">
                             {getTypeIcon(node.type)}
                             {node.label}
@@ -375,10 +370,10 @@ export function KnowledgeGraphPage() {
                           <td className="px-6 py-4">
                             <span className={cn(
                               "px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider rounded-md",
-                              node.type === 'concept' ? 'bg-purple-100 text-purple-700' :
-                              node.type === 'book' ? 'bg-blue-100 text-blue-700' :
-                              node.type === 'note' ? 'bg-green-100 text-green-700' :
-                              node.type === 'author' ? 'bg-yellow-100 text-yellow-700' :
+                              node.type === 'concept' ? 'bg-gray-100 text-gray-800' :
+                              node.type === 'book' ? 'bg-gray-100 text-gray-800' :
+                              node.type === 'note' ? 'bg-gray-100 text-gray-800' :
+                              node.type === 'author' ? 'bg-gray-100 text-gray-800' :
                               'bg-gray-100 text-gray-700'
                             )}>
                               {node.type}
@@ -439,7 +434,7 @@ export function KnowledgeGraphPage() {
                     {selectedNodeConnections.slice(0, 8).map((conn, idx) => (
                       <button key={`${conn?.id}-${idx}`} onClick={() => setSelectedNodeId(conn!.id)} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left group">
                         {getTypeIcon(conn!.type)}
-                        <span className="text-sm text-gray-700 font-medium truncate group-hover:text-indigo-600">{conn?.label}</span>
+                        <span className="text-sm text-gray-700 font-medium truncate group-hover:text-gray-900">{conn?.label}</span>
                       </button>
                     ))}
                     {selectedNodeConnections.length > 8 && (
@@ -451,7 +446,7 @@ export function KnowledgeGraphPage() {
             </div>
             
             <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
-              <Button onClick={navigateToDetail} className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700">
+              <Button onClick={navigateToDetail} className="w-full gap-2 bg-gray-900 hover:bg-gray-800">
                 Buka Selengkapnya <ArrowRight className="w-4 h-4" />
               </Button>
             </div>

@@ -14,7 +14,6 @@ import { WritingPage } from "../modules/writing/WritingPage"
 import { WritingDetailPage } from "../modules/writing/WritingDetailPage"
 import { KnowledgeGraphPage } from "../modules/graph/KnowledgeGraphPage"
 import { NodeDetailPage } from "../modules/graph/NodeDetailPage"
-import { ResearchPage } from "../modules/research/ResearchPage"
 import { ReviewPage } from "../modules/review/ReviewPage"
 import { DeckDetailPage } from "../modules/review/DeckDetailPage"
 import { ReviewSessionPage } from "../modules/review/ReviewSessionPage"
@@ -84,10 +83,6 @@ const router = createBrowserRouter([
       {
         path: "graph/:id",
         element: <NodeDetailPage />,
-      },
-      {
-        path: "research",
-        element: <ResearchPage />,
       },
       {
         path: "review",

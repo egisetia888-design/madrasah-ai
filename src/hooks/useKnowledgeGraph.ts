@@ -3,7 +3,6 @@ import { useGraphStore } from "../store/graphStore";
 import { useNotesStore } from "../store/notesStore";
 import { useWritingStore } from "../store/writingStore";
 import { useProjectsStore } from "../store/projectsStore";
-import { useResearchStore } from "../store/researchStore";
 import { useLibraryStore } from "../store/libraryStore";
 import { Node, Edge } from "../types";
 
@@ -14,7 +13,6 @@ export function useKnowledgeGraph() {
   const notes = useNotesStore(state => state.notes);
   const drafts = useWritingStore(state => state.drafts);
   const projects = useProjectsStore(state => state.projects);
-  const papers = useResearchStore(state => state.papers);
   const books = useLibraryStore(state => state.books);
 
   return useMemo(() => {
@@ -66,7 +64,6 @@ export function useKnowledgeGraph() {
     drafts.forEach(draft => addNodeIfMissing(draft.id, draft.title, 'note'));
     projects.forEach(project => addNodeIfMissing(project.id, project.title, 'book'));
     books.forEach(book => addNodeIfMissing(book.id, book.title, 'book'));
-    papers.forEach(paper => addNodeIfMissing(paper.id, paper.title, 'author'));
 
     // Second pass: Extract relations
     notes.forEach(note => {
@@ -86,16 +83,7 @@ export function useKnowledgeGraph() {
       extractTags(project.title, project.id);
       extractWikilinks(project.description, project.id);
     });
-    
-    papers.forEach(paper => {
-      const words = paper.title.split(' ').filter(w => w.length > 5);
-      words.slice(0, 2).forEach(w => {
-        const tagId = `tag-#${w.toLowerCase()}`;
-        addNodeIfMissing(tagId, `#${w.toLowerCase()}`, 'concept');
-        addEdgeIfMissing(paper.id, tagId, 'tags');
-      });
-    });
 
     return { nodes, edges };
-  }, [storeNodes, storeEdges, notes, drafts, projects, papers, books]);
+  }, [storeNodes, storeEdges, notes, drafts, projects, books]);
 }

@@ -184,7 +184,7 @@ export function NoteDetailPage() {
           <span className="hidden sm:inline">Kembali</span>
         </Button>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <Button variant="outline" className="gap-2 text-purple-700 bg-purple-50 border-purple-200 hover:bg-purple-100 hover:border-purple-300" onClick={() => setIsGeneratorOpen(true)}>
+          <Button variant="outline" className="gap-2 text-gray-800 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300" onClick={() => setIsGeneratorOpen(true)}>
             <BrainCircuit className="w-4 h-4" />
             <span className="hidden sm:inline">Buat Flashcard AI</span>
           </Button>
@@ -192,10 +192,10 @@ export function NoteDetailPage() {
             {previewMode ? <PenTool className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             <span className="hidden sm:inline">{previewMode ? "Edit" : "Preview"}</span>
           </Button>
-          <Button variant="ghost" className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setIsDeleteDialogOpen(true)}>
+          <Button variant="ghost" className="gap-2 text-gray-900 hover:text-gray-800 hover:bg-gray-50" onClick={() => setIsDeleteDialogOpen(true)}>
             <Trash2 className="w-4 h-4" />
           </Button>
-          <Button onClick={handleSave} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+          <Button onClick={handleSave} className="gap-2 bg-gray-900 hover:bg-gray-800">
             <Save className="w-4 h-4" />
             <span className="hidden sm:inline">{isSaving ? "Tersimpan!" : "Simpan"}</span>
           </Button>
@@ -218,7 +218,7 @@ export function NoteDetailPage() {
               <span key={tag!.id} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-md">
                 #{tag!.name}
                 {!previewMode && (
-                  <button onClick={() => removeTag(tag!.id)} className="text-gray-400 hover:text-red-500 rounded-full ml-1">
+                  <button onClick={() => removeTag(tag!.id)} className="text-gray-400 hover:text-gray-500 rounded-full ml-1">
                     <X className="w-3 h-3" />
                   </button>
                 )}
@@ -237,7 +237,7 @@ export function NoteDetailPage() {
                     setTagInput("");
                     setIsTagging(false);
                   }}
-                  className="px-2.5 py-1 text-xs font-medium border border-indigo-300 rounded-md outline-none focus:ring-1 focus:ring-indigo-500 w-32"
+                  className="px-2.5 py-1 text-xs font-medium border border-gray-300 rounded-md outline-none focus:ring-1 focus:ring-gray-500 w-32"
                   placeholder="Ketik & Enter..."
                 />
               ) : (
@@ -254,7 +254,7 @@ export function NoteDetailPage() {
         
         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 border-y border-gray-100 py-3">
           {sourceBook && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md border border-blue-100 cursor-pointer hover:bg-blue-100 transition-colors" onClick={() => navigate(`/library/${sourceBook.id}`)}>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 text-gray-800 rounded-md border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => navigate(`/library/${sourceBook.id}`)}>
               <span className="font-medium text-xs uppercase tracking-wider">Sumber:</span>
               <span className="font-semibold text-sm truncate max-w-[200px]">{sourceBook.title}</span>
             </div>
@@ -290,7 +290,6 @@ export function NoteDetailPage() {
               className="appearance-none bg-white border border-gray-200 text-gray-700 py-1.5 pl-3 pr-8 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <option value="knowledge">Knowledge (Fakta, Ilmu)</option>
-              <option value="research">Research (Analisis, Riset)</option>
               <option value="project">Project (Status, Dokumentasi)</option>
               <option value="writing">Writing (Draft, Skrip)</option>
               <option value="personal">Personal (Refleksi, Pengalaman)</option>
@@ -306,7 +305,7 @@ export function NoteDetailPage() {
                  updateNote(note.id, { status: e.target.value as NoteStatus });
               }}
               disabled={previewMode}
-              className={`appearance-none border py-1.5 pl-3 pr-8 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${status === 'processed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}
+              className={`appearance-none border py-1.5 pl-3 pr-8 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${status === 'processed' ? 'bg-gray-50 text-gray-800 border-gray-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}
             >
               <option value="unprocessed">Unprocessed</option>
               <option value="processed">Processed</option>
@@ -343,14 +342,14 @@ export function NoteDetailPage() {
         </DialogContent>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
-          <Button variant="destructive" onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">Hapus</Button>
+          <Button variant="destructive" onClick={handleDelete} className="bg-gray-900 hover:bg-gray-800 text-white">Hapus</Button>
         </DialogFooter>
       </Dialog>
       
       <Dialog open={isGeneratorOpen} onOpenChange={setIsGeneratorOpen} maxWidthClass="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <BrainCircuit className="w-5 h-5 text-purple-600" /> 
+            <BrainCircuit className="w-5 h-5 text-gray-900" /> 
             Auto-Flashcard Generator
           </DialogTitle>
         </DialogHeader>
@@ -358,15 +357,15 @@ export function NoteDetailPage() {
           {generatedCards.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-600 mb-4 text-sm">AI akan menganalisis catatan ini dan membuat 5-10 kartu Q&A untuk Anda pelajari.</p>
-              <Button onClick={handleGenerateCards} disabled={isGenerating} className="bg-purple-600 hover:bg-purple-700 text-white">
+              <Button onClick={handleGenerateCards} disabled={isGenerating} className="bg-gray-900 hover:bg-gray-800 text-white">
                 {isGenerating ? "Sedang Mengekstrak..." : "Mulai Generate"}
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="bg-purple-50 text-purple-800 p-3 rounded-lg text-sm flex items-center justify-between">
+              <div className="bg-gray-50 text-gray-900 p-3 rounded-lg text-sm flex items-center justify-between">
                 <span>Berhasil membuat {generatedCards.length} kartu.</span>
-                <Button variant="ghost" size="sm" onClick={() => setGeneratedCards([])} className="h-7 px-2 text-purple-700 hover:bg-purple-100">Buat Ulang</Button>
+                <Button variant="ghost" size="sm" onClick={() => setGeneratedCards([])} className="h-7 px-2 text-gray-800 hover:bg-gray-100">Buat Ulang</Button>
               </div>
               
               <div className="max-h-60 overflow-y-auto space-y-2 border border-gray-100 rounded-lg p-2 bg-gray-50/50">
@@ -384,7 +383,7 @@ export function NoteDetailPage() {
                   <select 
                     value={selectedDeckId}
                     onChange={(e) => setSelectedDeckId(e.target.value)}
-                    className="w-full appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-3 pr-8 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-3 pr-8 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-500"
                   >
                     <option value="" disabled>Pilih Deck...</option>
                     {decks.map(d => (
@@ -400,7 +399,7 @@ export function NoteDetailPage() {
         <DialogFooter>
           <Button variant="ghost" onClick={() => setIsGeneratorOpen(false)}>Batal</Button>
           {generatedCards.length > 0 && (
-            <Button onClick={handleSaveCardsToDeck} disabled={!selectedDeckId || isSaved} className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
+            <Button onClick={handleSaveCardsToDeck} disabled={!selectedDeckId || isSaved} className="bg-gray-900 hover:bg-gray-800 text-white gap-2">
               {isSaved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
               {isSaved ? "Tersimpan" : "Simpan ke Deck"}
             </Button>

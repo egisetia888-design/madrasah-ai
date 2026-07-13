@@ -27,7 +27,7 @@ export interface Book {
   updatedAt: number;
 }
 
-export type NoteType = 'knowledge' | 'research' | 'project' | 'writing' | 'personal';
+export type NoteType = 'knowledge' | 'project' | 'writing' | 'personal';
 export type NoteStatus = 'unprocessed' | 'processed';
 
 export interface Note {
@@ -131,18 +131,6 @@ export interface Edge {
   label?: string;
 }
 
-export type ResearchStatus = 'idea' | 'question' | 'sources' | 'evidence' | 'analysis' | 'draft' | 'review' | 'published';
-
-export interface Paper {
-  id: UUID;
-  title: string;
-  authors: string[];
-  abstract?: string;
-  url?: string;
-  status: ResearchStatus;
-  createdAt: number;
-  updatedAt: number;
-}
 
 export interface Deck {
   id: UUID;

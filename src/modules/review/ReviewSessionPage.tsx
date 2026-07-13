@@ -39,7 +39,7 @@ export function ReviewSessionPage() {
   if (completed) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-10rem)] space-y-6 max-w-md mx-auto text-center animate-in fade-in zoom-in duration-500">
-        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-500 mb-2">
+        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 mb-2">
           <CheckCircle2 className="w-10 h-10" />
         </div>
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">Selesai!</h2>
@@ -117,7 +117,7 @@ export function ReviewSessionPage() {
               <Markdown>{currentCard.back}</Markdown>
               
               {evaluationResult && (
-                <div className={`mt-6 p-4 rounded-xl text-left text-sm w-full border ${evaluationResult.isCorrect ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                <div className={`mt-6 p-4 rounded-xl text-left text-sm w-full border ${evaluationResult.isCorrect ? 'bg-gray-50 border-gray-200 text-gray-900' : 'bg-gray-50 border-gray-200 text-gray-900'}`}>
                   <div className="flex items-center gap-2 mb-2">
                     <BrainCircuit className="w-4 h-4" />
                     <span className="font-semibold">Penilaian AI (Kualitas: {evaluationResult.quality}/5)</span>
@@ -126,7 +126,7 @@ export function ReviewSessionPage() {
                 </div>
               )}
               {isEvaluating && (
-                <div className="mt-6 p-4 rounded-xl text-left text-sm w-full border bg-purple-50 border-purple-200 text-purple-800 flex items-center gap-2">
+                <div className="mt-6 p-4 rounded-xl text-left text-sm w-full border bg-gray-50 border-gray-200 text-gray-900 flex items-center gap-2">
                   <BrainCircuit className="w-4 h-4 animate-pulse" />
                   <span>AI sedang menilai jawaban Anda...</span>
                 </div>
@@ -137,7 +137,7 @@ export function ReviewSessionPage() {
                 <textarea
                   value={userAnswer}
                   onChange={(e) => setUserAnswer(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"
+                  className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-500 resize-none"
                   rows={3}
                   placeholder="Ketik jawaban Anda di sini untuk dinilai AI (Opsional)..."
                 />
@@ -145,7 +145,7 @@ export function ReviewSessionPage() {
                   <Button variant="outline" className="flex-1 gap-2" onClick={() => setShowAnswer(true)}>
                     Lihat Jawaban
                   </Button>
-                  <Button className="flex-1 gap-2 bg-purple-600 hover:bg-purple-700" onClick={handleEvaluate} disabled={!userAnswer.trim() || isEvaluating}>
+                  <Button className="flex-1 gap-2 bg-gray-900 hover:bg-gray-800" onClick={handleEvaluate} disabled={!userAnswer.trim() || isEvaluating}>
                     <BrainCircuit className="w-4 h-4" />
                     Nilai dengan AI
                   </Button>
@@ -157,7 +157,7 @@ export function ReviewSessionPage() {
 
       {showAnswer && !isEvaluating && (
         <div className="grid grid-cols-4 gap-2 shrink-0 animate-in slide-in-from-bottom-2 duration-300">
-          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-red-200 hover:bg-red-50 hover:text-red-700" onClick={() => handleReview(0)}>
+          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-gray-200 hover:bg-gray-50 hover:text-gray-800" onClick={() => handleReview(0)}>
             <span className="font-semibold text-sm md:text-base">Ulangi</span>
             <span className="text-[10px] md:text-xs text-gray-400 font-normal">1m</span>
           </Button>
@@ -165,11 +165,11 @@ export function ReviewSessionPage() {
             <span className="font-semibold text-sm md:text-base">Sulit</span>
             <span className="text-[10px] md:text-xs text-gray-400 font-normal">1h</span>
           </Button>
-          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-blue-200 hover:bg-blue-50 hover:text-blue-700" onClick={() => handleReview(4)}>
+          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-gray-200 hover:bg-gray-50 hover:text-gray-800" onClick={() => handleReview(4)}>
             <span className="font-semibold text-sm md:text-base">Sedang</span>
             <span className="text-[10px] md:text-xs text-gray-400 font-normal">3h</span>
           </Button>
-          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-green-200 hover:bg-green-50 hover:text-green-700" onClick={() => handleReview(5)}>
+          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-gray-200 hover:bg-gray-50 hover:text-gray-800" onClick={() => handleReview(5)}>
             <span className="font-semibold text-sm md:text-base">Mudah</span>
             <span className="text-[10px] md:text-xs text-gray-400 font-normal">4h</span>
           </Button>

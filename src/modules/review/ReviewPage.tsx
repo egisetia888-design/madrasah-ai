@@ -82,7 +82,7 @@ export function ReviewPage() {
                   
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-gray-900 bg-gray-50 px-2 py-1 rounded">
                         <RotateCcw className="w-3 h-3" />
                         {due} Jatuh Tempo
                       </div>
@@ -109,7 +109,7 @@ export function ReviewPage() {
         <form className="flex flex-col flex-1 min-h-0 overflow-hidden" onSubmit={handleAddDeck}>
           <DialogContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Nama Dek <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium text-gray-700">Nama Dek <span className="text-gray-500">*</span></label>
               <input 
                 value={name}
                 onChange={(e) => setName(e.target.value)}

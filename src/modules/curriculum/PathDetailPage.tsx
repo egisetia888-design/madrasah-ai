@@ -169,7 +169,7 @@ export function PathDetailPage() {
               <ArrowLeft className="w-4 h-4" /> Kembali
             </Button>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setIsDeleteDialogOpen(true)}>
+              <Button variant="ghost" className="gap-2 text-gray-900 hover:text-gray-800 hover:bg-gray-50" onClick={() => setIsDeleteDialogOpen(true)}>
                 <Trash2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Hapus</span>
               </Button>
@@ -213,7 +213,7 @@ export function PathDetailPage() {
            <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">Progres Keseluruhan</span>
            <div className="flex items-center gap-3 w-full sm:w-48">
               <div className="h-2 flex-1 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full" style={{ width: `${progressPercent}%` }}></div>
+                <div className="h-full bg-gray-900 rounded-full" style={{ width: `${progressPercent}%` }}></div>
               </div>
               <span className="font-bold text-lg text-gray-900">{progressPercent}%</span>
            </div>
@@ -255,7 +255,7 @@ export function PathDetailPage() {
                             if (window.confirm("Yakin ingin menghapus fase ini beserta kompetensinya?")) {
                               deletePhase(phase.id);
                             }
-                          }} className="text-gray-400 hover:text-red-500 transition-colors p-1">
+                          }} className="text-gray-400 hover:text-gray-500 transition-colors p-1">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </h3>
@@ -271,13 +271,13 @@ export function PathDetailPage() {
                            </div>
                          ) : (
                            phaseCompetencies.map(comp => (
-                             <div key={comp.id} className="border border-gray-200 rounded-xl bg-white p-4 hover:border-blue-200 transition-colors flex flex-col h-full shadow-sm">
+                             <div key={comp.id} className="border border-gray-200 rounded-xl bg-white p-4 hover:border-gray-200 transition-colors flex flex-col h-full shadow-sm">
                                <div className="flex items-start gap-3 relative group/comp">
                                  <button onClick={() => {
                                    if (window.confirm("Yakin ingin menghapus kompetensi ini?")) {
                                      deleteCompetency(comp.id);
                                    }
-                                 }} className="absolute -right-2 -top-2 opacity-0 group-hover/comp:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all">
+                                 }} className="absolute -right-2 -top-2 opacity-0 group-hover/comp:opacity-100 p-1.5 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all">
                                    <Trash2 className="w-4 h-4" />
                                  </button>
                                  <div className="flex-1">
@@ -287,8 +287,8 @@ export function PathDetailPage() {
                                        value={comp.status}
                                        onChange={(e) => updateCompetency(comp.id, { status: e.target.value as any })}
                                        className={`text-xs font-medium rounded-md px-2 py-1 border outline-none ${
-                                          comp.status === 'done' ? 'bg-green-50 text-green-700 border-green-200' :
-                                          comp.status === 'in-progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                          comp.status === 'done' ? 'bg-gray-50 text-gray-800 border-gray-200' :
+                                          comp.status === 'in-progress' ? 'bg-gray-50 text-gray-800 border-gray-200' :
                                           'bg-gray-50 text-gray-700 border-gray-200'
                                        }`}
                                      >
@@ -317,7 +317,7 @@ export function PathDetailPage() {
                                      {comp.bookIds.length > 0 && (
                                        <div className="flex flex-wrap gap-1 mb-2">
                                          {comp.bookIds.map(bid => (
-                                            <span key={bid} className="inline-flex items-center text-[10px] text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded truncate max-w-[150px]">
+                                            <span key={bid} className="inline-flex items-center text-[10px] text-gray-800 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded truncate max-w-[150px]">
                                               <BookOpen className="w-3 h-3 mr-1 shrink-0" /> {getBookTitle(bid)}
                                             </span>
                                          ))}
@@ -326,7 +326,7 @@ export function PathDetailPage() {
                                      {comp.outputIds.length > 0 && (
                                        <div className="flex flex-wrap gap-1">
                                          {comp.outputIds.map(oid => (
-                                            <span key={oid} className="inline-flex items-center text-[10px] text-purple-700 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded truncate max-w-[150px]">
+                                            <span key={oid} className="inline-flex items-center text-[10px] text-gray-800 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded truncate max-w-[150px]">
                                               <PenTool className="w-3 h-3 mr-1 shrink-0" /> {getDraftTitle(oid)}
                                             </span>
                                          ))}
@@ -408,7 +408,7 @@ export function PathDetailPage() {
         </DialogContent>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
-          <Button variant="destructive" onClick={handleDeletePath} className="bg-red-600 hover:bg-red-700 text-white">Hapus Kurikulum</Button>
+          <Button variant="destructive" onClick={handleDeletePath} className="bg-gray-900 hover:bg-gray-800 text-white">Hapus Kurikulum</Button>
         </DialogFooter>
       </Dialog>
 
@@ -433,7 +433,7 @@ export function PathDetailPage() {
                   {competencies.find(c => c.id === activeCompForManage)?.bookIds.map(bid => (
                     <div key={bid} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded border border-gray-200">
                       <span className="text-sm text-gray-700 truncate">{getBookTitle(bid)}</span>
-                      <button onClick={() => handleRemoveBookFromComp(activeCompForManage, bid)} className="text-red-500 hover:bg-red-50 p-1 rounded">
+                      <button onClick={() => handleRemoveBookFromComp(activeCompForManage, bid)} className="text-gray-500 hover:bg-gray-50 p-1 rounded">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -467,7 +467,7 @@ export function PathDetailPage() {
                   {competencies.find(c => c.id === activeCompForManage)?.outputIds.map(oid => (
                     <div key={oid} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded border border-gray-200">
                       <span className="text-sm text-gray-700 truncate">{getDraftTitle(oid)}</span>
-                      <button onClick={() => handleRemoveOutputFromComp(activeCompForManage, oid)} className="text-red-500 hover:bg-red-50 p-1 rounded">
+                      <button onClick={() => handleRemoveOutputFromComp(activeCompForManage, oid)} className="text-gray-500 hover:bg-gray-50 p-1 rounded">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

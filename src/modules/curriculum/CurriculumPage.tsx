@@ -105,8 +105,8 @@ export function CurriculumPage() {
           <p className="text-gray-500 mt-1 text-sm">Kelola peta jalan belajar dan progres Anda.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 shrink-0 border-blue-200 text-blue-700 bg-blue-50/50 hover:bg-blue-50" onClick={() => setIsAiOpen(true)}>
-            <Sparkles className="w-4 h-4 text-blue-600" />
+          <Button variant="outline" className="gap-2 shrink-0 border-gray-200 text-gray-800 bg-gray-50/50 hover:bg-gray-50" onClick={() => setIsAiOpen(true)}>
+            <Sparkles className="w-4 h-4 text-gray-900" />
             <span className="hidden sm:inline">AI Syllabus Planner</span>
           </Button>
           <Button className="gap-2 shrink-0" onClick={() => setIsAddOpen(true)}>
@@ -157,7 +157,7 @@ export function CurriculumPage() {
               return (
                 <div key={path.id} onClick={() => navigate(`/curriculum/${path.id}`)} className="group border border-gray-200 rounded-xl bg-white p-5 hover:shadow-sm transition-shadow cursor-pointer flex flex-col h-40 relative overflow-hidden">
                   <div className="absolute bottom-0 left-0 h-1 bg-gray-100 w-full">
-                     <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${progressPct}%` }} />
+                     <div className="h-full bg-gray-500 transition-all duration-500" style={{ width: `${progressPct}%` }} />
                   </div>
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-semibold text-gray-900 line-clamp-1 flex-1 pr-2">{path.title}</h3>
@@ -184,7 +184,7 @@ export function CurriculumPage() {
         <form className="flex flex-col flex-1 min-h-0 overflow-hidden" onSubmit={handleAddPath}>
           <DialogContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Judul <span className="text-red-500">*</span></label>
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Judul <span className="text-gray-500">*</span></label>
               <input 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -218,7 +218,7 @@ export function CurriculumPage() {
       <Dialog open={isAiOpen} onOpenChange={setIsAiOpen}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
+            <Sparkles className="w-5 h-5 text-gray-900 animate-pulse" />
             AI Syllabus Planner
           </DialogTitle>
         </DialogHeader>
@@ -228,12 +228,12 @@ export function CurriculumPage() {
               Ketikkan topik atau skill yang ingin Anda kuasai. AI akan membuatkan jalur belajar lengkap dari pemula hingga mahir untuk Anda.
             </p>
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Topik Pembelajaran <span className="text-red-500">*</span></label>
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Topik Pembelajaran <span className="text-gray-500">*</span></label>
               <input 
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 type="text" 
-                className="flex h-11 w-full rounded-xl border border-gray-200 bg-gray-50/30 focus:bg-white px-3.5 py-2 text-base md:text-sm shadow-sm transition-all outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400" 
+                className="flex h-11 w-full rounded-xl border border-gray-200 bg-gray-50/30 focus:bg-white px-3.5 py-2 text-base md:text-sm shadow-sm transition-all outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500 placeholder:text-gray-400" 
                 placeholder="Misal: Sejarah Filsafat Barat, atau Pemrograman Golang"
                 required
               />
@@ -243,7 +243,7 @@ export function CurriculumPage() {
             <Button type="button" variant="ghost" onClick={() => setIsAiOpen(false)} className="w-full sm:w-auto text-gray-500 hover:text-gray-900 hover:bg-gray-100/80">
               Batal
             </Button>
-            <Button type="submit" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm" disabled={!topic.trim() || isGenerating}>
+            <Button type="submit" className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white shadow-sm" disabled={!topic.trim() || isGenerating}>
               {isGenerating ? "Menyusun Silabus..." : "Buat Silabus"}
             </Button>
           </DialogFooter>

@@ -232,7 +232,7 @@ export function BookDetailPage() {
         {/* Left Column: Core Book Info & Reading */}
         <div className="lg:col-span-1 space-y-6">
           <div className="p-6 border border-gray-200 rounded-2xl bg-white space-y-5 shadow-sm relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-1 bg-blue-500 h-full"></div>
+             <div className="absolute top-0 left-0 w-1 bg-gray-500 h-full"></div>
              
              <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
@@ -243,7 +243,7 @@ export function BookDetailPage() {
              </div>
              
              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }}></div>
+                <div className="h-full bg-gray-900 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }}></div>
              </div>
              
              <div className="flex justify-between text-sm text-gray-500 font-medium">
@@ -277,7 +277,7 @@ export function BookDetailPage() {
             </div>
             
             <div className="pt-4 mt-4 border-t border-gray-100">
-               <Button variant="ghost" className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 gap-2" onClick={() => setIsDeleteDialogOpen(true)}>
+               <Button variant="ghost" className="w-full text-gray-900 hover:text-gray-800 hover:bg-gray-50 gap-2" onClick={() => setIsDeleteDialogOpen(true)}>
                  <Trash2 className="w-4 h-4" /> Hapus Materi
                </Button>
             </div>
@@ -289,11 +289,11 @@ export function BookDetailPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="p-6 border border-gray-200 rounded-2xl bg-white shadow-sm flex flex-col items-center justify-center text-center gap-2">
               <span className="text-4xl font-bold text-gray-900">{bookNotes.length}</span>
-              <span className="text-sm font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5"><PenTool className="w-4 h-4 text-blue-500"/> Catatan Literatur</span>
+              <span className="text-sm font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5"><PenTool className="w-4 h-4 text-gray-500"/> Catatan Literatur</span>
             </div>
             <div className="p-6 border border-gray-200 rounded-2xl bg-white shadow-sm flex flex-col items-center justify-center text-center gap-2">
               <span className="text-4xl font-bold text-gray-900">{bookFlashcards.length}</span>
-              <span className="text-sm font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5"><Brain className="w-4 h-4 text-purple-500"/> Kartu Ulasan</span>
+              <span className="text-sm font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5"><Brain className="w-4 h-4 text-gray-500"/> Kartu Ulasan</span>
             </div>
           </div>
           
@@ -313,23 +313,23 @@ export function BookDetailPage() {
              </div>
              
              {isQuickAdding && (
-               <div className="p-4 border border-indigo-200 bg-indigo-50/50 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+               <div className="p-4 border border-gray-200 bg-gray-50/50 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                  <input 
                    type="text" 
                    value={quickNoteTitle}
                    onChange={(e) => setQuickNoteTitle(e.target.value)}
                    placeholder="Judul Ide / Catatan Cepat..."
-                   className="w-full bg-white border border-indigo-100 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                   className="w-full bg-white border border-gray-100 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-500"
                    autoFocus
                  />
                  <textarea 
                    value={quickNoteContent}
                    onChange={(e) => setQuickNoteContent(e.target.value)}
                    placeholder="Isi catatan (opsional)..."
-                   className="w-full bg-white border border-indigo-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none min-h-[80px]"
+                   className="w-full bg-white border border-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 resize-none min-h-[80px]"
                  />
                  <div className="flex justify-end">
-                   <Button size="sm" onClick={handleSaveQuickNote} disabled={!quickNoteTitle.trim()} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8">
+                   <Button size="sm" onClick={handleSaveQuickNote} disabled={!quickNoteTitle.trim()} className="bg-gray-900 hover:bg-gray-800 text-white text-xs h-8">
                      Simpan Catatan
                    </Button>
                  </div>
@@ -339,12 +339,12 @@ export function BookDetailPage() {
              {bookNotes.length > 0 ? (
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  {bookNotes.map(note => (
-                   <div key={note.id} onClick={() => navigate(`/notes/${note.id}`)} className="p-5 border border-gray-200 rounded-xl bg-gray-50/50 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all cursor-pointer group">
-                     <h4 className="font-semibold text-sm text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">{note.title}</h4>
+                   <div key={note.id} onClick={() => navigate(`/notes/${note.id}`)} className="p-5 border border-gray-200 rounded-xl bg-gray-50/50 hover:bg-white hover:border-gray-200 hover:shadow-sm transition-all cursor-pointer group">
+                     <h4 className="font-semibold text-sm text-gray-900 mb-2 group-hover:text-gray-900 transition-colors line-clamp-2">{note.title}</h4>
                      <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">{note.content}</p>
                      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400 font-medium uppercase tracking-wider">
                        <span>{new Date(note.createdAt).toLocaleDateString()}</span>
-                       <span className={cn("px-2 py-0.5 rounded", note.status === 'processed' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600')}>{note.status === 'processed' ? 'Diproses' : 'Mentah'}</span>
+                       <span className={cn("px-2 py-0.5 rounded", note.status === 'processed' ? 'bg-gray-100 text-gray-800' : 'bg-gray-200 text-gray-600')}>{note.status === 'processed' ? 'Diproses' : 'Mentah'}</span>
                      </div>
                    </div>
                  ))}
@@ -372,7 +372,7 @@ export function BookDetailPage() {
         </DialogHeader>
         <DialogContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Judul <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-gray-700">Judul <span className="text-gray-500">*</span></label>
             <input 
               type="text" 
               value={editTitle}
@@ -457,7 +457,7 @@ export function BookDetailPage() {
         </DialogContent>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
-          <Button variant="destructive" onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">Hapus Materi</Button>
+          <Button variant="destructive" onClick={handleDelete} className="bg-gray-900 hover:bg-gray-800 text-white">Hapus Materi</Button>
         </DialogFooter>
       </Dialog>
     </div>

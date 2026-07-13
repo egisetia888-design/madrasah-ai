@@ -69,7 +69,7 @@ export function WritingDetailPage() {
           Kembali
         </Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setIsDeleteDialogOpen(true)}>
+          <Button variant="ghost" className="gap-2 text-gray-900 hover:text-gray-800 hover:bg-gray-50" onClick={() => setIsDeleteDialogOpen(true)}>
             <Trash2 className="w-4 h-4" />
             <span className="hidden sm:inline">Hapus</span>
           </Button>
@@ -126,7 +126,7 @@ export function WritingDetailPage() {
         </DialogContent>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
-          <Button variant="destructive" onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">Hapus Draf</Button>
+          <Button variant="destructive" onClick={handleDelete} className="bg-gray-900 hover:bg-gray-800 text-white">Hapus Draf</Button>
         </DialogFooter>
       </Dialog>
     </div>
