@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Note, Folder, Tag } from '../types';
+import { generateEmbedding } from '../lib/semanticSearch';
 
 localforage.config({
   name: 'madrasah_db',
@@ -35,6 +36,7 @@ interface NotesState {
 
   addTag: (name: string) => string;
   deleteTag: (id: string) => void;
+  indexNote: (id: string) => Promise<void>;
 }
 
 export const useNotesStore = create<NotesState>()(
@@ -113,6 +115,25 @@ export const useNotesStore = create<NotesState>()(
           tags: n.tags.filter(tagId => tagId !== id)
         }))
       })),
+
+      indexNote: async (id) => {
+        const state = get();
+        const note = state.notes.find(n => n.id === id);
+        if (!note) return;
+
+        try {
+          const textToEmbed = `${note.title} ${note.content}`;
+          const embedding = await generateEmbedding(textToEmbed);
+          
+          set((state) => ({
+            notes: state.notes.map(n => 
+              n.id === id ? { ...n, embedding } : n
+            )
+          }));
+        } catch (error) {
+          console.error('Failed to index note:', error);
+        }
+      },
 
     }),
     {

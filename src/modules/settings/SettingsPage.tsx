@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, Download, Upload, Trash2, AlertTriangle, CheckCircle2, PlayCircle, FileText } from 'lucide-react';
+import { Database, Download, Upload, Trash2, AlertTriangle, CheckCircle2, PlayCircle, FileText, Search, BrainCircuit, RefreshCw } from 'lucide-react';
 import localforage from 'localforage';
 import { Button } from '../../components/ui/Button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/Dialog';
@@ -15,6 +15,50 @@ export function SettingsPage() {
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [mdExportStatus, setMdExportStatus] = useState<string | null>(null);
   const startTour = useTourStore(state => state.startTour);
+  const [indexStatus, setIndexStatus] = useState<string | null>(null);
+  const [isIndexing, setIsIndexing] = useState(false);
+
+  const handleReindex = async () => {
+    setIsIndexing(true);
+    setIndexStatus("Menyiapkan pemindai...");
+    try {
+      const notesStore = useNotesStore.getState();
+      const writingStore = useWritingStore.getState();
+      
+      const unindexedNotes = notesStore.notes.filter(n => !n.embedding);
+      const unindexedDrafts = writingStore.drafts.filter(d => !d.embedding);
+      
+      const total = unindexedNotes.length + unindexedDrafts.length;
+      
+      if (total === 0) {
+        setIndexStatus("Semua data sudah terindeks semantik.");
+        setTimeout(() => setIndexStatus(null), 3000);
+        return;
+      }
+      
+      let processed = 0;
+      
+      for (const note of unindexedNotes) {
+        setIndexStatus(`Mengindeks Catatan (${processed + 1}/${total})...`);
+        await notesStore.indexNote(note.id);
+        processed++;
+      }
+      
+      for (const draft of unindexedDrafts) {
+        setIndexStatus(`Mengindeks Draf (${processed + 1}/${total})...`);
+        await writingStore.indexDraft(draft.id);
+        processed++;
+      }
+      
+      setIndexStatus("Indeks semantik berhasil diperbarui!");
+      setTimeout(() => setIndexStatus(null), 3000);
+    } catch (error) {
+      console.error("Indexing failed:", error);
+      setIndexStatus("Gagal memperbarui indeks.");
+    } finally {
+      setIsIndexing(false);
+    }
+  };
 
   const handleExport = async () => {
     try {
@@ -264,6 +308,41 @@ export function SettingsPage() {
               <PlayCircle className="w-4 h-4" />
               Mulai Tur Panduan
             </Button>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+            <BrainCircuit className="w-5 h-5 text-gray-400" />
+            <h2 className="text-lg font-medium text-gray-900">AI & Pencarian Semantik (Lokal)</h2>
+          </div>
+          <div className="p-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              <div className="flex-1">
+                <p className="text-sm text-gray-600 mb-4">
+                  Aplikasi ini menggunakan model kecerdasan buatan <strong>Transformers.js</strong> yang berjalan sepenuhnya di browser Anda. Ini memungkinkan pencarian berdasarkan makna (semantik) tanpa mengirim data Anda ke server.
+                </p>
+                <p className="text-xs text-gray-500 mb-4">
+                  Catatan yang baru dibuat akan diindeks secara otomatis. Jika Anda mengimpor data lama, Anda mungkin perlu melakukan pengindeksan ulang manual.
+                </p>
+              </div>
+              <div className="w-full md:w-auto shrink-0 space-y-2">
+                <Button 
+                  onClick={handleReindex} 
+                  disabled={isIndexing}
+                  variant="outline" 
+                  className="w-full gap-2 text-gray-900 border-gray-200 hover:bg-gray-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isIndexing ? 'animate-spin' : ''}`} />
+                  {isIndexing ? "Sedang Mengindeks..." : "Indeks Ulang Data"}
+                </Button>
+                {indexStatus && (
+                  <p className="text-[10px] text-gray-900 flex items-center gap-1 justify-center md:justify-start">
+                    <CheckCircle2 className="w-3 h-3 text-gray-500" /> {indexStatus}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 

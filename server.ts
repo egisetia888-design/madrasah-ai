@@ -142,7 +142,8 @@ async function startServer() {
       const systemInstruction = `
       You are a Smart Zettelkasten Assistant. Your job is to analyze a new knowledge snippet from the user and:
       1. Suggest 3-5 relevant tags (short keywords in Indonesian or English).
-      2. Suggest 1-3 connections to existing notes (return the exact titles of the relevant existing notes).
+      2. Suggest 1 most relevant Lucide-react icon name (e.g., 'Brain', 'Book', 'Code', 'Globe', 'Database').
+      3. Suggest 1-3 connections to existing notes (return the exact titles of the relevant existing notes).
       
       User's existing notes for context:
       ${JSON.stringify(notes.map((n: any) => ({ id: n.id, title: n.title, content: n.content })), null, 2)}
@@ -150,6 +151,7 @@ async function startServer() {
       Respond ONLY with a raw JSON object in the following format, without any markdown formatting or code blocks:
       {
         "tags": ["tag1", "tag2"],
+        "icon": "LucideIconName",
         "connections": ["Existing Note Title 1", "Existing Note Title 2"]
       }
       `;
@@ -179,7 +181,7 @@ async function startServer() {
 
       const data = await response.json() as any;
       const text = data.choices?.[0]?.message?.content || "{}";
-      const resultData = cleanAndParseJson(text, { tags: [], connections: [] });
+      const resultData = cleanAndParseJson(text, { tags: [], icon: "FileText", connections: [] });
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
       res.json(resultData);

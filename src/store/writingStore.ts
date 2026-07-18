@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Draft } from '../types';
+import { generateEmbedding } from '../lib/semanticSearch';
 
 localforage.config({
   name: 'madrasah_db',
@@ -26,6 +27,7 @@ interface WritingState {
   addDraft: (draft: Omit<Draft, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => string;
   updateDraft: (id: string, draft: Partial<Draft>) => void;
   deleteDraft: (id: string) => void;
+  indexDraft: (id: string) => Promise<void>;
 }
 
 export const useWritingStore = create<WritingState>()(
@@ -61,6 +63,25 @@ export const useWritingStore = create<WritingState>()(
       deleteDraft: (id) => set((state) => ({
         drafts: state.drafts.filter(d => d.id !== id)
       })),
+
+      indexDraft: async (id) => {
+        const state = get();
+        const draft = state.drafts.find(d => d.id === id);
+        if (!draft) return;
+
+        try {
+          const textToEmbed = `${draft.title} ${draft.content}`;
+          const embedding = await generateEmbedding(textToEmbed);
+          
+          set((state) => ({
+            drafts: state.drafts.map(d => 
+              d.id === id ? { ...d, embedding } : d
+            )
+          }));
+        } catch (error) {
+          console.error('Failed to index draft:', error);
+        }
+      },
     }),
     {
       name: 'madrasah-writing-storage-v2',

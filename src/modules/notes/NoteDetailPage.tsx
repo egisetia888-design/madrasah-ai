@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { ArrowLeft, Save, Trash2, Eye, PenTool, ChevronDown, BrainCircuit, CheckCircle2, Folder, Tag as TagIcon, X } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Eye, PenTool, ChevronDown, BrainCircuit, CheckCircle2, Folder, Tag as TagIcon, X, Sparkles, Check, Trash, RotateCcw } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { useNotesStore } from "../../store/notesStore";
 import { useReviewStore } from "../../store/reviewStore";
 import { useLibraryStore } from "../../store/libraryStore";
@@ -49,6 +50,8 @@ export function NoteDetailPage() {
   const [generatedCards, setGeneratedCards] = useState<Array<{front: string, back: string}>>([]);
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
   const [isSaved, setIsSaved] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<{ tags: string[], icon: string } | null>(null);
 
   useEffect(() => {
     if (note) {
@@ -62,6 +65,17 @@ export function NoteDetailPage() {
       setNoteTags(note.tags);
     }
   }, [note]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [title, content, rawQuote, referenceCitation, type, status, folderId, noteTags, note.id]);
 
   if (!note) {
     return (
@@ -90,6 +104,10 @@ export function NoteDetailPage() {
       folderId,
       tags: noteTags
     });
+    
+    // Index for semantic search
+    useNotesStore.getState().indexNote(note.id);
+    
     setTimeout(() => setIsSaving(false), 500); 
   };
 
@@ -144,6 +162,55 @@ export function NoteDetailPage() {
     setIsSaved(true);
   };
 
+  const handleAnalyzeContent = async () => {
+    setIsAnalyzing(true);
+    setAiSuggestions(null);
+    try {
+      const res = await fetch("/api/ai/suggest-tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          content: title + "\n\n" + content,
+          notes: notes.filter(n => n.id !== id)
+        }),
+      });
+      const data = await res.json();
+      if (data.tags || data.icon) {
+        setAiSuggestions({
+          tags: data.tags || [],
+          icon: data.icon || "FileText"
+        });
+      }
+    } catch (err) {
+      console.error("Analysis failed:", err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const approveSuggestions = () => {
+    if (!aiSuggestions) return;
+    
+    const currentTags = [...noteTags];
+    aiSuggestions.tags.forEach(tagName => {
+      const tagId = addTag(tagName);
+      if (!currentTags.includes(tagId)) {
+        currentTags.push(tagId);
+      }
+    });
+    
+    setNoteTags(currentTags);
+    updateNote(note.id, { 
+      tags: currentTags,
+      icon: aiSuggestions.icon 
+    });
+    setAiSuggestions(null);
+  };
+
+  const discardSuggestions = () => {
+    setAiSuggestions(null);
+  };
+
   const processBidirectionalLinks = (text: string) => {
     const linkRegex = /\[\[(.*?)\]\]/g;
     return text.replace(linkRegex, (match, nodeName) => {
@@ -194,6 +261,15 @@ export function NoteDetailPage() {
           <span className="hidden sm:inline">Kembali</span>
         </Button>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button 
+            variant="outline" 
+            className="gap-2 text-indigo-600 bg-indigo-50 border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200" 
+            onClick={handleAnalyzeContent}
+            disabled={isAnalyzing}
+          >
+            <Sparkles className={`w-4 h-4 ${isAnalyzing ? 'animate-pulse' : ''}`} />
+            <span className="hidden sm:inline">{isAnalyzing ? "Menganalisis..." : "Analisis Catatan"}</span>
+          </Button>
           <Button variant="outline" className="gap-2 text-gray-800 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300" onClick={() => setIsGeneratorOpen(true)}>
             <BrainCircuit className="w-4 h-4" />
             <span className="hidden sm:inline">Buat Flashcard AI</span>
@@ -213,15 +289,60 @@ export function NoteDetailPage() {
       </div>
 
       <div className="space-y-6 flex-1 flex flex-col">
+        {aiSuggestions && (
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-2 animate-in slide-in-from-top duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-sm font-semibold text-indigo-900">Saran AI (Draf)</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" onClick={discardSuggestions} className="h-8 text-indigo-600 hover:bg-indigo-100">Tolak</Button>
+                <Button size="sm" onClick={approveSuggestions} className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white gap-1">
+                  <Check className="w-3 h-3" /> Terima Saran
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-indigo-100">
+                <span className="text-xs text-indigo-400 font-medium uppercase tracking-wider">Ikon:</span>
+                {(() => {
+                  const Icon = (LucideIcons as any)[aiSuggestions.icon] || LucideIcons.FileText;
+                  return <Icon className="w-4 h-4 text-indigo-600" />;
+                })()}
+                <span className="text-xs font-medium text-indigo-900">{aiSuggestions.icon}</span>
+              </div>
+              <div className="flex flex-wrap gap-1 items-center">
+                <span className="text-xs text-indigo-400 font-medium uppercase tracking-wider mr-1">Tag:</span>
+                {aiSuggestions.tags.map((t, i) => (
+                  <span key={i} className="px-2 py-0.5 text-[10px] font-bold bg-white text-indigo-600 rounded-lg border border-indigo-100 tracking-wide uppercase">
+                    #{t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="text-4xl font-bold tracking-tight text-gray-900 bg-transparent border-none outline-none w-full placeholder:text-gray-300 focus:ring-0 p-0"
-            placeholder="Note Title"
-            disabled={previewMode}
-          />
+          <div className="flex items-center gap-4">
+            {note.icon && (
+              <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                {(() => {
+                   const Icon = (LucideIcons as any)[note.icon] || LucideIcons.FileText;
+                   return <Icon className="w-8 h-8 text-gray-900" />;
+                })()}
+              </div>
+            )}
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-4xl font-bold tracking-tight text-gray-900 bg-transparent border-none outline-none w-full placeholder:text-gray-300 focus:ring-0 p-0"
+              placeholder="Note Title"
+              disabled={previewMode}
+            />
+          </div>
           
           <div className="flex flex-wrap gap-2">
             {resolvedTags.map(tag => (

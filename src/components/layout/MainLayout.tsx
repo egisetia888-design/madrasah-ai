@@ -6,24 +6,41 @@ import { CommandPalette } from "./CommandPalette"
 import { OnboardingTour } from "./OnboardingTour"
 import { QuickAddDialog } from "./QuickAddDialog"
 import { HijriClock } from "./HijriClock"
+import { ShortcutGuide } from "./ShortcutGuide"
 import { Search } from "lucide-react"
 import { useUIStore } from "../../store/uiStore"
 
 export function MainLayout() {
   const searchOpen = useUIStore(state => state.searchOpen)
   const setSearchOpen = useUIStore(state => state.setSearchOpen)
+  const shortcutGuideOpen = useUIStore(state => state.shortcutGuideOpen)
+  const setShortcutGuideOpen = useUIStore(state => state.setShortcutGuideOpen)
+  const setQuickAddOpen = useUIStore(state => state.setQuickAddOpen)
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      // Cmd+K
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setSearchOpen(!searchOpen)
+      }
+
+      // Cmd+Shift+I for Quick Add
+      if (e.key === "I" && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+        e.preventDefault()
+        setQuickAddOpen(true)
+      }
+      
+      // Shift + ? (which is e.key === "?")
+      if (e.key === "?" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault()
+        setShortcutGuideOpen(!shortcutGuideOpen)
       }
     }
 
     document.addEventListener("keydown", down)
     return () => document.removeEventListener("keydown", down)
-  }, [searchOpen, setSearchOpen])
+  }, [searchOpen, setSearchOpen, shortcutGuideOpen, setShortcutGuideOpen, setQuickAddOpen])
 
   return (
     <div className="flex min-h-screen bg-gray-50/50 text-gray-900 font-sans">
@@ -60,6 +77,7 @@ export function MainLayout() {
       <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
       <OnboardingTour />
       <QuickAddDialog />
+      <ShortcutGuide />
     </div>
   )
 }

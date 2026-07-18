@@ -9,6 +9,7 @@ import { useReviewStore } from "../../store/reviewStore";
 import { useLibraryStore } from "../../store/libraryStore";
 import { useUIStore } from "../../store/uiStore";
 import { cn } from "../../utils/cn";
+import { searchSemantic, SemanticSearchResult } from "../../lib/semanticSearch";
 
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const navigate = useNavigate();
@@ -20,6 +21,36 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   const projects = useProjectsStore(state => state.projects);
   const decks = useReviewStore(state => state.decks);
   const books = useLibraryStore(state => state.books);
+
+  const [semanticResults, setSemanticResults] = useState<SemanticSearchResult[]>([]);
+  const [isSearchingSemantic, setIsSearchingSemantic] = useState(false);
+
+  useEffect(() => {
+    const performSemanticSearch = async () => {
+      if (!query.trim() || query.length < 3) {
+        setSemanticResults([]);
+        return;
+      }
+      
+      setIsSearchingSemantic(true);
+      try {
+        const allItems = [
+          ...notes.map(n => ({ id: n.id, embedding: n.embedding })),
+          ...drafts.map(d => ({ id: d.id, embedding: d.embedding }))
+        ];
+        
+        const semantic = await searchSemantic(query, allItems);
+        setSemanticResults(semantic);
+      } catch (err) {
+        console.error('Semantic search failed:', err);
+      } finally {
+        setIsSearchingSemantic(false);
+      }
+    };
+
+    const timer = setTimeout(performSemanticSearch, 500);
+    return () => clearTimeout(timer);
+  }, [query, notes, drafts]);
 
   useEffect(() => {
     if (!open) {
@@ -78,7 +109,49 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     return results;
   };
 
-  const results = searchResults();
+  // Combine results
+  const combinedResults = () => {
+    const base = searchResults();
+    if (!query.trim()) return base;
+
+    const semanticItems = semanticResults.map(res => {
+      const note = notes.find(n => n.id === res.id);
+      if (note) {
+        return { 
+          id: note.id, 
+          title: note.title, 
+          type: 'Catatan (Semantik)', 
+          icon: FileText, 
+          action: () => handleSelect(`/notes/${note.id}`),
+          relevance: res.similarity 
+        };
+      }
+      const draft = drafts.find(d => d.id === res.id);
+      if (draft) {
+        return { 
+          id: draft.id, 
+          title: draft.title, 
+          type: 'Draf (Semantik)', 
+          icon: PenLine, 
+          action: () => handleSelect(`/writing/${draft.id}`),
+          relevance: res.similarity
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    // Merge and remove duplicates (prefer keyword match if it exists)
+    const finalResults = [...base];
+    semanticItems.forEach((item: any) => {
+      if (!finalResults.find(r => r.id === item.id)) {
+        finalResults.push(item);
+      }
+    });
+
+    return finalResults;
+  };
+
+  const finalItems = combinedResults();
 
   const handleSelect = (path: string) => {
     navigate(path);
@@ -102,15 +175,16 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
         </div>
         
         <div className="max-h-[350px] overflow-y-auto p-2 no-scrollbar bg-gray-50/50">
-          {results.length === 0 ? (
+          {finalItems.length === 0 ? (
             <div className="py-12 text-center text-sm text-gray-500 flex flex-col items-center">
               <Command className="w-8 h-8 text-gray-300 mb-3" />
               Tidak ada hasil untuk "{query}"
+              {isSearchingSemantic && <p className="mt-2 text-xs text-gray-400">Sedang mencari makna...</p>}
             </div>
           ) : (
             <div className="space-y-1">
               {!query.trim() && <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi Cepat</div>}
-              {results.map((result, i) => {
+              {finalItems.map((result, i) => {
                 const Icon = result.icon;
                 return (
                   <button

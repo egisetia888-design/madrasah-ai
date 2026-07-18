@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
 import { Plus, PenLine, FileText, MoreVertical, LayoutGrid, List } from "lucide-react"
+import * as LucideIcons from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog"
 import { useWritingStore } from "../../store/writingStore"
 import { WritingStatus } from "../../types"
@@ -29,12 +30,15 @@ export function WritingPage() {
     e.preventDefault()
     if (!title) return
     
-    addDraft({
+    const id = addDraft({
       title,
       content,
       // Ideally we would pass 'status: "idea"' but the store defaults to 'draft' currently. 
       // Need to fix the store to accept status or default to idea, but for now we'll rely on what it does.
     })
+
+    // Index for semantic search
+    useWritingStore.getState().indexDraft(id);
 
     setTitle("")
     setContent("")
@@ -44,7 +48,15 @@ export function WritingPage() {
   const renderCard = (draft: any) => (
     <div key={draft.id} onClick={() => navigate(`/writing/${draft.id}`)} className="group border border-gray-200 rounded-xl bg-white p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex flex-col h-40">
       <div className="flex items-start justify-between mb-2">
-        <h3 className="font-medium text-gray-900 line-clamp-2 pr-2 leading-snug">{draft.title}</h3>
+        <div className="flex items-center gap-2 pr-2 min-w-0">
+          {draft.icon && (
+            (() => {
+              const Icon = (LucideIcons as any)[draft.icon] || LucideIcons.FileText;
+              return <Icon className="w-3.5 h-3.5 text-gray-500 shrink-0" />;
+            })()
+          )}
+          <h3 className="font-medium text-gray-900 line-clamp-2 leading-snug">{draft.title}</h3>
+        </div>
         <button className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-900 shrink-0">
           <MoreVertical className="w-4 h-4" />
         </button>

@@ -2,6 +2,7 @@ import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
 import { Plus, Search, FileText, Folder as FolderIcon, MoreVertical, Sparkles, LayoutGrid, List, Tag as TagIcon, Brain, CheckCircle2, Circle, ChevronRight, Hash, FolderOpen, Filter } from "lucide-react"
+import * as LucideIcons from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog"
 import { useNotesStore } from "../../store/notesStore"
 import Markdown from 'react-markdown'
@@ -36,7 +37,7 @@ export function NotesPage() {
   const [suggestedConnections, setSuggestedConnections] = useState<string[]>([])
   const [isSuggesting, setIsSuggesting] = useState(false)
   const [tagInput, setTagInput] = useState("")
-  const [addTag = useNotesStore(state => state.addTag)] = useState(() => useNotesStore.getState().addTag)
+  const addTag = useNotesStore(state => state.addTag)
 
   // Folder Form
   const [newFolderName, setNewFolderName] = useState("")
@@ -86,7 +87,7 @@ export function NotesPage() {
       });
     }
 
-    addNote({
+    const id = addNote({
       title: title.trim(),
       content: content.trim(),
       rawQuote: rawQuote.trim(),
@@ -96,6 +97,9 @@ export function NotesPage() {
       folderId: selectedFolder || activeFolderId,
       tags: finalTags,
     })
+    
+    // Index for semantic search
+    useNotesStore.getState().indexNote(id);
     
     setTitle("")
     setContent("")
@@ -383,9 +387,17 @@ export function NotesPage() {
                     
                     <div className="flex items-start justify-between mb-3 gap-4">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-gray-900 transition-colors">
-                          {note.title}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          {note.icon && (
+                            (() => {
+                              const Icon = (LucideIcons as any)[note.icon] || LucideIcons.FileText;
+                              return <Icon className="w-4 h-4 text-gray-500 shrink-0" />;
+                            })()
+                          )}
+                          <h3 className="font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-gray-900 transition-colors">
+                            {note.title}
+                          </h3>
+                        </div>
                         {folder && (
                           <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
                             <FolderIcon className="w-3 h-3" /> {folder.name}

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Library, PenTool, Map, Settings, LogOut, Briefcase, FileText, Network, FlaskConical, Search, Brain, BarChart2, Star, Clock, Pin, Zap } from "lucide-react"
+import { LayoutDashboard, Library, PenTool, Map, Settings, LogOut, Briefcase, FileText, Network, FlaskConical, Search, Brain, BarChart2, Star, Clock, Pin, Zap, Keyboard } from "lucide-react"
 import { cn } from "../../utils/cn"
 import { useUIStore } from "../../store/uiStore"
 import { useNotesStore } from "../../store/notesStore"
@@ -103,6 +103,14 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-6 pt-4 border-t border-gray-100 space-y-0.5">
+        <button
+          onClick={() => useUIStore.getState().setShortcutGuideOpen(true)}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors text-left"
+        >
+          <Keyboard className="w-4 h-4 text-gray-400" />
+          Bantuan Pintasan
+          <kbd className="ml-auto inline-flex items-center justify-center px-1 text-[10px] font-medium text-gray-400 border border-gray-200 bg-gray-50 rounded">?</kbd>
+        </button>
         <NavLink
           to="/analytics"
           className={({ isActive }) =>

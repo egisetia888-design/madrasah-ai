@@ -41,6 +41,8 @@ export interface Note {
   sourceId?: UUID | null; // For book/research notes
   folderId: UUID | null;
   tags: UUID[];
+  embedding?: number[]; // Vector representation
+  icon?: string; // Lucide icon name
   createdAt: number;
   updatedAt: number;
 }
@@ -116,6 +118,9 @@ export interface Draft {
   title: string;
   content: string;
   status: WritingStatus;
+  embedding?: number[]; // Vector representation
+  icon?: string; // Lucide icon name
+  tags?: string[]; // Tag names or IDs
   createdAt: number;
   updatedAt: number;
 }
