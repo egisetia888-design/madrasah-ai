@@ -25,6 +25,8 @@ export function NotesPage() {
   // Note Form
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
+  const [rawQuote, setRawQuote] = useState("")
+  const [referenceCitation, setReferenceCitation] = useState("")
   const [noteType, setNoteType] = useState<NoteType>('knowledge')
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
   
@@ -69,6 +71,11 @@ export function NotesPage() {
     e.preventDefault()
     if (!title.trim()) return
     
+    if ((rawQuote.trim() && !referenceCitation.trim()) || (!rawQuote.trim() && referenceCitation.trim())) {
+      alert("Jika Anda memasukkan Kutipan Mentah atau Sumber Referensi, keduanya wajib diisi untuk menjaga jejak epistemologis.");
+      return;
+    }
+    
     // Process tags
     const finalTags = [...selectedTags];
     if (tagInput.trim()) {
@@ -82,6 +89,8 @@ export function NotesPage() {
     addNote({
       title: title.trim(),
       content: content.trim(),
+      rawQuote: rawQuote.trim(),
+      referenceCitation: referenceCitation.trim(),
       type: noteType,
       status: 'unprocessed',
       folderId: selectedFolder || activeFolderId,
@@ -90,6 +99,8 @@ export function NotesPage() {
     
     setTitle("")
     setContent("")
+    setRawQuote("")
+    setReferenceCitation("")
     setNoteType('knowledge')
     setSelectedTags([])
     setSuggestedTags([])
@@ -496,14 +507,37 @@ export function NotesPage() {
               </div>
             </div>
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Isi Konten</label>
-              <textarea 
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="flex min-h-[150px] w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 resize-none" 
-                placeholder="Tuliskan pemikiran Anda di sini..."
-              />
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <label className="text-sm font-medium text-gray-700">Kutipan Mentah <span className="text-gray-400 font-normal">(Wajib jika salah satu diisi)</span></label>
+                   <textarea
+                     value={rawQuote}
+                     onChange={(e) => setRawQuote(e.target.value)}
+                     className="flex min-h-[100px] w-full rounded-md border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 resize-none"
+                     placeholder="Kutipan langsung..."
+                   />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-sm font-medium text-gray-700">Sumber Referensi <span className="text-gray-400 font-normal">(Wajib jika salah satu diisi)</span></label>
+                   <textarea
+                     value={referenceCitation}
+                     onChange={(e) => setReferenceCitation(e.target.value)}
+                     className="flex min-h-[100px] w-full rounded-md border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 resize-none"
+                     placeholder="Buku, artikel, url..."
+                   />
+                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Inferensi / Opini Sendiri</label>
+                <textarea 
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="flex min-h-[150px] w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 resize-none" 
+                  placeholder="Tuliskan pemikiran Anda di sini..."
+                />
+              </div>
             </div>
             
             <div className="space-y-2">

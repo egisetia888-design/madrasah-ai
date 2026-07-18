@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar"
 import { MobileNav } from "./MobileNav"
 import { CommandPalette } from "./CommandPalette"
 import { OnboardingTour } from "./OnboardingTour"
+import { QuickAddDialog } from "./QuickAddDialog"
 import { HijriClock } from "./HijriClock"
 import { Search } from "lucide-react"
 import { useUIStore } from "../../store/uiStore"
@@ -58,6 +59,7 @@ export function MainLayout() {
       <MobileNav />
       <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
       <OnboardingTour />
+      <QuickAddDialog />
     </div>
   )
 }

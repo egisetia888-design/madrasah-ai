@@ -28,6 +28,8 @@ export function NoteDetailPage() {
   
   const [title, setTitle] = useState(note?.title || "");
   const [content, setContent] = useState(note?.content || "");
+  const [rawQuote, setRawQuote] = useState(note?.rawQuote || "");
+  const [referenceCitation, setReferenceCitation] = useState(note?.referenceCitation || "");
   const [type, setType] = useState<NoteType>(note?.type || 'knowledge');
   const [status, setStatus] = useState<NoteStatus>(note?.status || 'unprocessed');
   const [folderId, setFolderId] = useState<string | null>(note?.folderId || null);
@@ -52,6 +54,8 @@ export function NoteDetailPage() {
     if (note) {
       setTitle(note.title);
       setContent(note.content);
+      setRawQuote(note.rawQuote || "");
+      setReferenceCitation(note.referenceCitation || "");
       setType(note.type);
       setStatus(note.status);
       setFolderId(note.folderId);
@@ -71,10 +75,16 @@ export function NoteDetailPage() {
   }
 
   const handleSave = () => {
+    if ((rawQuote.trim() && !referenceCitation.trim()) || (!rawQuote.trim() && referenceCitation.trim())) {
+      alert("Jika Anda memasukkan Kutipan Mentah atau Sumber Referensi, keduanya wajib diisi untuk menjaga jejak epistemologis.");
+      return;
+    }
     setIsSaving(true);
     updateNote(note.id, { 
       title, 
-      content, 
+      content,
+      rawQuote,
+      referenceCitation, 
       type, 
       status, 
       folderId,
@@ -320,16 +330,62 @@ export function NoteDetailPage() {
         </div>
 
         {previewMode ? (
-          <div className="prose prose-gray max-w-none flex-1 font-serif py-4">
-            <Markdown>{processBidirectionalLinks(content)}</Markdown>
+          <div className="space-y-6 flex-1 py-4">
+            {(rawQuote || referenceCitation) && (
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
+                {rawQuote && (
+                  <div>
+                    <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Kutipan Mentah</h3>
+                    <blockquote className="border-l-2 border-gray-300 pl-4 italic text-gray-700 font-serif">
+                      <Markdown>{rawQuote}</Markdown>
+                    </blockquote>
+                  </div>
+                )}
+                {referenceCitation && (
+                  <div>
+                    <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Sumber Referensi Asli</h3>
+                    <p className="text-sm text-gray-700">{referenceCitation}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="prose prose-gray max-w-none font-serif">
+              <Markdown>{processBidirectionalLinks(content)}</Markdown>
+            </div>
           </div>
         ) : (
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full flex-1 min-h-[500px] py-4 text-lg leading-relaxed text-gray-700 bg-transparent border-none outline-none resize-none placeholder:text-gray-300 focus:ring-0 p-0 font-serif"
-            placeholder="Start writing... Use [[Node Name]] to link to other concepts."
-          />
+          <div className="flex flex-col space-y-6 flex-1 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div className="space-y-2">
+                 <label className="text-sm font-medium text-gray-700">Kutipan Mentah <span className="text-gray-400 font-normal">(Wajib jika salah satu diisi)</span></label>
+                 <textarea
+                   value={rawQuote}
+                   onChange={(e) => setRawQuote(e.target.value)}
+                   className="w-full min-h-[100px] py-2 px-3 text-sm leading-relaxed text-gray-700 bg-gray-50/50 border border-gray-200 rounded-lg outline-none resize-y placeholder:text-gray-400 focus:ring-2 focus:ring-gray-900 focus:bg-white"
+                   placeholder="Salin kutipan persis dari literatur di sini..."
+                 />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-sm font-medium text-gray-700">Sumber Referensi Asli <span className="text-gray-400 font-normal">(Wajib jika salah satu diisi)</span></label>
+                 <textarea
+                   value={referenceCitation}
+                   onChange={(e) => setReferenceCitation(e.target.value)}
+                   className="w-full min-h-[100px] py-2 px-3 text-sm leading-relaxed text-gray-700 bg-gray-50/50 border border-gray-200 rounded-lg outline-none resize-y placeholder:text-gray-400 focus:ring-2 focus:ring-gray-900 focus:bg-white"
+                   placeholder="Contoh: Hal. 45, Buku X, Penulis Y..."
+                 />
+               </div>
+            </div>
+            
+            <div className="space-y-2 flex-1 flex flex-col">
+              <label className="text-sm font-medium text-gray-700">Inferensi / Opini Sendiri</label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="w-full flex-1 min-h-[300px] py-2 text-lg leading-relaxed text-gray-700 bg-transparent border-none outline-none resize-none placeholder:text-gray-300 focus:ring-0 p-0 font-serif"
+                placeholder="Tuliskan pemikiran, kesimpulan, atau opini Anda sendiri di sini..."
+              />
+            </div>
+          </div>
         )}
       </div>
 

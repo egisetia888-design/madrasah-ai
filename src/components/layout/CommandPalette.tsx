@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, FileText, PenLine, Briefcase, Network, Brain, Plus, Command, CornerDownLeft } from "lucide-react";
+import { Search, FileText, PenLine, Briefcase, Book, Network, Brain, Plus, Command, CornerDownLeft } from "lucide-react";
 import { Dialog, DialogContent } from "../ui/Dialog";
 import { useNotesStore } from "../../store/notesStore";
 import { useWritingStore } from "../../store/writingStore";
 import { useProjectsStore } from "../../store/projectsStore";
 import { useReviewStore } from "../../store/reviewStore";
+import { useLibraryStore } from "../../store/libraryStore";
 import { useUIStore } from "../../store/uiStore";
 import { cn } from "../../utils/cn";
 
@@ -18,6 +19,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   const drafts = useWritingStore(state => state.drafts);
   const projects = useProjectsStore(state => state.projects);
   const decks = useReviewStore(state => state.decks);
+  const books = useLibraryStore(state => state.books);
 
   useEffect(() => {
     if (!open) {
@@ -61,6 +63,12 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       }
     });
 
+    books.forEach(book => {
+      if (book.title.toLowerCase().includes(term)) {
+        results.push({ id: book.id, title: book.title, type: "Pustaka", icon: Book, action: () => handleSelect(`/library/${book.id}`) });
+      }
+    });
+
     projects.forEach(project => {
       if (project.title.toLowerCase().includes(term) || project.description.toLowerCase().includes(term)) {
         results.push({ id: project.id, title: project.title, type: 'Proyek', icon: Briefcase, action: () => handleSelect(`/projects/${project.id}`) });
@@ -74,20 +82,21 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
 
   const handleSelect = (path: string) => {
     navigate(path);
+    onOpenChange(false);
   };
   
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden bg-white shadow-2xl border-0 rounded-2xl">
-        <div className="flex items-center px-4 py-4 border-b border-gray-100">
+        <div className="flex items-center pl-4 pr-12 py-4 border-b border-gray-100">
           <Search className="w-5 h-5 text-gray-400 shrink-0 mr-3" />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ketik perintah atau cari sesuatu..."
-            className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder:text-gray-400 text-lg font-sans"
+            placeholder="Cari atau ketik perintah..."
+            className="flex-1 min-w-0 bg-transparent border-none outline-none text-gray-900 placeholder:text-gray-400 text-base sm:text-lg font-sans"
           />
           <kbd className="hidden sm:inline-flex items-center justify-center h-6 px-2 text-[10px] font-medium text-gray-400 bg-gray-100 rounded-md border border-gray-200">ESC</kbd>
         </div>

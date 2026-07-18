@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
-import { Database, Download, Upload, Trash2, AlertTriangle, CheckCircle2, PlayCircle } from 'lucide-react';
+import { Database, Download, Upload, Trash2, AlertTriangle, CheckCircle2, PlayCircle, FileText } from 'lucide-react';
 import localforage from 'localforage';
 import { Button } from '../../components/ui/Button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/Dialog';
 import { useTourStore } from '../../store/tourStore';
+import { useNotesStore } from '../../store/notesStore';
+import { useLibraryStore } from '../../store/libraryStore';
+import { useWritingStore } from '../../store/writingStore';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 export function SettingsPage() {
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [mdExportStatus, setMdExportStatus] = useState<string | null>(null);
   const startTour = useTourStore(state => state.startTour);
 
   const handleExport = async () => {
@@ -94,18 +101,147 @@ export function SettingsPage() {
     reader.readAsText(file);
   };
 
-  const handleClearData = async () => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus SEMUA data? Tindakan ini tidak dapat dibatalkan!')) {
-      try {
-        await localforage.clear();
-        alert('Semua data berhasil dihapus.');
-        window.location.reload();
-      } catch (error) {
-        console.error('Clear failed:', error);
-        alert('Gagal menghapus data.');
-      }
+  const handleExportMarkdown = async () => {
+    try {
+      setMdExportStatus("Menyiapkan ZIP Markdown...");
+      const zip = new JSZip();
+
+      const notesFolder = zip.folder("Catatan");
+      const notes = useNotesStore.getState().notes;
+      const allTags = useNotesStore.getState().tags;
+      const folders = useNotesStore.getState().folders;
+      const books = useLibraryStore.getState().books;
+
+      notes.forEach(note => {
+        const noteFolder = note.folderId ? folders.find(f => f.id === note.folderId)?.name || "Uncategorized" : "Uncategorized";
+        const noteTags = note.tags.map(tid => allTags.find(t => t.id === tid)?.name || tid).join(", ");
+        const sourceBook = note.sourceId ? books.find(b => b.id === note.sourceId)?.title : "None";
+
+        let mdContent = `---
+`;
+        mdContent += `title: ${note.title}
+`;
+        mdContent += `type: ${note.type}
+`;
+        mdContent += `status: ${note.status}
+`;
+        mdContent += `folder: ${noteFolder}
+`;
+        mdContent += `tags: [${noteTags}]
+`;
+        if (note.sourceId) mdContent += `source: ${sourceBook}
+`;
+        mdContent += `date_created: ${new Date(note.createdAt).toISOString()}
+`;
+        mdContent += `date_updated: ${new Date(note.updatedAt).toISOString()}
+`;
+        mdContent += `---
+
+`;
+        mdContent += `# ${note.title}
+
+`;
+
+        if (note.rawQuote) {
+          mdContent += `## Kutipan Mentah
+`;
+          mdContent += `> ${note.rawQuote.split("\n").join("\n> ")}
+
+`;
+          if (note.referenceCitation) {
+             mdContent += `**Sumber:** ${note.referenceCitation}
+
+`;
+          }
+        }
+
+        if (note.content) {
+          mdContent += `## Konten
+`;
+          mdContent += `${note.content}
+`;
+        }
+
+        notesFolder?.file(`${noteFolder}/${note.title.replace(/[^a-zA-Z0-9]/gi, "_").toLowerCase()}.md`, mdContent);
+      });
+
+      const writingFolder = zip.folder("Tulisan");
+      const drafts = useWritingStore.getState().drafts;
+      drafts.forEach(draft => {
+        let mdContent = `---
+`;
+        mdContent += `title: ${draft.title}
+`;
+        mdContent += `status: ${draft.status}
+`;
+        mdContent += `date_created: ${new Date(draft.createdAt).toISOString()}
+`;
+        mdContent += `date_updated: ${new Date(draft.updatedAt).toISOString()}
+`;
+        mdContent += `---
+
+`;
+        mdContent += `# ${draft.title}
+
+`;
+        mdContent += `${draft.content}
+`;
+
+        writingFolder?.file(`${draft.title.replace(/[^a-zA-Z0-9]/gi, "_").toLowerCase()}.md`, mdContent);
+      });
+
+      const booksFolder = zip.folder("Pustaka");
+      books.forEach(book => {
+        let mdContent = `---
+`;
+        mdContent += `title: ${book.title}
+`;
+        mdContent += `status: ${book.status}
+`;
+        mdContent += `progress: ${book.progress}%
+`;
+        mdContent += `date_created: ${new Date(book.createdAt).toISOString()}
+`;
+        mdContent += `date_updated: ${new Date(book.updatedAt).toISOString()}
+`;
+        mdContent += `---
+
+`;
+        mdContent += `# ${book.title}
+`;
+
+        booksFolder?.file(`${book.title.replace(/[^a-zA-Z0-9]/gi, "_").toLowerCase()}.md`, mdContent);
+      });
+
+      setMdExportStatus("Mengunduh ZIP...");
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `madrasah-markdown-export-${new Date().toISOString().split("T")[0]}.zip`);
+
+      setMdExportStatus("Ekspor Markdown berhasil!");
+      setTimeout(() => setMdExportStatus(null), 3000);
+    } catch (error) {
+      console.error("MD Export failed:", error);
+      setMdExportStatus("Gagal mengekspor Markdown.");
+      setTimeout(() => setMdExportStatus(null), 3000);
     }
   };
+
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+
+  const confirmClearData = async () => {
+      try {
+        await localforage.clear();
+        window.location.reload();
+      } catch (error) {
+        console.error("Clear failed:", error);
+        alert("Gagal menghapus data.");
+      }
+  };
+
+  const handleClearData = () => {
+    setIsClearDialogOpen(true);
+  };
+
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 max-w-3xl">
@@ -134,14 +270,14 @@ export function SettingsPage() {
         <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
             <Database className="w-5 h-5 text-gray-400" />
-            <h2 className="text-lg font-medium text-gray-900">Penyimpanan Lokal (IndexedDB)</h2>
+            <h2 className="text-lg font-medium text-gray-900">Portabilitas & Evakuasi Data Universal (IndexedDB)</h2>
           </div>
           <div className="p-6 space-y-6">
             <p className="text-sm text-gray-600">
               Semua data Anda (catatan, proyek, riset, dll.) disimpan secara aman di dalam peramban ini menggunakan teknologi <strong>IndexedDB</strong>. Data ini tidak dikirim ke server mana pun. Anda memiliki kendali penuh atas data Anda.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
                 <h3 className="font-medium text-gray-900 mb-1">Cadangkan Data (Ekspor)</h3>
                 <p className="text-xs text-gray-500 mb-4 h-8">
@@ -157,6 +293,22 @@ export function SettingsPage() {
                   </p>
                 )}
               </div>
+              <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
+                <h3 className="font-medium text-gray-900 mb-1">Evakuasi Markdown</h3>
+                <p className="text-xs text-gray-500 mb-4 h-8">
+                  Ekspor catatan ke dalam format ZIP berisi file Markdown.
+                </p>
+                <Button onClick={handleExportMarkdown} className="w-full gap-2 bg-gray-900 hover:bg-gray-800 text-white">
+                  <FileText className="w-4 h-4" />
+                  Ekspor Markdown
+                </Button>
+                {mdExportStatus && (
+                  <p className="text-xs mt-2 text-gray-900 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> {mdExportStatus}
+                  </p>
+                )}
+              </div>
+
 
               <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
                 <h3 className="font-medium text-gray-900 mb-1">Pulihkan Data (Impor)</h3>
@@ -184,7 +336,7 @@ export function SettingsPage() {
             </div>
 
             <div className="pt-6 border-t border-gray-100">
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div>
                   <h3 className="font-medium text-gray-900 flex items-center gap-1.5">
                     <AlertTriangle className="w-4 h-4" /> Zona Bahaya
@@ -193,7 +345,7 @@ export function SettingsPage() {
                     Menghapus seluruh data akan menghilangkan semua catatan, proyek, dan pengaturan secara permanen. Pastikan Anda telah melakukan ekspor data sebelumnya.
                   </p>
                 </div>
-                <Button variant="outline" className="text-gray-900 border-gray-200 hover:bg-gray-50 hover:text-gray-800 hover:border-gray-300" onClick={handleClearData}>
+                <Button variant="outline" className="w-full sm:w-auto shrink-0 text-gray-900 border-gray-200 hover:bg-gray-50 hover:text-gray-800 hover:border-gray-300" onClick={handleClearData}>
                   <Trash2 className="w-4 h-4 mr-2" />
                   Hapus Semua Data
                 </Button>
@@ -201,6 +353,26 @@ export function SettingsPage() {
             </div>
           </div>
         </section>
+      <Dialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-red-600">
+            <AlertTriangle className="w-5 h-5" /> Hapus Semua Data
+          </DialogTitle>
+        </DialogHeader>
+        <DialogContent>
+          <p className="text-gray-600">
+            Apakah Anda yakin ingin menghapus <strong>SEMUA</strong> data (Catatan, Pustaka, Proyek, dll)? Tindakan ini <strong>tidak dapat dibatalkan</strong>.
+          </p>
+          <p className="text-gray-600 mt-2">
+            Pastikan Anda telah melakukan ekspor data (Backup) terlebih dahulu sebelum melanjutkan.
+          </p>
+        </DialogContent>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setIsClearDialogOpen(false)}>Batal</Button>
+          <Button type="button" variant="destructive" className="bg-red-600 hover:bg-red-700 text-white" onClick={confirmClearData}>Ya, Hapus Permanen</Button>
+        </DialogFooter>
+      </Dialog>
+
       </div>
     </div>
   );

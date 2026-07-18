@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { NavLink, useLocation } from "react-router-dom"
-import { LayoutDashboard, Library, PenTool, Map, Briefcase, FileText, Network, FlaskConical, Menu, X, Brain, BarChart2, Settings, Command } from "lucide-react"
+import { LayoutDashboard, Library, PenTool, Map, Briefcase, FileText, Network, FlaskConical, Menu, X, Brain, BarChart2, Settings, Command, Zap } from "lucide-react"
 import { cn } from "../../utils/cn"
 import { useUIStore } from "../../store/uiStore"
 
@@ -87,15 +87,26 @@ export function MobileNav() {
                 </div>
               </div>
               
-              <button 
-                onClick={() => {
-                  setMenuOpen(false);
-                  setSearchOpen(true);
-                }} 
-                className="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 rounded-full text-gray-600 shadow-sm"
-              >
-                <Command className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    setMenuOpen(false);
+                    useUIStore.getState().setQuickAddOpen(true);
+                  }} 
+                  className="w-10 h-10 flex items-center justify-center bg-gray-900 text-white rounded-full shadow-sm"
+                >
+                  <Zap className="w-4 h-4" fill="currentColor" />
+                </button>
+                <button 
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setSearchOpen(true);
+                  }} 
+                  className="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 rounded-full text-gray-600 shadow-sm"
+                >
+                  <Command className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">

@@ -71,35 +71,35 @@ export function OnboardingTour() {
         setCurrentStep(0);
       }
     }} maxWidthClass="max-w-4xl">
-      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:min-h-[480px]">
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden md:min-h-[480px]">
         {/* Left Side: Illustration / Graphic Area */}
-        <div className="md:w-5/12 bg-gray-50 flex flex-col items-center justify-center p-8 md:p-10 border-b md:border-b-0 md:border-r border-gray-100 relative overflow-hidden shrink-0">
+        <div className="w-full h-48 md:h-auto md:w-5/12 bg-gray-50 flex flex-col items-center justify-center p-4 md:p-10 border-b md:border-b-0 md:border-r border-gray-100 relative overflow-hidden shrink-0">
           {/* Decorative Background Elements */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-30 pointer-events-none">
-             <div className="absolute -top-10 -left-10 w-40 h-40 bg-gray-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
-             <div className="absolute top-0 -right-10 w-40 h-40 bg-gray-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-             <div className="absolute -bottom-10 left-20 w-40 h-40 bg-gray-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+             <div className="absolute -top-10 -left-10 w-32 h-32 md:w-40 md:h-40 bg-gray-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+             <div className="absolute top-0 -right-10 w-32 h-32 md:w-40 md:h-40 bg-gray-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+             <div className="absolute -bottom-10 left-20 w-32 h-32 md:w-40 md:h-40 bg-gray-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
           </div>
 
           <div className="relative z-10 flex flex-col items-center">
-            <div className={cn("w-24 h-24 rounded-3xl flex items-center justify-center mb-8 shadow-sm transition-all duration-500 scale-100", steps[currentStep].bgColor)}>
-              <StepIcon className={cn("w-12 h-12", steps[currentStep].color)} />
+            <div className={cn("w-20 h-20 md:w-24 md:h-24 rounded-3xl flex items-center justify-center mb-6 md:mb-8 shadow-sm transition-all duration-500 scale-100", steps[currentStep].bgColor)}>
+              <StepIcon className={cn("w-10 h-10 md:w-12 md:h-12", steps[currentStep].color)} />
             </div>
             
             {/* Abstract Wireframe Representation */}
-            <div className="w-full max-w-[200px] space-y-3 opacity-80">
+            <div className="w-full max-w-[160px] md:max-w-[200px] space-y-2 md:space-y-3 opacity-80">
               <div className="h-2 w-3/4 bg-gray-200 rounded-full mx-auto" />
               <div className="h-2 w-full bg-gray-200 rounded-full" />
               <div className="h-2 w-5/6 bg-gray-200 rounded-full mx-auto" />
               
-              <div className="flex justify-center gap-2 pt-4">
-                <div className="w-10 h-10 rounded-lg bg-white shadow-sm border border-gray-100 flex items-center justify-center">
+              <div className="flex justify-center gap-2 pt-3 md:pt-4">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white shadow-sm border border-gray-100 flex items-center justify-center">
                   <BookOpen className="w-4 h-4 text-gray-400" />
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-white shadow-sm border border-gray-100 flex items-center justify-center">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white shadow-sm border border-gray-100 flex items-center justify-center">
                   <Target className="w-4 h-4 text-gray-400" />
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-white shadow-sm border border-gray-100 flex items-center justify-center">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white shadow-sm border border-gray-100 flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
@@ -108,7 +108,7 @@ export function OnboardingTour() {
         </div>
 
         {/* Right Side: Content & Actions */}
-        <div className="md:w-7/12 flex flex-col p-6 md:p-12 bg-white shrink-0">
+        <div className="md:w-7/12 flex flex-col p-6 md:p-12 bg-white shrink-0 md:overflow-y-auto">
           <div className="flex-1">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 md:mb-4 tracking-tight">
               {steps[currentStep].title}

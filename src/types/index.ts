@@ -33,7 +33,9 @@ export type NoteStatus = 'unprocessed' | 'processed';
 export interface Note {
   id: UUID;
   title: string;
-  content: string;
+  content: string; // Inferensi/Opini Sendiri (atau konten utama)
+  rawQuote?: string; // Kutipan Mentah dari Literatur Kredibel
+  referenceCitation?: string; // Teks sumber referensi asli
   type: NoteType;
   status: NoteStatus;
   sourceId?: UUID | null; // For book/research notes

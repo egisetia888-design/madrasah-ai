@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Library, PenTool, Map, Settings, LogOut, Briefcase, FileText, Network, FlaskConical, Search, Brain, BarChart2, Star, Clock, Pin } from "lucide-react"
+import { LayoutDashboard, Library, PenTool, Map, Settings, LogOut, Briefcase, FileText, Network, FlaskConical, Search, Brain, BarChart2, Star, Clock, Pin, Zap } from "lucide-react"
 import { cn } from "../../utils/cn"
 import { useUIStore } from "../../store/uiStore"
 import { useNotesStore } from "../../store/notesStore"
@@ -39,11 +39,16 @@ export function Sidebar() {
         </div>
       </div>
 
-      <button onClick={() => setSearchOpen(true)} className="flex items-center gap-2 w-full px-3 py-2 mb-6 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 hover:text-gray-900 transition-all text-left">
-        <Search className="w-4 h-4 shrink-0" />
-        <span className="flex-1 truncate">Ketik perintah...</span>
-        <kbd className="hidden sm:inline-flex items-center justify-center px-1.5 text-[10px] font-medium text-gray-400 border border-gray-200 bg-gray-50 rounded">⌘K</kbd>
-      </button>
+      <div className="flex items-center gap-2 mb-6">
+        <button onClick={() => setSearchOpen(true)} className="flex-1 flex items-center gap-2 px-3 py-2 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 hover:text-gray-900 transition-all text-left">
+          <Search className="w-4 h-4 shrink-0" />
+          <span className="flex-1 truncate">Ketik...</span>
+          <kbd className="hidden xl:inline-flex items-center justify-center px-1.5 text-[10px] font-medium text-gray-400 border border-gray-200 bg-gray-50 rounded">⌘K</kbd>
+        </button>
+        <button onClick={() => useUIStore.getState().setQuickAddOpen(true)} className="flex shrink-0 items-center justify-center w-9 h-9 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 hover:text-gray-900 hover:bg-gray-50 transition-all" title="Tangkapan Kilat (Cmd+Shift+I)">
+          <Zap className="w-4 h-4" />
+        </button>
+      </div>
 
       <nav className="flex-1 space-y-8 overflow-y-auto pr-2 no-scrollbar">
         
