@@ -7,6 +7,7 @@ import { OnboardingTour } from "./OnboardingTour"
 import { QuickAddDialog } from "./QuickAddDialog"
 import { HijriClock } from "./HijriClock"
 import { ShortcutGuide } from "./ShortcutGuide"
+import { AboutDialog } from "./AboutDialog"
 import { Search } from "lucide-react"
 import { useUIStore } from "../../store/uiStore"
 
@@ -16,6 +17,7 @@ export function MainLayout() {
   const shortcutGuideOpen = useUIStore(state => state.shortcutGuideOpen)
   const setShortcutGuideOpen = useUIStore(state => state.setShortcutGuideOpen)
   const setQuickAddOpen = useUIStore(state => state.setQuickAddOpen)
+  const setAboutOpen = useUIStore(state => state.setAboutOpen)
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -48,8 +50,8 @@ export function MainLayout() {
       <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
         {/* Mobile Header */}
         <div className="md:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center shadow-sm">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setAboutOpen(true)}>
+             <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center shadow-sm group-active:scale-95 transition-transform">
                <span className="text-white font-bold text-sm">M</span>
              </div>
              <span className="font-semibold text-[17px] tracking-tight">Madrasah</span>
@@ -78,6 +80,7 @@ export function MainLayout() {
       <OnboardingTour />
       <QuickAddDialog />
       <ShortcutGuide />
+      <AboutDialog />
     </div>
   )
 }

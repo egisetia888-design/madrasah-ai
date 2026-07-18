@@ -19,6 +19,7 @@ const workspaceItems = [
 export function Sidebar() {
   const navigate = useNavigate();
   const setSearchOpen = useUIStore(state => state.setSearchOpen)
+  const setAboutOpen = useUIStore(state => state.setAboutOpen)
   
   const notes = useNotesStore(state => state.notes)
   const drafts = useWritingStore(state => state.drafts)
@@ -30,7 +31,7 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen border-r border-gray-200 bg-[#fbfbfb] px-4 py-6 sticky top-0 font-sans">
-      <div className="flex items-center justify-between px-2 mb-8 cursor-pointer group" onClick={() => navigate('/')}>
+      <div className="flex items-center justify-between px-2 mb-8 cursor-pointer group" onClick={() => setAboutOpen(true)}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
             <span className="text-white font-bold text-sm font-display">M</span>
