@@ -1,6 +1,6 @@
 # 📊 05. Model Data dan Integrasi API Backend
 
-Seluruh struktur data di dalam **Remix: Madrasah** diketik secara ketat menggunakan TypeScript di sisi klien dan diterjemahkan ke dalam interaksi rute API terstruktur untuk integrasi AI di sisi server.
+Seluruh struktur data di dalam **Madrasah — Personal Knowledge Operating System** diketik secara ketat menggunakan TypeScript di sisi klien dan diterjemahkan ke dalam interaksi rute API terstruktur untuk integrasi AI di sisi server.
 
 ---
 

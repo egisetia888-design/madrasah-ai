@@ -1,6 +1,6 @@
 # 📦 04. Panduan Modul dan Fitur Sistem
 
-Modul fungsional **Remix: Madrasah** dikelompokkan ke dalam empat pilar utama yang saling terhubung membentuk ekosistem manajemen pengetahuan yang kokoh.
+Modul fungsional **Madrasah — Personal Knowledge Operating System** dikelompokkan ke dalam empat pilar utama yang saling terhubung membentuk ekosistem manajemen pengetahuan yang kokoh.
 
 ---
 

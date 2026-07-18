@@ -1,10 +1,10 @@
 # 🕋 01. Identitas, Visi, dan Filosofi Produk
 
 ## 1.1 Identitas Produk
-**Remix: Madrasah** adalah sebuah **Personal Knowledge Operating System (PKOS)** modern yang dirancang untuk mengintegrasikan seluruh siklus hidup pengetahuan individu. Lebih dari sekadar aplikasi pencatatan, Madrasah adalah platform terpadu yang menyatukan perencanaan belajar, manajemen pustaka, pencatatan berbasis Zettelkasten, penulisan terfokus, serta pengulangan berjarak (*spaced repetition*) untuk retensi ingatan jangka panjang.
+**Madrasah — Personal Knowledge Operating System** adalah sebuah **Personal Knowledge Operating System (PKOS)** modern yang dirancang untuk mengintegrasikan seluruh siklus hidup pengetahuan individu. Lebih dari sekadar aplikasi pencatatan, Madrasah adalah platform terpadu yang menyatukan perencanaan belajar, manajemen pustaka, pencatatan berbasis Zettelkasten, penulisan terfokus, serta pengulangan berjarak (*spaced repetition*) untuk retensi ingatan jangka panjang.
 
 ## 1.2 Visi Produk
-Visi utama **Remix: Madrasah** adalah **demokratisasi manajemen pengetahuan pribadi tingkat lanjut**. Kami percaya bahwa di era kelimpahan informasi (information overload), tantangan terbesar manusia bukan lagi mencari informasi, melainkan menyaring, menghubungkan, dan memproduksi pengetahuan yang bermakna. Madrasah hadir sebagai "Otak Kedua" (Second Brain) yang andal, sunyi, bebas dari kebisingan algoritma media sosial, dan dioptimalkan secara estetis untuk merangsang kejernihan berpikir.
+Visi utama **Madrasah — Personal Knowledge Operating System** adalah **demokratisasi manajemen pengetahuan pribadi tingkat lanjut**. Kami percaya bahwa di era kelimpahan informasi (information overload), tantangan terbesar manusia bukan lagi mencari informasi, melainkan menyaring, menghubungkan, dan memproduksi pengetahuan yang bermakna. Madrasah hadir sebagai "Otak Kedua" (Second Brain) yang andal, sunyi, bebas dari kebisingan algoritma media sosial, dan dioptimalkan secara estetis untuk merangsang kejernihan berpikir.
 
 ## 1.3 Filosofi "Madrasah"
 Nama **Madrasah** diambil dari bahasa Arab yang secara harfiah berarti "tempat belajar" atau "sekolah". Dalam sejarah peradaban, madrasah merupakan pusat transmisi ilmu pengetahuan secara sistematis, di mana kurikulum disusun dengan saksama, literatur dipelajari secara mendalam, catatan (*hasyiyah*) dibuat di pinggir halaman kitab, dan diskusi melahirkan sintesis baru.

@@ -6,7 +6,7 @@ Dokumen ini melacak visi masa depan pengembangan fungsionalitas Madrasah serta m
 
 ## 7.1 Peta Jalan Pengembangan (Roadmap)
 
-Pengembangan **Remix: Madrasah** dibagi ke dalam tiga fase strategis untuk bertransformasi dari sistem operasi pengetahuan personal lokal menjadi platform kolaboratif akademis yang kokoh.
+Pengembangan **Madrasah — Personal Knowledge Operating System** dibagi ke dalam tiga fase strategis untuk bertransformasi dari sistem operasi pengetahuan personal lokal menjadi platform kolaboratif akademis yang kokoh.
 
 ### Fase 1: Fondasi Kokoh & PKOS Inti (Selesai / Tahap Aktual)
 - [x] **Bahasa Visual Monokrom Terpadu**: Pembersihan total palet warna sekunder menuju nuansa monokrom hitam-putih murni untuk menjamin ketenangan kognitif pengguna.

@@ -1,6 +1,6 @@
 # 🤝 09. Panduan Kontribusi Pengembang (Contribution Guidelines)
 
-Kami menyambut baik kontribusi dari komunitas pengembang, desainer, akademisi, dan pengguna untuk bersama-sama menjadikan **Remix: Madrasah** sebagai sistem operasi pengetahuan terbaik.
+Kami menyambut baik kontribusi dari komunitas pengembang, desainer, akademisi, dan pengguna untuk bersama-sama menjadikan **Madrasah — Personal Knowledge Operating System** sebagai sistem operasi pengetahuan terbaik.
 
 ---
 

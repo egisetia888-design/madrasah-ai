@@ -2,7 +2,7 @@
 
 ## 2.1 Prinsip Desain Utama
 
-Estetika visual dan interaksi di dalam **Remix: Madrasah** dipandu oleh tiga prinsip dasar:
+Estetika visual dan interaksi di dalam **Madrasah — Personal Knowledge Operating System** dipandu oleh tiga prinsip dasar:
 
 ### 1. Minimalisme Monokrom (Monochrome Zen)
 Sesuai dengan arahan terbaru untuk mendukung kejernihan berpikir tanpa distraksi visual, Madrasah mengadopsi palet warna monokromatik hitam-putih yang ketat:

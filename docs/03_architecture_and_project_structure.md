@@ -1,7 +1,7 @@
 # 🛠️ 03. Arsitektur Sistem dan Struktur Proyek
 
 ## 3.1 Arsitektur Sistem Umum
-**Remix: Madrasah** mengusung arsitektur **Full-Stack Single Container** yang menggabungkan kecepatan Single Page Application (SPA) berbasis React dengan keandalan server Express.js di sisi backend.
+**Madrasah — Personal Knowledge Operating System** mengusung arsitektur **Full-Stack Single Container** yang menggabungkan kecepatan Single Page Application (SPA) berbasis React dengan keandalan server Express.js di sisi backend.
 
 ```
 +--------------------------------------------------------------+

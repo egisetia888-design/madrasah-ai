@@ -1,8 +1,8 @@
-# 🕋 Remix: Madrasah
+# 🕋 Madrasah — Personal Knowledge Operating System
 
 > **Personal Knowledge Operating System (PKOS) — Monochrome Slate Edition**
 
-**Remix: Madrasah** adalah sistem operasi pengetahuan pribadi (Personal Knowledge Operating System) modern yang dirancang khusus untuk mengintegrasikan seluruh siklus hidup intelektual individu. Aplikasi ini menggabungkan penataan kurikulum belajar, manajemen literatur pustaka, pencatatan Markdown berbasis Zettelkasten, penulisan bebas gangguan, serta pelatihan retensi ingatan jangka panjang melalui kartu flash (*spaced repetition*) dalam satu antarmuka monokromatik yang hening dan tanpa distraksi.
+**Madrasah — Personal Knowledge Operating System** adalah sistem operasi pengetahuan pribadi (Personal Knowledge Operating System) modern yang dirancang khusus untuk mengintegrasikan seluruh siklus hidup intelektual individu. Aplikasi ini menggabungkan penataan kurikulum belajar, manajemen literatur pustaka, pencatatan Markdown berbasis Zettelkasten, penulisan bebas gangguan, serta pelatihan retensi ingatan jangka panjang melalui kartu flash (*spaced repetition*) dalam satu antarmuka monokromatik yang hening dan tanpa distraksi.
 
 Aplikasi ini dioptimalkan sepenuhnya untuk perangkat desktop maupun mobile secara responsif, menghadirkan harmoni visual tinggi, tipografi presisi, dan fungsionalitas cerdas berbasis AI.
 
@@ -66,4 +66,4 @@ Aplikasi Anda akan segera mengudara secara terintegrasi pada port **3000** di al
 
 ---
 
-*Remix: Madrasah dirancang dengan ketulusan dan fungsionalitas tinggi untuk menemani petualangan intelektual Anda.*
+*Madrasah — Personal Knowledge Operating System dirancang dengan ketulusan dan fungsionalitas tinggi untuk menemani petualangan intelektual Anda.*

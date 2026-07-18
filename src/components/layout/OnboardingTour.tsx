@@ -71,9 +71,9 @@ export function OnboardingTour() {
         setCurrentStep(0);
       }
     }} maxWidthClass="max-w-4xl">
-      <div className="flex flex-col md:flex-row h-full md:min-h-[480px]">
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:min-h-[480px]">
         {/* Left Side: Illustration / Graphic Area */}
-        <div className="md:w-5/12 bg-gray-50 flex flex-col items-center justify-center p-10 border-b md:border-b-0 md:border-r border-gray-100 relative overflow-hidden">
+        <div className="md:w-5/12 bg-gray-50 flex flex-col items-center justify-center p-8 md:p-10 border-b md:border-b-0 md:border-r border-gray-100 relative overflow-hidden shrink-0">
           {/* Decorative Background Elements */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-30 pointer-events-none">
              <div className="absolute -top-10 -left-10 w-40 h-40 bg-gray-200 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
@@ -108,16 +108,16 @@ export function OnboardingTour() {
         </div>
 
         {/* Right Side: Content & Actions */}
-        <div className="md:w-7/12 flex flex-col p-8 md:p-12 bg-white">
+        <div className="md:w-7/12 flex flex-col p-6 md:p-12 bg-white shrink-0">
           <div className="flex-1">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 md:mb-4 tracking-tight">
               {steps[currentStep].title}
             </h2>
-            <p className="text-lg text-gray-500 leading-relaxed mb-8">
+            <p className="text-base md:text-lg text-gray-500 leading-relaxed mb-6 md:mb-8">
               {steps[currentStep].description}
             </p>
 
-            <div className="space-y-3 mb-8">
+            <div className="space-y-3 mb-6 md:mb-8">
               {steps[currentStep].highlights.map((highlight, idx) => (
                 <div key={idx} className="flex items-center gap-3 text-gray-700 font-medium">
                   <div className="w-5 h-5 rounded-full bg-gray-50 flex items-center justify-center shrink-0">

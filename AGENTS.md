@@ -1,6 +1,6 @@
 # 🤖 Petunjuk Agen Kecerdasan Buatan (AI Agent Guidelines)
 
-Dokumen ini berisi panduan dan aturan baku khusus untuk AI Coding Agent yang memodifikasi, menambah, atau mendesain ulang bagian apa pun dari proyek **Remix: Madrasah**. Semua instruksi ini harus dipatuhi untuk menjaga integritas kode, estetika visual, dan responsivitas aplikasi.
+Dokumen ini berisi panduan dan aturan baku khusus untuk AI Coding Agent yang memodifikasi, menambah, atau mendesain ulang bagian apa pun dari proyek **Madrasah — Personal Knowledge Operating System**. Semua instruksi ini harus dipatuhi untuk menjaga integritas kode, estetika visual, dan responsivitas aplikasi.
 
 ---
 
