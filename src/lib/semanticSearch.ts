@@ -22,18 +22,19 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 }
 
 export function cosineSimilarity(a: number[], b: number[]): number {
+  if (!a || !b || a.length !== b.length || a.length === 0) return 0;
   let dotProduct = 0;
   let mA = 0;
   let mB = 0;
   for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    mA += a[i] * a[i];
-    mB += b[i] * b[i];
+    const valA = a[i];
+    const valB = b[i];
+    dotProduct += valA * valB;
+    mA += valA * valA;
+    mB += valB * valB;
   }
-  mA = Math.sqrt(mA);
-  mB = Math.sqrt(mB);
-  const similarity = dotProduct / (mA * mB);
-  return similarity;
+  if (mA === 0 || mB === 0) return 0;
+  return dotProduct / (Math.sqrt(mA) * Math.sqrt(mB));
 }
 
 export interface SemanticSearchResult {

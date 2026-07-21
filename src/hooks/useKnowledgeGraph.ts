@@ -19,15 +19,20 @@ export function useKnowledgeGraph() {
     const nodes: Node[] = [...storeNodes];
     const edges: Edge[] = [...storeEdges];
     
+    const nodeSet = new Set<string>(storeNodes.map(n => n.id));
+    const edgeSet = new Set<string>(storeEdges.map(e => e.id));
+    
     const addNodeIfMissing = (id: string, label: string, type: Node['type']) => {
-      if (!nodes.find(n => n.id === id)) {
+      if (!nodeSet.has(id)) {
+        nodeSet.add(id);
         nodes.push({ id, label, type });
       }
     };
 
     const addEdgeIfMissing = (source: string, target: string, label: string) => {
       const edgeId = `${source}-${target}`;
-      if (!edges.find(e => e.id === edgeId)) {
+      if (!edgeSet.has(edgeId)) {
+        edgeSet.add(edgeId);
         edges.push({ id: edgeId, source, target, label });
       }
     };

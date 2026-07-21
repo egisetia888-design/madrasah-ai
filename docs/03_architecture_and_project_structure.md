@@ -40,7 +40,8 @@ Aplikasi klien dibangun menggunakan **React 18+** dan dikompilasi menggunakan **
 
 ### 2. Sisi Server (Backend Gateway)
 Server backend menggunakan **Express.js** yang berjalan di Node.js. Server ini memiliki tanggung jawab krusial:
-- **Keamanan API Key**: Menjaga rahasia `OPENROUTER_API_KEY` dari jangkauan pihak luar. Aplikasi frontend tidak pernah berkomunikasi langsung dengan pihak ketiga AI, melainkan melalui endpoint proxy `/api/ai/*`.
+- **Keamanan API Key**: Menjaga rahasia `GEMINI_API_KEY` dan `OPENROUTER_API_KEY` dari jangkauan pihak luar. Aplikasi frontend tidak pernah berkomunikasi langsung dengan pihak ketiga AI, melainkan melalui endpoint proxy `/api/ai/*`.
+- **Dual AI Provider Support**: Menggunakan `@google/genai` SDK sebagai provider utama (`GEMINI_API_KEY`) dengan fallback otomatis ke OpenRouter API (`OPENROUTER_API_KEY`) jika kunci Gemini tidak dikonfigurasi.
 - **Rate Limiting**: Melindungi server dari kelebihan beban dan membatasi penyalahgunaan API menggunakan `express-rate-limit`.
 - **In-Memory Cache**: Menyimpan respons AI secara berkala (TTL 1 jam) berdasarkan kemiripan payload permintaan untuk memotong biaya API dan mempercepat waktu tunggu pengguna.
 

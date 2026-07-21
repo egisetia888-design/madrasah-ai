@@ -21,8 +21,9 @@ Aplikasi membutuhkan file `.env` di direktori akar untuk beroperasi dengan fungs
 
 | Nama Variabel | Status | Nilai Default | Keterangan |
 | :--- | :--- | :--- | :--- |
-| `OPENROUTER_API_KEY` | **Wajib** | *Kosong* | Kredensial autentikasi API OpenRouter Anda (contoh: `sk-or-v1-...`). |
-| `OPENROUTER_MODEL` | Opsional | `google/gemini-2.5-flash` | Model kecerdasan buatan utama yang akan dipanggil untuk memproses instruksi. |
+| `GEMINI_API_KEY` | **Sangat Direkomendasikan** | *Kosong* | Kredensial Google GenAI API untuk akses langsung ke model Gemini. |
+| `OPENROUTER_API_KEY` | Opsional | *Kosong* | Kredensial autentikasi API OpenRouter alternatif (contoh: `sk-or-v1-...`). |
+| `OPENROUTER_MODEL` | Opsional | `google/gemini-2.5-flash` | Model kecerdasan buatan fallback OpenRouter jika `GEMINI_API_KEY` tidak tersedia. |
 | `APP_URL` | Opsional | `https://madrasah.remix` | Alamat URL tempat aplikasi di-hosting, dikirim ke OpenRouter sebagai penanda referer. |
 | `NODE_ENV` | Otomatis | `development` | Mengontrol mode jalannya aplikasi (`development` atau `production`). |
 

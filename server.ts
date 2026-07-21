@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import dotenv from "dotenv";
 import rateLimit from "express-rate-limit";
+import { GoogleGenAI, Type } from "@google/genai";
 
 dotenv.config();
 
@@ -29,6 +30,98 @@ function cleanAndParseJson(text: string, fallback: any = {}) {
   }
 }
 
+// Lazy initialize GoogleGenAI client
+let genAIClient: GoogleGenAI | null = null;
+function getGeminiClient(): GoogleGenAI | null {
+  if (!genAIClient && process.env.GEMINI_API_KEY) {
+    genAIClient = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
+  }
+  return genAIClient;
+}
+
+interface AICallOptions {
+  systemInstruction: string;
+  userPrompt: string;
+  jsonMode?: boolean;
+  responseSchema?: any;
+}
+
+async function executeAIRequest(options: AICallOptions): Promise<string> {
+  const gemini = getGeminiClient();
+
+  // Try Google GenAI SDK first
+  if (gemini) {
+    try {
+      const config: any = {
+        systemInstruction: options.systemInstruction,
+      };
+      if (options.jsonMode) {
+        config.responseMimeType = "application/json";
+        if (options.responseSchema) {
+          config.responseSchema = options.responseSchema;
+        }
+      }
+
+      const response = await gemini.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: options.userPrompt,
+        config
+      });
+
+      if (response.text) {
+        return response.text;
+      }
+    } catch (err: any) {
+      console.warn("[AI Provider] Gemini API request failed, trying OpenRouter fallback:", err?.message || err);
+    }
+  }
+
+  // OpenRouter Fallback
+  if (process.env.OPENROUTER_API_KEY) {
+    const messages = [
+      { role: "system", content: options.systemInstruction },
+      { role: "user", content: options.userPrompt }
+    ];
+
+    const body: any = {
+      model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+      messages
+    };
+
+    if (options.jsonMode) {
+      body.response_format = { type: "json_object" };
+    }
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
+        "X-Title": "Remix Madrasah"
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
+    }
+
+    const data = await response.json() as any;
+    return data.choices?.[0]?.message?.content || "";
+  }
+
+  throw new Error("Layanan AI belum dikonfigurasi. Silakan pastikan GEMINI_API_KEY atau OPENROUTER_API_KEY tersedia di Settings > Secrets.");
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -36,15 +129,15 @@ async function startServer() {
   // Set up rate limiting
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    max: 100, // Limit each IP to 100 requests per `window`
+    standardHeaders: true,
+    legacyHeaders: false,
     message: { error: "Too many requests from this IP, please try again after 15 minutes." }
   });
 
   const aiLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 15, // Limit each IP to 15 AI requests per minute
+    max: 20, // Limit each IP to 20 AI requests per minute
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Terlalu banyak permintaan ke AI. Silakan tunggu beberapa saat." }
@@ -65,10 +158,6 @@ async function startServer() {
   // AI Routes
   app.post("/api/ai/zettelkasten", async (req, res) => {
     try {
-      if (!process.env.OPENROUTER_API_KEY) {
-        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
-      }
-
       const { prompt, notes } = req.body;
       const cacheKey = getCacheKey("zettelkasten", { prompt, notesCount: notes?.length });
       
@@ -90,30 +179,11 @@ async function startServer() {
       Respond directly and helpfully in Indonesian. Format your response cleanly using Markdown.
       `;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
-          "X-Title": "Remix Madrasah"
-        },
-        body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemInstruction },
-            { role: "user", content: prompt }
-          ]
-        })
+      const text = await executeAIRequest({
+        systemInstruction,
+        userPrompt: prompt
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
-      }
-
-      const data = await response.json() as any;
-      const text = data.choices?.[0]?.message?.content || "";
       const resultData = { result: text };
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
@@ -126,11 +196,7 @@ async function startServer() {
 
   app.post("/api/ai/suggest-tags", async (req, res) => {
     try {
-      if (!process.env.OPENROUTER_API_KEY) {
-        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
-      }
-
-      const { content, notes } = req.body;
+      const { content, notes = [] } = req.body;
       const cacheKey = getCacheKey("suggest-tags", { content });
       
       const cached = aiCache.get(cacheKey);
@@ -148,39 +214,26 @@ async function startServer() {
       User's existing notes for context:
       ${JSON.stringify(notes.map((n: any) => ({ id: n.id, title: n.title, content: n.content })), null, 2)}
       
-      Respond ONLY with a raw JSON object in the following format, without any markdown formatting or code blocks:
-      {
-        "tags": ["tag1", "tag2"],
-        "icon": "LucideIconName",
-        "connections": ["Existing Note Title 1", "Existing Note Title 2"]
-      }
+      Respond ONLY with a raw JSON object matching the schema.
       `;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
-          "X-Title": "Remix Madrasah"
+      const schema = {
+        type: Type.OBJECT,
+        properties: {
+          tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+          icon: { type: Type.STRING },
+          connections: { type: Type.ARRAY, items: { type: Type.STRING } }
         },
-        body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemInstruction },
-            { role: "user", content: `New snippet:\n${content}` }
-          ],
-          response_format: { type: "json_object" }
-        })
+        required: ["tags", "icon", "connections"]
+      };
+
+      const text = await executeAIRequest({
+        systemInstruction,
+        userPrompt: `New snippet:\n${content}`,
+        jsonMode: true,
+        responseSchema: schema
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
-      }
-
-      const data = await response.json() as any;
-      const text = data.choices?.[0]?.message?.content || "{}";
       const resultData = cleanAndParseJson(text, { tags: [], icon: "FileText", connections: [] });
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
@@ -193,10 +246,6 @@ async function startServer() {
 
   app.post("/api/ai/generate-flashcards", async (req, res) => {
     try {
-      if (!process.env.OPENROUTER_API_KEY) {
-        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
-      }
-
       const { content } = req.body;
       const cacheKey = getCacheKey("generate-flashcards", { content });
       
@@ -210,39 +259,34 @@ async function startServer() {
       You are an expert at creating Spaced Repetition Flashcards. Your job is to analyze the provided note content and extract 5-10 crucial Question & Answer pairs.
       Focus on core concepts, important facts, and principles.
       
-      Respond ONLY with a raw JSON object in the following format, without any markdown formatting or code blocks:
-      {
-        "flashcards": [
-          { "front": "Question here?", "back": "Answer here" }
-        ]
-      }
+      Respond ONLY with a raw JSON object matching the schema.
       `;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
-          "X-Title": "Remix Madrasah"
+      const schema = {
+        type: Type.OBJECT,
+        properties: {
+          flashcards: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                front: { type: Type.STRING },
+                back: { type: Type.STRING }
+              },
+              required: ["front", "back"]
+            }
+          }
         },
-        body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemInstruction },
-            { role: "user", content: `Create flashcards from this note:\n\n${content}` }
-          ],
-          response_format: { type: "json_object" }
-        })
+        required: ["flashcards"]
+      };
+
+      const text = await executeAIRequest({
+        systemInstruction,
+        userPrompt: `Create flashcards from this note:\n\n${content}`,
+        jsonMode: true,
+        responseSchema: schema
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
-      }
-
-      const data = await response.json() as any;
-      const text = data.choices?.[0]?.message?.content || "{}";
       const resultData = cleanAndParseJson(text, { flashcards: [] });
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
@@ -255,10 +299,6 @@ async function startServer() {
 
   app.post("/api/ai/grade-flashcard", async (req, res) => {
     try {
-      if (!process.env.OPENROUTER_API_KEY) {
-        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
-      }
-
       const { question, correctAnswer, userAnswer } = req.body;
       const cacheKey = getCacheKey("grade-flashcard", { question, correctAnswer, userAnswer });
       
@@ -283,39 +323,26 @@ async function startServer() {
       4: Correct, after some hesitation.
       5: Perfect, fluent recall.
  
-      Respond ONLY with a raw JSON object in the following format, without any markdown formatting or code blocks:
-      {
-        "isCorrect": boolean,
-        "quality": number,
-        "feedback": "Short feedback explaining what was good or what was missed (in Indonesian)"
-      }
+      Respond ONLY with a raw JSON object matching the schema.
       `;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
-          "X-Title": "Remix Madrasah"
+      const schema = {
+        type: Type.OBJECT,
+        properties: {
+          isCorrect: { type: Type.BOOLEAN },
+          quality: { type: Type.NUMBER },
+          feedback: { type: Type.STRING }
         },
-        body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemInstruction },
-            { role: "user", content: `Question: ${question}\nCorrect Answer: ${correctAnswer}\nUser's Answer: ${userAnswer}` }
-          ],
-          response_format: { type: "json_object" }
-        })
+        required: ["isCorrect", "quality", "feedback"]
+      };
+
+      const text = await executeAIRequest({
+        systemInstruction,
+        userPrompt: `Question: ${question}\nCorrect Answer: ${correctAnswer}\nUser's Answer: ${userAnswer}`,
+        jsonMode: true,
+        responseSchema: schema
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
-      }
-
-      const data = await response.json() as any;
-      const text = data.choices?.[0]?.message?.content || "{}";
       const resultData = cleanAndParseJson(text, { isCorrect: false, quality: 1, feedback: "Gagal memproses penilaian dari AI." });
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
@@ -328,10 +355,6 @@ async function startServer() {
 
   app.post("/api/ai/generate-syllabus", async (req, res) => {
     try {
-      if (!process.env.OPENROUTER_API_KEY) {
-        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
-      }
-
       const { topic } = req.body;
       const cacheKey = getCacheKey("generate-syllabus", { topic });
       
@@ -351,55 +374,48 @@ async function startServer() {
  
       Provide all responses in Indonesian.
  
-      Respond ONLY with a raw JSON object in the following format, without any markdown formatting or code blocks:
-      {
-        "title": "A clear, inspiring title for the learning path",
-        "description": "A brief overview of what the user will achieve",
-        "phases": [
-          {
-            "title": "Phase 1: Title",
-            "description": "Description of this phase",
-            "order": 1,
-            "competencies": [
-              {
-                "title": "Competency 1",
-                "description": "What to learn or do"
-              },
-              {
-                "title": "Competency 2",
-                "description": "What to learn or do"
-              }
-            ]
-          }
-        ]
-      }
+      Respond ONLY with a raw JSON object matching the schema.
       `;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
-          "X-Title": "Remix Madrasah"
+      const schema = {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          description: { type: Type.STRING },
+          phases: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                description: { type: Type.STRING },
+                order: { type: Type.INTEGER },
+                competencies: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      title: { type: Type.STRING },
+                      description: { type: Type.STRING }
+                    },
+                    required: ["title", "description"]
+                  }
+                }
+              },
+              required: ["title", "description", "order", "competencies"]
+            }
+          }
         },
-        body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemInstruction },
-            { role: "user", content: `Topic: ${topic}` }
-          ],
-          response_format: { type: "json_object" }
-        })
+        required: ["title", "description", "phases"]
+      };
+
+      const text = await executeAIRequest({
+        systemInstruction,
+        userPrompt: `Topic: ${topic}`,
+        jsonMode: true,
+        responseSchema: schema
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
-      }
-
-      const data = await response.json() as any;
-      const text = data.choices?.[0]?.message?.content || "{}";
       const resultData = cleanAndParseJson(text, { title: topic, description: "Gagal membuat silabus.", phases: [] });
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
@@ -412,10 +428,6 @@ async function startServer() {
 
   app.post("/api/ai/summarize-literature", async (req, res) => {
     try {
-      if (!process.env.OPENROUTER_API_KEY) {
-        return res.status(500).json({ error: "OPENROUTER_API_KEY is not configured on the server." });
-      }
-
       const { content } = req.body;
       const cacheKey = getCacheKey("summarize-literature", { content });
       
@@ -427,7 +439,7 @@ async function startServer() {
       
       const systemInstruction = `
       You are an expert academic assistant.
-      The user will provide the abstract, introduction, or full text of an academic paper.
+      The user will provide the abstract, introduction, or full text of an academic paper or book chapter.
       Your task is to summarize the paper into exactly 3 key points:
       1. Masalah Utama (The Main Problem)
       2. Metodologi (The Methodology)
@@ -435,39 +447,26 @@ async function startServer() {
  
       Provide all responses in Indonesian.
  
-      Respond ONLY with a raw JSON object in the following format, without any markdown formatting or code blocks:
-      {
-        "problem": "Masalah utama yang dibahas...",
-        "methodology": "Metode yang digunakan...",
-        "conclusion": "Kesimpulan atau hasil utama..."
-      }
+      Respond ONLY with a raw JSON object matching the schema.
       `;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
-          "X-Title": "Remix Madrasah"
+      const schema = {
+        type: Type.OBJECT,
+        properties: {
+          problem: { type: Type.STRING },
+          methodology: { type: Type.STRING },
+          conclusion: { type: Type.STRING }
         },
-        body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemInstruction },
-            { role: "user", content: `Literature Content:\n${content}` }
-          ],
-          response_format: { type: "json_object" }
-        })
+        required: ["problem", "methodology", "conclusion"]
+      };
+
+      const text = await executeAIRequest({
+        systemInstruction,
+        userPrompt: `Literature Content:\n${content}`,
+        jsonMode: true,
+        responseSchema: schema
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
-      }
-
-      const data = await response.json() as any;
-      const text = data.choices?.[0]?.message?.content || "{}";
       const resultData = cleanAndParseJson(text, { problem: "Tidak dapat menyimpulkan masalah utama.", methodology: "Tidak dapat menyimpulkan metodologi.", conclusion: "Tidak dapat menyimpulkan kesimpulan." });
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
@@ -501,3 +500,4 @@ async function startServer() {
 }
 
 startServer();
+
