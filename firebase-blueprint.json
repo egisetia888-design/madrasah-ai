@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "Note": {
+      "title": "Note",
+      "description": "User knowledge note entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 500 },
+        "content": { "type": "string" },
+        "type": { "type": "string" },
+        "status": { "type": "string" },
+        "folderId": { "type": "string" },
+        "tags": { "type": "array" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "title"]
+    },
+    "Draft": {
+      "title": "Draft",
+      "description": "User writing draft entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 500 },
+        "content": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "title"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "User project entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 500 },
+        "description": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "title"]
+    },
+    "Book": {
+      "title": "Book",
+      "description": "User library book entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 500 },
+        "authorId": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "title"]
+    }
+  },
+  "firestore": {
+    "/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/Note" },
+      "description": "Collection of knowledge notes"
+    },
+    "/drafts/{draftId}": {
+      "schema": { "$ref": "#/entities/Draft" },
+      "description": "Collection of writing drafts"
+    },
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Collection of projects"
+    },
+    "/books/{bookId}": {
+      "schema": { "$ref": "#/entities/Book" },
+      "description": "Collection of library books"
+    }
+  }
+}

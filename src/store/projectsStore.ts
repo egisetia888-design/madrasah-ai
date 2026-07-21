@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Project, Task, TaskStatus } from '../types';
+import { syncSaveProject, syncDeleteProject } from '../lib/firestoreSync';
 
 localforage.config({
   name: 'madrasah_db',
@@ -42,32 +43,40 @@ export const useProjectsStore = create<ProjectsState>()(
       
       addProject: (projectData) => {
         const id = crypto.randomUUID();
+        const newProject: Project = {
+          ...projectData,
+          id,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
         set((state) => ({
-          projects: [
-            {
-              ...projectData,
-              id,
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-            },
-            ...state.projects
-          ]
+          projects: [newProject, ...state.projects]
         }));
+        syncSaveProject(newProject);
         return id;
       },
       
-      updateProject: (id, projectData) => set((state) => ({
-        projects: state.projects.map(p => 
-          p.id === id 
-            ? { ...p, ...projectData, updatedAt: Date.now() } 
-            : p
-        )
-      })),
+      updateProject: (id, projectData) => {
+        set((state) => {
+          const updatedProjects = state.projects.map(p => {
+            if (p.id === id) {
+              const updated = { ...p, ...projectData, updatedAt: Date.now() };
+              syncSaveProject(updated);
+              return updated;
+            }
+            return p;
+          });
+          return { projects: updatedProjects };
+        });
+      },
       
-      deleteProject: (id) => set((state) => ({
-        projects: state.projects.filter(p => p.id !== id),
-        tasks: state.tasks.filter(t => t.projectId !== id),
-      })),
+      deleteProject: (id) => {
+        set((state) => ({
+          projects: state.projects.filter(p => p.id !== id),
+          tasks: state.tasks.filter(t => t.projectId !== id),
+        }));
+        syncDeleteProject(id);
+      },
 
       addTask: (taskData) => set((state) => {
         return {
@@ -109,3 +118,4 @@ export const useProjectsStore = create<ProjectsState>()(
     }
   )
 );
+

@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom"
 import { LayoutDashboard, Library, PenTool, Map, Settings, LogOut, Briefcase, FileText, Network, FlaskConical, Search, Brain, BarChart2, Star, Clock, Pin, Zap, Keyboard } from "lucide-react"
 import { cn } from "../../utils/cn"
 import { useUIStore } from "../../store/uiStore"
+import { useAuthStore } from "../../store/authStore"
 import { useNotesStore } from "../../store/notesStore"
 import { useWritingStore } from "../../store/writingStore"
 
@@ -140,6 +141,16 @@ export function Sidebar() {
           <Settings className="w-4 h-4 text-gray-400" />
           Pengaturan
         </NavLink>
+        <button
+          onClick={() => {
+            useAuthStore.getState().logout();
+            navigate("/login");
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors text-left"
+        >
+          <LogOut className="w-4 h-4 text-gray-400" />
+          Keluar
+        </button>
       </div>
     </aside>
   )

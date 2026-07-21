@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Draft } from '../types';
 import { generateEmbedding } from '../lib/semanticSearch';
+import { syncSaveDraft, syncDeleteDraft } from '../lib/firestoreSync';
 
 localforage.config({
   name: 'madrasah_db',
@@ -37,32 +38,40 @@ export const useWritingStore = create<WritingState>()(
       
       addDraft: (draftData) => {
         const id = crypto.randomUUID();
+        const newDraft: Draft = {
+          ...draftData,
+          id,
+          status: 'draft',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
         set((state) => ({
-          drafts: [
-            {
-              ...draftData,
-              id,
-              status: 'draft',
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-            },
-            ...state.drafts
-          ]
+          drafts: [newDraft, ...state.drafts]
         }));
+        syncSaveDraft(newDraft);
         return id;
       },
       
-      updateDraft: (id, draftData) => set((state) => ({
-        drafts: state.drafts.map(d => 
-          d.id === id 
-            ? { ...d, ...draftData, updatedAt: Date.now() } 
-            : d
-        )
-      })),
+      updateDraft: (id, draftData) => {
+        set((state) => {
+          const updatedDrafts = state.drafts.map(d => {
+            if (d.id === id) {
+              const updated = { ...d, ...draftData, updatedAt: Date.now() };
+              syncSaveDraft(updated);
+              return updated;
+            }
+            return d;
+          });
+          return { drafts: updatedDrafts };
+        });
+      },
       
-      deleteDraft: (id) => set((state) => ({
-        drafts: state.drafts.filter(d => d.id !== id)
-      })),
+      deleteDraft: (id) => {
+        set((state) => ({
+          drafts: state.drafts.filter(d => d.id !== id)
+        }));
+        syncDeleteDraft(id);
+      },
 
       indexDraft: async (id) => {
         const state = get();
@@ -74,9 +83,14 @@ export const useWritingStore = create<WritingState>()(
           const embedding = await generateEmbedding(textToEmbed);
           
           set((state) => ({
-            drafts: state.drafts.map(d => 
-              d.id === id ? { ...d, embedding } : d
-            )
+            drafts: state.drafts.map(d => {
+              if (d.id === id) {
+                const updated = { ...d, embedding };
+                syncSaveDraft(updated);
+                return updated;
+              }
+              return d;
+            })
           }));
         } catch (error) {
           console.error('Failed to index draft:', error);
@@ -89,3 +103,4 @@ export const useWritingStore = create<WritingState>()(
     }
   )
 );
+

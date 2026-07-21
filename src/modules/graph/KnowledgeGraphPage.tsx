@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
-import { Search, Network, Maximize, List, Book, FileText, Briefcase, Hash, X, ArrowRight, User } from "lucide-react"
+import { Search, Network, Maximize, List, Book, FileText, Briefcase, PenTool, Hash, X, ArrowRight, User } from "lucide-react"
 import * as d3 from "d3"
 import { useKnowledgeGraph } from "../../hooks/useKnowledgeGraph"
 import { useNotesStore } from "../../store/notesStore"
@@ -31,6 +31,8 @@ export function KnowledgeGraphPage() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [filters, setFilters] = useState({
     note: true,
+    writing: true,
+    project: true,
     concept: true,
     book: true,
     author: true
@@ -40,7 +42,6 @@ export function KnowledgeGraphPage() {
     const search = searchParams.get("search");
     if (search) {
       setSearchTerm(search);
-      // Let's also try to select the node if there is a match
       setTimeout(() => {
          const exactMatch = rawNodes.find(n => n.label.toLowerCase() === search.toLowerCase());
          if (exactMatch) setSelectedNodeId(exactMatch.id);
@@ -72,10 +73,16 @@ export function KnowledgeGraphPage() {
   const nodeDetails = useMemo(() => {
     if (!selectedNode) return null;
     if (selectedNode.type === 'note') {
-      return notes.find(n => n.id === selectedNode.id) || drafts.find(d => d.id === selectedNode.id);
+      return notes.find(n => n.id === selectedNode.id);
+    }
+    if (selectedNode.type === 'writing') {
+      return drafts.find(d => d.id === selectedNode.id);
+    }
+    if (selectedNode.type === 'project') {
+      return projects.find(p => p.id === selectedNode.id);
     }
     if (selectedNode.type === 'book') {
-      return projects.find(p => p.id === selectedNode.id) || books.find(b => b.id === selectedNode.id);
+      return books.find(b => b.id === selectedNode.id);
     }
     return null;
   }, [selectedNode, notes, drafts, projects, books]);
@@ -145,11 +152,13 @@ export function KnowledgeGraphPage() {
         if (searchTerm && !isMatched) return '#f3f4f6'; // dim
         
         switch(d.type) {
-          case 'book': return '#3b82f6' // blue
-          case 'note': return '#10b981' // green
-          case 'author': return '#f59e0b' // yellow
-          case 'concept': return '#8b5cf6' // purple
-          default: return '#9ca3af'
+          case 'note': return '#111827'    // Slate 900
+          case 'writing': return '#374151' // Slate 700
+          case 'project': return '#1f2937' // Slate 800
+          case 'book': return '#4b5563'    // Slate 600
+          case 'concept': return '#6b7280' // Slate 500
+          case 'author': return '#9ca3af'  // Slate 400
+          default: return '#6b7280'
         }
       })
       .attr("stroke", (d: any) => {
@@ -244,6 +253,8 @@ export function KnowledgeGraphPage() {
   const getTypeIcon = (type: string) => {
     switch(type) {
       case 'note': return <FileText className="w-4 h-4 text-gray-900" />
+      case 'writing': return <PenTool className="w-4 h-4 text-gray-900" />
+      case 'project': return <Briefcase className="w-4 h-4 text-gray-900" />
       case 'concept': return <Hash className="w-4 h-4 text-gray-900" />
       case 'book': return <Book className="w-4 h-4 text-gray-900" />
       case 'author': return <User className="w-4 h-4 text-gray-900" />
@@ -254,10 +265,12 @@ export function KnowledgeGraphPage() {
   const navigateToDetail = () => {
     if (!selectedNode) return;
     
-    // We already have a graph node detail page at /graph/:id
-    // But it might be better to navigate to the actual entity if we know its type.
     if (selectedNode.type === 'note' && notes.find(n => n.id === selectedNode.id)) {
       navigate(`/notes/${selectedNode.id}`)
+    } else if (selectedNode.type === 'writing' && drafts.find(d => d.id === selectedNode.id)) {
+      navigate(`/writing/${selectedNode.id}`)
+    } else if (selectedNode.type === 'project' && projects.find(p => p.id === selectedNode.id)) {
+      navigate(`/projects/${selectedNode.id}`)
     } else if (selectedNode.type === 'book' && books.find(b => b.id === selectedNode.id)) {
       navigate(`/library/${selectedNode.id}`)
     } else {
@@ -299,17 +312,23 @@ export function KnowledgeGraphPage() {
           {/* Toolbar Overlay (Graph Mode) */}
           {viewMode === 'graph' && (
             <div className="absolute top-4 left-4 right-4 z-10 flex flex-wrap gap-3 items-center justify-between pointer-events-none">
-              <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md border border-gray-200 rounded-lg p-1.5 shadow-sm pointer-events-auto">
-                <button onClick={() => toggleFilter('note')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.note ? "bg-gray-50 text-gray-800" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
+              <div className="flex items-center gap-1.5 flex-wrap bg-white/90 backdrop-blur-md border border-gray-200 rounded-lg p-1.5 shadow-sm pointer-events-auto">
+                <button onClick={() => toggleFilter('note')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.note ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
                   <FileText className="w-3.5 h-3.5" /> Catatan
                 </button>
-                <button onClick={() => toggleFilter('concept')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.concept ? "bg-gray-50 text-gray-800" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
+                <button onClick={() => toggleFilter('writing')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.writing ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
+                  <PenTool className="w-3.5 h-3.5" /> Tulisan
+                </button>
+                <button onClick={() => toggleFilter('project')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.project ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
+                  <Briefcase className="w-3.5 h-3.5" /> Proyek
+                </button>
+                <button onClick={() => toggleFilter('concept')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.concept ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
                   <Hash className="w-3.5 h-3.5" /> Konsep
                 </button>
-                <button onClick={() => toggleFilter('book')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.book ? "bg-gray-50 text-gray-800" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
+                <button onClick={() => toggleFilter('book')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.book ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
                   <Book className="w-3.5 h-3.5" /> Pustaka
                 </button>
-                <button onClick={() => toggleFilter('author')} className={cn("px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors", filters.author ? "bg-gray-50 text-gray-800" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
+                <button onClick={() => toggleFilter('author')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.author ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
                   <User className="w-3.5 h-3.5" /> Penulis
                 </button>
               </div>

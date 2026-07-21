@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Note, Folder, Tag } from '../types';
 import { generateEmbedding } from '../lib/semanticSearch';
+import { syncSaveNote, syncDeleteNote } from '../lib/firestoreSync';
 
 localforage.config({
   name: 'madrasah_db',
@@ -48,33 +49,41 @@ export const useNotesStore = create<NotesState>()(
       
       addNote: (noteData) => {
         const id = crypto.randomUUID();
+        const newNote: Note = {
+          type: 'knowledge',
+          status: 'unprocessed',
+          ...noteData,
+          id,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
         set((state) => ({
-          notes: [
-            {
-              type: 'knowledge',
-              status: 'unprocessed',
-              ...noteData,
-              id,
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-            },
-            ...state.notes
-          ]
+          notes: [newNote, ...state.notes]
         }));
+        syncSaveNote(newNote);
         return id;
       },
       
-      updateNote: (id, noteData) => set((state) => ({
-        notes: state.notes.map(n => 
-          n.id === id 
-            ? { ...n, ...noteData, updatedAt: Date.now() } 
-            : n
-        )
-      })),
+      updateNote: (id, noteData) => {
+        set((state) => {
+          const updatedNotes = state.notes.map(n => {
+            if (n.id === id) {
+              const updated = { ...n, ...noteData, updatedAt: Date.now() };
+              syncSaveNote(updated);
+              return updated;
+            }
+            return n;
+          });
+          return { notes: updatedNotes };
+        });
+      },
       
-      deleteNote: (id) => set((state) => ({
-        notes: state.notes.filter(n => n.id !== id)
-      })),
+      deleteNote: (id) => {
+        set((state) => ({
+          notes: state.notes.filter(n => n.id !== id)
+        }));
+        syncDeleteNote(id);
+      },
 
       addFolder: (name, parentId = null) => {
         const id = crypto.randomUUID();
@@ -126,9 +135,14 @@ export const useNotesStore = create<NotesState>()(
           const embedding = await generateEmbedding(textToEmbed);
           
           set((state) => ({
-            notes: state.notes.map(n => 
-              n.id === id ? { ...n, embedding } : n
-            )
+            notes: state.notes.map(n => {
+              if (n.id === id) {
+                const updated = { ...n, embedding };
+                syncSaveNote(updated);
+                return updated;
+              }
+              return n;
+            })
           }));
         } catch (error) {
           console.error('Failed to index note:', error);
@@ -142,3 +156,4 @@ export const useNotesStore = create<NotesState>()(
     }
   )
 );
+

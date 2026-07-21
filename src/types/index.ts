@@ -27,7 +27,7 @@ export interface Book {
   updatedAt: number;
 }
 
-export type NoteType = 'knowledge' | 'project' | 'writing' | 'personal';
+export type NoteType = 'knowledge' | 'project' | 'writing' | 'personal' | 'research';
 export type NoteStatus = 'unprocessed' | 'processed';
 
 export interface Note {
@@ -125,10 +125,12 @@ export interface Draft {
   updatedAt: number;
 }
 
+export type NodeType = 'note' | 'book' | 'author' | 'concept' | 'writing' | 'project';
+
 export interface Node {
   id: UUID;
   label: string;
-  type: 'note' | 'book' | 'author' | 'concept';
+  type: NodeType;
 }
 
 export interface Edge {

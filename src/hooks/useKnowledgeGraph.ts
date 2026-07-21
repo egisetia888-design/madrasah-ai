@@ -61,8 +61,8 @@ export function useKnowledgeGraph() {
 
     // First pass: Add all explicit entities
     notes.forEach(note => addNodeIfMissing(note.id, note.title, 'note'));
-    drafts.forEach(draft => addNodeIfMissing(draft.id, draft.title, 'note'));
-    projects.forEach(project => addNodeIfMissing(project.id, project.title, 'book'));
+    drafts.forEach(draft => addNodeIfMissing(draft.id, draft.title, 'writing'));
+    projects.forEach(project => addNodeIfMissing(project.id, project.title, 'project'));
     books.forEach(book => addNodeIfMissing(book.id, book.title, 'book'));
 
     // Second pass: Extract relations

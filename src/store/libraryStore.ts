@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Book, Author, Category } from '../types';
+import { syncSaveBook, syncDeleteBook } from '../lib/firestoreSync';
 
 localforage.config({
   name: 'madrasah_db',
@@ -43,27 +44,39 @@ export const useLibraryStore = create<LibraryState>()(
       
       addBook: (bookData) => {
         const id = crypto.randomUUID();
+        const newBook: Book = {
+          ...bookData,
+          id,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
         set((state) => ({
-          books: [
-            {
-              ...bookData,
-              id,
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-            },
-            ...state.books
-          ]
+          books: [newBook, ...state.books]
         }));
+        syncSaveBook(newBook);
         return id;
       },
       
-      updateBook: (id, bookData) => set((state) => ({
-        books: state.books.map(b => b.id === id ? { ...b, ...bookData, updatedAt: Date.now() } : b)
-      })),
+      updateBook: (id, bookData) => {
+        set((state) => {
+          const updatedBooks = state.books.map(b => {
+            if (b.id === id) {
+              const updated = { ...b, ...bookData, updatedAt: Date.now() };
+              syncSaveBook(updated);
+              return updated;
+            }
+            return b;
+          });
+          return { books: updatedBooks };
+        });
+      },
       
-      deleteBook: (id) => set((state) => ({
-        books: state.books.filter(b => b.id !== id)
-      })),
+      deleteBook: (id) => {
+        set((state) => ({
+          books: state.books.filter(b => b.id !== id)
+        }));
+        syncDeleteBook(id);
+      },
 
       addAuthor: (name) => {
         const id = crypto.randomUUID();
@@ -87,3 +100,4 @@ export const useLibraryStore = create<LibraryState>()(
     }
   )
 );
+
