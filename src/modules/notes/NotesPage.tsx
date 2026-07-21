@@ -132,10 +132,15 @@ export function NotesPage() {
         body: JSON.stringify({ content, notes }),
       });
       const data = await res.json();
-      if (data.tags) setSuggestedTags(data.tags);
-      if (data.connections) setSuggestedConnections(data.connections);
-    } catch (err) {
+      if (res.ok) {
+        if (data.tags) setSuggestedTags(data.tags);
+        if (data.connections) setSuggestedConnections(data.connections);
+      } else {
+        alert(data.error || "Gagal mendapatkan saran tag dari AI.");
+      }
+    } catch (err: any) {
       console.error(err);
+      alert("Gagal menghubungkan ke layanan AI.");
     } finally {
       setIsSuggesting(false);
     }

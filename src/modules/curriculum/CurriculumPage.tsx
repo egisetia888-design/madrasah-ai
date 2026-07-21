@@ -54,7 +54,7 @@ export function CurriculumPage() {
       
       const data = await res.json();
       
-      if (data.title && data.phases) {
+      if (res.ok && data.title && data.phases && data.phases.length > 0) {
         const pathId = crypto.randomUUID();
         
         addPath({
@@ -89,9 +89,12 @@ export function CurriculumPage() {
         setTopic("");
         setIsAiOpen(false);
         navigate(`/curriculum/${pathId}`);
+      } else {
+        alert(data.error || "Gagal merancang silabus dengan AI. Silakan periksa kunci API di Pengaturan.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert("Gagal menghubungkan ke layanan AI. Silakan coba beberapa saat lagi.");
     } finally {
       setIsGenerating(false);
     }

@@ -127,11 +127,14 @@ export function NoteDetailPage() {
         body: JSON.stringify({ content: title + "\n\n" + content }),
       });
       const data = await res.json();
-      if (data.flashcards) {
+      if (res.ok && data.flashcards) {
         setGeneratedCards(data.flashcards);
+      } else {
+        alert(data.error || "Gagal membuat kartu ulasan dengan AI. Silakan periksa kunci API di Pengaturan.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert("Gagal menghubungkan ke layanan AI. Silakan coba beberapa saat lagi.");
     } finally {
       setIsGenerating(false);
     }
@@ -175,14 +178,17 @@ export function NoteDetailPage() {
         }),
       });
       const data = await res.json();
-      if (data.tags || data.icon) {
+      if (res.ok && (data.tags || data.icon)) {
         setAiSuggestions({
           tags: data.tags || [],
           icon: data.icon || "FileText"
         });
+      } else {
+        alert(data.error || "Gagal menganalisis konten dengan AI.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Analysis failed:", err);
+      alert("Terjadi kesalahan saat menganalisis catatan.");
     } finally {
       setIsAnalyzing(false);
     }

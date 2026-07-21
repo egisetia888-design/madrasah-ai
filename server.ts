@@ -15,6 +15,7 @@ function getCacheKey(endpoint: string, body: any) {
 }
 
 function cleanAndParseJson(text: string, fallback: any = {}) {
+  if (!text) return fallback;
   try {
     let cleanText = text.trim();
     if (cleanText.startsWith("```")) {
@@ -25,6 +26,14 @@ function cleanAndParseJson(text: string, fallback: any = {}) {
     }
     return JSON.parse(cleanText.trim());
   } catch (error) {
+    const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        // ignore fallback below
+      }
+    }
     console.error("JSON Parsing Error on AI output:", text.substring(0, 100) + "...");
     return fallback;
   }
@@ -51,75 +60,96 @@ interface AICallOptions {
   userPrompt: string;
   jsonMode?: boolean;
   responseSchema?: any;
+  timeoutMs?: number;
 }
 
 async function executeAIRequest(options: AICallOptions): Promise<string> {
-  const gemini = getGeminiClient();
+  const timeoutMs = options.timeoutMs || 25000;
+  
+  const aiPromise = (async () => {
+    const gemini = getGeminiClient();
 
-  // Try Google GenAI SDK first
-  if (gemini) {
-    try {
-      const config: any = {
-        systemInstruction: options.systemInstruction,
-      };
-      if (options.jsonMode) {
-        config.responseMimeType = "application/json";
-        if (options.responseSchema) {
-          config.responseSchema = options.responseSchema;
+    // Try Google GenAI SDK first
+    if (gemini) {
+      try {
+        const config: any = {
+          systemInstruction: options.systemInstruction,
+        };
+        if (options.jsonMode) {
+          config.responseMimeType = "application/json";
+          if (options.responseSchema) {
+            config.responseSchema = options.responseSchema;
+          }
         }
+
+        const response = await gemini.models.generateContent({
+          model: "gemini-3.6-flash",
+          contents: options.userPrompt,
+          config
+        });
+
+        if (response.text) {
+          return response.text;
+        }
+      } catch (err: any) {
+        console.warn("[AI Provider] Gemini API request failed, trying OpenRouter fallback:", err?.message || err);
+      }
+    }
+
+    // OpenRouter Fallback
+    if (process.env.OPENROUTER_API_KEY) {
+      const messages = [
+        { role: "system", content: options.systemInstruction },
+        { role: "user", content: options.userPrompt }
+      ];
+
+      const body: any = {
+        model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+        messages
+      };
+
+      if (options.jsonMode) {
+        body.response_format = { type: "json_object" };
       }
 
-      const response = await gemini.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: options.userPrompt,
-        config
-      });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs - 1000);
 
-      if (response.text) {
-        return response.text;
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
+            "X-Title": "Remix Madrasah"
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
+        }
+
+        const data = await response.json() as any;
+        return data.choices?.[0]?.message?.content || "";
+      } catch (err: any) {
+        clearTimeout(timer);
+        throw err;
       }
-    } catch (err: any) {
-      console.warn("[AI Provider] Gemini API request failed, trying OpenRouter fallback:", err?.message || err);
-    }
-  }
-
-  // OpenRouter Fallback
-  if (process.env.OPENROUTER_API_KEY) {
-    const messages = [
-      { role: "system", content: options.systemInstruction },
-      { role: "user", content: options.userPrompt }
-    ];
-
-    const body: any = {
-      model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
-      messages
-    };
-
-    if (options.jsonMode) {
-      body.response_format = { type: "json_object" };
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
-        "X-Title": "Remix Madrasah"
-      },
-      body: JSON.stringify(body)
-    });
+    throw new Error("Layanan AI belum dikonfigurasi. Silakan pastikan GEMINI_API_KEY atau OPENROUTER_API_KEY tersedia di Settings > Secrets.");
+  })();
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
-    }
+  const timeoutPromise = new Promise<string>((_, reject) => {
+    setTimeout(() => reject(new Error("Permintaan AI melebihi batas waktu (timeout 25 detik). Silakan coba lagi.")), timeoutMs);
+  });
 
-    const data = await response.json() as any;
-    return data.choices?.[0]?.message?.content || "";
-  }
-
-  throw new Error("Layanan AI belum dikonfigurasi. Silakan pastikan GEMINI_API_KEY atau OPENROUTER_API_KEY tersedia di Settings > Secrets.");
+  return Promise.race([aiPromise, timeoutPromise]);
 }
 
 async function startServer() {
@@ -158,8 +188,12 @@ async function startServer() {
   // AI Routes
   app.post("/api/ai/zettelkasten", async (req, res) => {
     try {
-      const { prompt, notes } = req.body;
-      const cacheKey = getCacheKey("zettelkasten", { prompt, notesCount: notes?.length });
+      const { prompt, notes = [] } = req.body;
+      const sanitizedNotes = Array.isArray(notes) 
+        ? notes.slice(0, 10).map((n: any) => ({ id: n.id, title: n.title, excerpt: (n.content || '').slice(0, 500) }))
+        : [];
+
+      const cacheKey = getCacheKey("zettelkasten", { prompt, notesCount: sanitizedNotes.length });
       
       const cached = aiCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -174,14 +208,14 @@ async function startServer() {
       3. Identify gaps in their knowledge.
       
       User's current notes for context:
-      ${JSON.stringify(notes, null, 2)}
+      ${JSON.stringify(sanitizedNotes, null, 2)}
       
-      Respond directly and helpfully in Indonesian. Format your response cleanly using Markdown.
+      Respond directly and helpfully in Indonesian. Format your response cleanly using Markdown. Keep responses concise and structured.
       `;
 
       const text = await executeAIRequest({
         systemInstruction,
-        userPrompt: prompt
+        userPrompt: String(prompt || '').slice(0, 2000)
       });
 
       const resultData = { result: text };
@@ -197,7 +231,12 @@ async function startServer() {
   app.post("/api/ai/suggest-tags", async (req, res) => {
     try {
       const { content, notes = [] } = req.body;
-      const cacheKey = getCacheKey("suggest-tags", { content });
+      const sanitizedContent = String(content || '').slice(0, 4000);
+      const sanitizedNotes = Array.isArray(notes)
+        ? notes.slice(0, 10).map((n: any) => ({ id: n.id, title: n.title }))
+        : [];
+
+      const cacheKey = getCacheKey("suggest-tags", { content: sanitizedContent });
       
       const cached = aiCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -211,8 +250,8 @@ async function startServer() {
       2. Suggest 1 most relevant Lucide-react icon name (e.g., 'Brain', 'Book', 'Code', 'Globe', 'Database').
       3. Suggest 1-3 connections to existing notes (return the exact titles of the relevant existing notes).
       
-      User's existing notes for context:
-      ${JSON.stringify(notes.map((n: any) => ({ id: n.id, title: n.title, content: n.content })), null, 2)}
+      User's existing notes titles for context:
+      ${JSON.stringify(sanitizedNotes, null, 2)}
       
       Respond ONLY with a raw JSON object matching the schema.
       `;
@@ -229,7 +268,7 @@ async function startServer() {
 
       const text = await executeAIRequest({
         systemInstruction,
-        userPrompt: `New snippet:\n${content}`,
+        userPrompt: `New snippet:\n${sanitizedContent}`,
         jsonMode: true,
         responseSchema: schema
       });
@@ -247,7 +286,9 @@ async function startServer() {
   app.post("/api/ai/generate-flashcards", async (req, res) => {
     try {
       const { content } = req.body;
-      const cacheKey = getCacheKey("generate-flashcards", { content });
+      const sanitizedContent = String(content || '').slice(0, 6000);
+
+      const cacheKey = getCacheKey("generate-flashcards", { content: sanitizedContent });
       
       const cached = aiCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -282,7 +323,7 @@ async function startServer() {
 
       const text = await executeAIRequest({
         systemInstruction,
-        userPrompt: `Create flashcards from this note:\n\n${content}`,
+        userPrompt: `Create flashcards from this note:\n\n${sanitizedContent}`,
         jsonMode: true,
         responseSchema: schema
       });

@@ -85,9 +85,22 @@ export function ReviewSessionPage() {
         }),
       });
       const data = await res.json();
-      setEvaluationResult(data);
-    } catch (err) {
+      if (res.ok) {
+        setEvaluationResult(data);
+      } else {
+        setEvaluationResult({
+          isCorrect: false,
+          quality: 2,
+          feedback: data.error || "Gagal menghubungkan ke AI Penilai. Silakan nilai sendiri secara manual."
+        });
+      }
+    } catch (err: any) {
       console.error(err);
+      setEvaluationResult({
+        isCorrect: false,
+        quality: 2,
+        feedback: "Koneksi ke AI terputus. Silakan pilih nilai evaluasi manual di bawah ini."
+      });
     } finally {
       setIsEvaluating(false);
     }

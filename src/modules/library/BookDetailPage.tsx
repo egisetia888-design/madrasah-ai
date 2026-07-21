@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { ArrowLeft, BookOpen, Clock, PenTool, Brain, Trash2, Edit2, Save, Image as ImageIcon, Book, CheckCircle2, Bookmark, Flame, Plus, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, PenTool, Brain, Trash2, Edit2, Save, Image as ImageIcon, Book, CheckCircle2, Bookmark, Flame, Plus, X, Sparkles, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog";
 import { useLibraryStore } from "../../store/libraryStore";
 import { useNotesStore } from "../../store/notesStore";
@@ -39,6 +39,12 @@ export function BookDetailPage() {
   const [quickNoteTitle, setQuickNoteTitle] = useState("");
   const [quickNoteContent, setQuickNoteContent] = useState("");
   const [isQuickAdding, setIsQuickAdding] = useState(false);
+
+  // AI Literature Summary states
+  const [isSummarizeOpen, setIsSummarizeOpen] = useState(false);
+  const [summaryInputText, setSummaryInputText] = useState("");
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [summaryResult, setSummaryResult] = useState<{ mainProblem?: string; methodology?: string; conclusion?: string } | null>(null);
 
   if (!book) {
     return (
@@ -170,6 +176,52 @@ export function BookDetailPage() {
       default: return 'Milik Saya';
     }
   }
+
+  const handleSummarizeLiterature = async () => {
+    const textToSummarize = summaryInputText.trim() || `${book.title} oleh ${author?.name || 'Penulis'}\n\nCatatan:\n` + bookNotes.map(n => `${n.title}: ${n.content}`).join('\n\n');
+    if (!textToSummarize.trim()) {
+      alert("Masukkan teks atau tambahkan catatan literatur terlebih dahulu untuk dirangkum.");
+      return;
+    }
+
+    setIsSummarizing(true);
+    setSummaryResult(null);
+    try {
+      const res = await fetch("/api/ai/summarize-literature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: textToSummarize })
+      });
+      const data = await res.json();
+      if (res.ok && data) {
+        setSummaryResult(data);
+      } else {
+        alert(data.error || "Gagal merangkum literatur. Silakan periksa kunci API di Pengaturan.");
+      }
+    } catch (err: any) {
+      console.error("Summarize failed:", err);
+      alert("Terjadi kesalahan saat menghubungkan ke layanan AI.");
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  const handleSaveSummaryAsNote = () => {
+    if (!summaryResult) return;
+    const contentText = `### Masalah Utama\n${summaryResult.mainProblem || '-'}\n\n### Metodologi\n${summaryResult.methodology || '-'}\n\n### Kesimpulan\n${summaryResult.conclusion || '-'}`;
+    addNote({
+      title: `Ringkasan AI: ${book.title}`,
+      content: contentText,
+      folderId: null,
+      tags: [],
+      sourceId: book.id,
+      type: 'research',
+      status: 'processed'
+    });
+    setIsSummarizeOpen(false);
+    setSummaryResult(null);
+    setSummaryInputText("");
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 max-w-6xl mx-auto pb-20">
@@ -303,6 +355,9 @@ export function BookDetailPage() {
                  Catatan Literatur Tertaut
                </h3>
                <div className="flex items-center gap-2">
+                 <Button variant="outline" size="sm" onClick={() => setIsSummarizeOpen(true)} className="text-xs h-8 gap-1.5 text-gray-800 bg-gray-50 hover:bg-gray-100 border-gray-200">
+                   <Sparkles className="w-3.5 h-3.5 text-gray-900" /> Ringkas AI
+                 </Button>
                  <Button variant="outline" size="sm" onClick={() => setIsQuickAdding(!isQuickAdding)} className={cn("text-xs h-8 gap-2", isQuickAdding && "bg-gray-100")}>
                    {isQuickAdding ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />} {isQuickAdding ? "Batal" : "Tambah Cepat"}
                  </Button>
@@ -458,6 +513,66 @@ export function BookDetailPage() {
         <DialogFooter>
           <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
           <Button variant="destructive" onClick={handleDelete} className="bg-gray-900 hover:bg-gray-800 text-white">Hapus Materi</Button>
+        </DialogFooter>
+      </Dialog>
+
+      <Dialog open={isSummarizeOpen} onOpenChange={setIsSummarizeOpen}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-gray-900" /> Ringkas Literatur dengan AI
+          </DialogTitle>
+        </DialogHeader>
+        <DialogContent className="space-y-4">
+          <p className="text-sm text-gray-600">
+            AI akan menganalisis teks buku/sari catatan dan mengekstrak <strong className="text-gray-900">Masalah Utama</strong>, <strong className="text-gray-900">Metodologi</strong>, dan <strong className="text-gray-900">Kesimpulan</strong>.
+          </p>
+          
+          <div className="space-y-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Teks Abstrak / Kutipan / Catatan (Biarkan kosong untuk menggunakan kumpulan catatan buku)
+            </label>
+            <textarea
+              value={summaryInputText}
+              onChange={(e) => setSummaryInputText(e.target.value)}
+              placeholder={`Opsional: Tempel ekstrak teks dari buku "${book.title}"...`}
+              className="w-full h-28 p-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
+            />
+          </div>
+
+          {summaryResult && (
+            <div className="p-4 border border-gray-200 bg-gray-50 rounded-xl space-y-3 text-sm">
+              <div>
+                <span className="font-semibold text-gray-900 block text-xs uppercase tracking-wider mb-1">1. Masalah Utama</span>
+                <p className="text-gray-700 leading-relaxed">{summaryResult.mainProblem || "-"}</p>
+              </div>
+              <div>
+                <span className="font-semibold text-gray-900 block text-xs uppercase tracking-wider mb-1">2. Metodologi</span>
+                <p className="text-gray-700 leading-relaxed">{summaryResult.methodology || "-"}</p>
+              </div>
+              <div>
+                <span className="font-semibold text-gray-900 block text-xs uppercase tracking-wider mb-1">3. Kesimpulan</span>
+                <p className="text-gray-700 leading-relaxed">{summaryResult.conclusion || "-"}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+        <DialogFooter className="gap-2 sm:gap-0">
+          {summaryResult ? (
+            <>
+              <Button variant="outline" onClick={() => setSummaryResult(null)}>Proses Ulang</Button>
+              <Button onClick={handleSaveSummaryAsNote} className="bg-gray-900 hover:bg-gray-800 text-white gap-2">
+                <Save className="w-4 h-4" /> Simpan sebagai Catatan Literatur
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={() => setIsSummarizeOpen(false)}>Batal</Button>
+              <Button onClick={handleSummarizeLiterature} disabled={isSummarizing} className="bg-gray-900 hover:bg-gray-800 text-white gap-2">
+                {isSummarizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {isSummarizing ? "Merangkum..." : "Mulai Merangkum"}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </Dialog>
     </div>

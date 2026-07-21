@@ -92,14 +92,17 @@ export function WritingDetailPage() {
         }),
       });
       const data = await res.json();
-      if (data.tags || data.icon) {
+      if (res.ok && (data.tags || data.icon)) {
         setAiSuggestions({
           tags: data.tags || [],
           icon: data.icon || "PenTool"
         });
+      } else {
+        alert(data.error || "Gagal menganalisis draf tulisan dengan AI.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Analysis failed:", err);
+      alert("Gagal menghubungkan ke layanan AI.");
     } finally {
       setIsAnalyzing(false);
     }
