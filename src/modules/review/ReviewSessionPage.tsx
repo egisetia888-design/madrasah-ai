@@ -4,6 +4,7 @@ import { Button } from "../../components/ui/Button";
 import { ArrowLeft, CheckCircle2, BrainCircuit } from "lucide-react";
 import { useReviewStore } from "../../store/reviewStore";
 import Markdown from "react-markdown";
+import { useToastStore } from "../../store/toastStore";
 
 export function ReviewSessionPage() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +13,8 @@ export function ReviewSessionPage() {
   const decks = useReviewStore(state => state.decks);
   const flashcards = useReviewStore(state => state.flashcards);
   const reviewFlashcard = useReviewStore(state => state.reviewFlashcard);
+  const addToast = useToastStore(state => state.addToast);
+  const updateToast = useToastStore(state => state.updateToast);
   
   const deck = decks.find(d => d.id === id);
   const allDueCards = flashcards.filter(f => f.deckId === id && f.dueDate <= Date.now());
@@ -73,6 +76,7 @@ export function ReviewSessionPage() {
     setIsEvaluating(true);
     setEvaluationResult(null);
     setShowAnswer(true); // show the real answer too
+    const toastId = addToast({ type: 'loading', message: 'AI sedang mengevaluasi jawaban Anda...' });
     
     try {
       const res = await fetch("/api/ai/grade-flashcard", {
@@ -87,12 +91,14 @@ export function ReviewSessionPage() {
       const data = await res.json();
       if (res.ok) {
         setEvaluationResult(data);
+        updateToast(toastId, { type: 'success', message: 'Evaluasi selesai.' });
       } else {
         setEvaluationResult({
           isCorrect: false,
           quality: 2,
           feedback: data.error || "Gagal menghubungkan ke AI Penilai. Silakan nilai sendiri secara manual."
         });
+        updateToast(toastId, { type: 'error', message: data.error || 'Gagal mengevaluasi jawaban.' });
       }
     } catch (err: any) {
       console.error(err);
@@ -101,6 +107,7 @@ export function ReviewSessionPage() {
         quality: 2,
         feedback: "Koneksi ke AI terputus. Silakan pilih nilai evaluasi manual di bawah ini."
       });
+      updateToast(toastId, { type: 'error', message: 'Koneksi ke layanan AI terputus.' });
     } finally {
       setIsEvaluating(false);
     }

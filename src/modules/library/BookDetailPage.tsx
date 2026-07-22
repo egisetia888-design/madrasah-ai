@@ -8,6 +8,7 @@ import { useNotesStore } from "../../store/notesStore";
 import { useReviewStore } from "../../store/reviewStore";
 import { BookStatus } from "../../types";
 import { cn } from "../../utils/cn";
+import { useToastStore } from "../../store/toastStore";
 
 export function BookDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,9 @@ export function BookDetailPage() {
   const notes = useNotesStore(state => state.notes);
   const addNote = useNotesStore(state => state.addNote);
   const flashcards = useReviewStore(state => state.flashcards);
+  
+  const addToast = useToastStore(state => state.addToast);
+  const updateToast = useToastStore(state => state.updateToast);
   
   const book = books.find(b => b.id === id);
   
@@ -180,12 +184,14 @@ export function BookDetailPage() {
   const handleSummarizeLiterature = async () => {
     const textToSummarize = summaryInputText.trim() || `${book.title} oleh ${author?.name || 'Penulis'}\n\nCatatan:\n` + bookNotes.map(n => `${n.title}: ${n.content}`).join('\n\n');
     if (!textToSummarize.trim()) {
-      alert("Masukkan teks atau tambahkan catatan literatur terlebih dahulu untuk dirangkum.");
+      addToast({ type: 'info', message: 'Masukkan teks atau tambahkan catatan literatur terlebih dahulu untuk dirangkum.' });
       return;
     }
 
     setIsSummarizing(true);
     setSummaryResult(null);
+    const toastId = addToast({ type: 'loading', message: 'AI sedang merangkum literatur...' });
+
     try {
       const res = await fetch("/api/ai/summarize-literature", {
         method: "POST",
@@ -195,12 +201,13 @@ export function BookDetailPage() {
       const data = await res.json();
       if (res.ok && data) {
         setSummaryResult(data);
+        updateToast(toastId, { type: 'success', message: 'Rangkuman literatur selesai!' });
       } else {
-        alert(data.error || "Gagal merangkum literatur. Silakan periksa kunci API di Pengaturan.");
+        updateToast(toastId, { type: 'error', message: data.error || "Gagal merangkum literatur." });
       }
     } catch (err: any) {
       console.error("Summarize failed:", err);
-      alert("Terjadi kesalahan saat menghubungkan ke layanan AI.");
+      updateToast(toastId, { type: 'error', message: "Terjadi kesalahan saat menghubungkan ke layanan AI." });
     } finally {
       setIsSummarizing(false);
     }
@@ -218,6 +225,7 @@ export function BookDetailPage() {
       type: 'research',
       status: 'processed'
     });
+    addToast({ type: 'success', message: 'Catatan rangkuman berhasil disimpan!' });
     setIsSummarizeOpen(false);
     setSummaryResult(null);
     setSummaryInputText("");

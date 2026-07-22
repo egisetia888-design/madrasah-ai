@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Play, BookOpen, Map, Brain, FileText, PenTool, Briefcase, Plus, Book, ChevronRight, Activity, Sparkles, Command } from "lucide-react"
 import { useLibraryStore } from "../../store/libraryStore"
@@ -37,13 +37,56 @@ export function DashboardPage() {
   const doneCompetencies = competencies.filter(c => c.status === 'done').length;
   const globalProgress = totalCompetencies > 0 ? Math.round((doneCompetencies / totalCompetencies) * 100) : 0;
 
+  const { greeting, quote } = useMemo(() => {
+    const hour = new Date().getHours();
+    let timeGreeting = "malam";
+    let quotes: string[] = [];
+
+    if (hour >= 3 && hour < 11) {
+      timeGreeting = "pagi";
+      quotes = [
+        "Mari mulai lembaran baru dengan semangat.",
+        "Pagi yang cerah untuk ide-ide cemerlang.",
+        "Fokuskan pikiran untuk menyerap ilmu baru hari ini."
+      ];
+    } else if (hour >= 11 && hour < 15) {
+      timeGreeting = "siang";
+      quotes = [
+        "Tetap produktif dan jaga fokus Anda.",
+        "Istirahat sejenak, lalu lanjutkan pekerjaan besar Anda.",
+        "Sedikit demi sedikit, pemahaman semakin dalam."
+      ];
+    } else if (hour >= 15 && hour < 18) {
+      timeGreeting = "sore";
+      quotes = [
+        "Waktu yang tepat untuk mereview apa yang telah dipelajari.",
+        "Akhiri hari dengan menyempurnakan catatan Anda.",
+        "Tetap semangat menyelesaikan target hari ini."
+      ];
+    } else {
+      timeGreeting = "malam";
+      quotes = [
+        "Waktunya refleksi dan merencanakan esok hari.",
+        "Tenangkan pikiran, susun ulang ide-ide Anda.",
+        "Malam yang tenang untuk membaca dan mendalami konsep."
+      ];
+    }
+    
+    const quoteIndex = new Date().getDate() % quotes.length;
+
+    return {
+      greeting: `Assalamualaikum, selamat ${timeGreeting}`,
+      quote: quotes[quoteIndex]
+    };
+  }, []);
+
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-24">
       {/* Hero / Mission Control Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 font-display">Mission Control</h1>
-          <p className="text-gray-500 mt-1 text-base">Sistem operasi intelektual Anda. Mari lanjutkan pekerjaan besar hari ini.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 font-display">{greeting}</h1>
+          <p className="text-gray-500 mt-1 text-base">{quote}</p>
         </div>
         
         <div className="flex items-center gap-3">

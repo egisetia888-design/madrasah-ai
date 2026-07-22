@@ -8,6 +8,7 @@ import { useNotesStore } from "../../store/notesStore"
 import Markdown from 'react-markdown'
 import { NoteType } from "../../types"
 import { cn } from "../../utils/cn"
+import { useToastStore } from "../../store/toastStore"
 
 export function NotesPage() {
   const navigate = useNavigate()
@@ -17,6 +18,8 @@ export function NotesPage() {
   const allTags = useNotesStore(state => state.tags)
   const addNote = useNotesStore(state => state.addNote)
   const addFolder = useNotesStore(state => state.addFolder)
+  const addToast = useToastStore(state => state.addToast)
+  const updateToast = useToastStore(state => state.updateToast)
 
   // State
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -125,6 +128,7 @@ export function NotesPage() {
   const handleSuggest = async () => {
     if (!content.trim()) return;
     setIsSuggesting(true);
+    const toastId = addToast({ type: 'loading', message: 'AI sedang menganalisis saran tag...' });
     try {
       const res = await fetch("/api/ai/suggest-tags", {
         method: "POST",
@@ -135,12 +139,13 @@ export function NotesPage() {
       if (res.ok) {
         if (data.tags) setSuggestedTags(data.tags);
         if (data.connections) setSuggestedConnections(data.connections);
+        updateToast(toastId, { type: 'success', message: 'Saran tag dari AI berhasil dimuat.' });
       } else {
-        alert(data.error || "Gagal mendapatkan saran tag dari AI.");
+        updateToast(toastId, { type: 'error', message: data.error || "Gagal mendapatkan saran tag dari AI." });
       }
     } catch (err: any) {
       console.error(err);
-      alert("Gagal menghubungkan ke layanan AI.");
+      updateToast(toastId, { type: 'error', message: "Gagal menghubungkan ke layanan AI." });
     } finally {
       setIsSuggesting(false);
     }
@@ -160,6 +165,7 @@ export function NotesPage() {
     if (!prompt.trim()) return;
     setIsLoading(true);
     setAiResponse("");
+    const toastId = addToast({ type: 'loading', message: 'AI sedang memproses pertanyaan...' });
     try {
       const res = await fetch("/api/ai/zettelkasten", {
         method: "POST",
@@ -171,11 +177,14 @@ export function NotesPage() {
       
       if (res.ok) {
         setAiResponse(data.result);
+        updateToast(toastId, { type: 'success', message: 'Tanggapan AI selesai.' });
       } else {
         setAiResponse(`Error: ${data.error}`);
+        updateToast(toastId, { type: 'error', message: data.error || "Gagal mendapatkan respon AI." });
       }
     } catch (err: any) {
       setAiResponse(`Failed to connect to the assistant: ${err.message}`);
+      updateToast(toastId, { type: 'error', message: "Gagal menghubungkan ke layanan AI." });
     } finally {
       setIsLoading(false);
     }

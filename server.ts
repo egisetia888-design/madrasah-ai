@@ -156,6 +156,9 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Trust proxy for rate limiter to work correctly behind reverse proxy
+  app.set("trust proxy", 1);
+
   // Set up rate limiting
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

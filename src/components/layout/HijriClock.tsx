@@ -30,9 +30,9 @@ export function HijriClock() {
       onClick={() => navigate('/analytics')}
       className="flex items-center gap-3 px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 hover:shadow transition-all group"
     >
-      <div className="flex flex-col items-end">
-        <span className="text-xs font-semibold text-gray-900 tracking-tight">{dayName}, {hijriDate}</span>
-        <span className="text-[10px] text-gray-500 font-medium flex items-center gap-1">
+      <div className="flex flex-col items-end text-right">
+        <span className="text-xs font-semibold text-gray-900 tracking-tight text-right">{dayName}, {hijriDate}</span>
+        <span className="text-[10px] text-gray-500 font-medium flex items-center justify-end gap-1">
           <Clock className="w-3 h-3" /> {currentTime} WIB
         </span>
       </div>

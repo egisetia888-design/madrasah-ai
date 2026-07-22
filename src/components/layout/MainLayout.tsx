@@ -10,6 +10,7 @@ import { ShortcutGuide } from "./ShortcutGuide"
 import { AboutDialog } from "./AboutDialog"
 import { Search } from "lucide-react"
 import { useUIStore } from "../../store/uiStore"
+import { Toaster } from "../ui/Toaster"
 
 export function MainLayout() {
   const searchOpen = useUIStore(state => state.searchOpen)
@@ -81,6 +82,7 @@ export function MainLayout() {
       <QuickAddDialog />
       <ShortcutGuide />
       <AboutDialog />
+      <Toaster />
     </div>
   )
 }

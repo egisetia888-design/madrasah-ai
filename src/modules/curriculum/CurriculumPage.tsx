@@ -4,6 +4,7 @@ import { Button } from "../../components/ui/Button"
 import { Plus, Search, Map, Milestone, MoreVertical, Sparkles } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog"
 import { useCurriculumStore } from "../../store/curriculumStore"
+import { useToastStore } from "../../store/toastStore"
 
 export function CurriculumPage() {
   const navigate = useNavigate()
@@ -21,6 +22,8 @@ export function CurriculumPage() {
   const addPath = useCurriculumStore(state => state.addPath)
   const addPhase = useCurriculumStore(state => state.addPhase)
   const addCompetency = useCurriculumStore(state => state.addCompetency)
+  const addToast = useToastStore(state => state.addToast)
+  const updateToast = useToastStore(state => state.updateToast)
   const [searchQuery, setSearchQuery] = useState("")
 
   const filteredPaths = paths.filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()) || (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase())));
@@ -44,6 +47,7 @@ export function CurriculumPage() {
     if (!topic.trim()) return;
     
     setIsGenerating(true);
+    const toastId = addToast({ type: 'loading', message: 'AI sedang menyusun silabus...' });
     
     try {
       const res = await fetch("/api/ai/generate-syllabus", {
@@ -86,15 +90,16 @@ export function CurriculumPage() {
           }
         });
         
+        updateToast(toastId, { type: 'success', message: 'Silabus berhasil dibuat!' });
         setTopic("");
         setIsAiOpen(false);
         navigate(`/curriculum/${pathId}`);
       } else {
-        alert(data.error || "Gagal merancang silabus dengan AI. Silakan periksa kunci API di Pengaturan.");
+        updateToast(toastId, { type: 'error', message: data.error || "Gagal merancang silabus dengan AI." });
       }
     } catch (err: any) {
       console.error(err);
-      alert("Gagal menghubungkan ke layanan AI. Silakan coba beberapa saat lagi.");
+      updateToast(toastId, { type: 'error', message: "Gagal menghubungkan ke layanan AI." });
     } finally {
       setIsGenerating(false);
     }

@@ -8,6 +8,7 @@ import { useWritingStore } from "../../store/writingStore";
 import { useNotesStore } from "../../store/notesStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog";
 import { WritingStatus } from "../../types";
+import { useToastStore } from "../../store/toastStore";
 
 const WRITING_PIPELINE: { id: WritingStatus; label: string }[] = [
   { id: 'idea', label: 'Ide' },
@@ -25,6 +26,8 @@ export function WritingDetailPage() {
   const drafts = useWritingStore(state => state.drafts);
   const updateDraft = useWritingStore(state => state.updateDraft);
   const deleteDraft = useWritingStore(state => state.deleteDraft);
+  const addToast = useToastStore(state => state.addToast);
+  const updateToast = useToastStore(state => state.updateToast);
   
   const draft = drafts.find(d => d.id === id);
   
@@ -82,6 +85,8 @@ export function WritingDetailPage() {
   const handleAnalyzeContent = async () => {
     setIsAnalyzing(true);
     setAiSuggestions(null);
+    const toastId = addToast({ type: 'loading', message: 'AI sedang menganalisis draf tulisan...' });
+
     try {
       const res = await fetch("/api/ai/suggest-tags", {
         method: "POST",
@@ -97,12 +102,13 @@ export function WritingDetailPage() {
           tags: data.tags || [],
           icon: data.icon || "PenTool"
         });
+        updateToast(toastId, { type: 'success', message: 'Analisis AI selesai.' });
       } else {
-        alert(data.error || "Gagal menganalisis draf tulisan dengan AI.");
+        updateToast(toastId, { type: 'error', message: data.error || "Gagal menganalisis draf tulisan dengan AI." });
       }
     } catch (err: any) {
       console.error("Analysis failed:", err);
-      alert("Gagal menghubungkan ke layanan AI.");
+      updateToast(toastId, { type: 'error', message: "Gagal menghubungkan ke layanan AI." });
     } finally {
       setIsAnalyzing(false);
     }

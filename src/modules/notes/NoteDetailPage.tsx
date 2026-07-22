@@ -9,6 +9,7 @@ import { useLibraryStore } from "../../store/libraryStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog";
 import { NoteStatus, NoteType } from "../../types";
 import Markdown from "react-markdown";
+import { useToastStore } from "../../store/toastStore";
 
 export function NoteDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +25,9 @@ export function NoteDetailPage() {
   
   const decks = useReviewStore(state => state.decks);
   const addFlashcard = useReviewStore(state => state.addFlashcard);
+  
+  const addToast = useToastStore(state => state.addToast);
+  const updateToast = useToastStore(state => state.updateToast);
   
   const note = notes.find(n => n.id === id);
   
@@ -120,6 +124,8 @@ export function NoteDetailPage() {
     setIsGenerating(true);
     setGeneratedCards([]);
     setIsSaved(false);
+    const toastId = addToast({ type: 'loading', message: 'AI sedang menyusun kartu flash...' });
+    
     try {
       const res = await fetch("/api/ai/generate-flashcards", {
         method: "POST",
@@ -129,12 +135,13 @@ export function NoteDetailPage() {
       const data = await res.json();
       if (res.ok && data.flashcards) {
         setGeneratedCards(data.flashcards);
+        updateToast(toastId, { type: 'success', message: `Berhasil membuat ${data.flashcards.length} kartu flash!` });
       } else {
-        alert(data.error || "Gagal membuat kartu ulasan dengan AI. Silakan periksa kunci API di Pengaturan.");
+        updateToast(toastId, { type: 'error', message: data.error || "Gagal membuat kartu flash. Periksa API key." });
       }
     } catch (err: any) {
       console.error(err);
-      alert("Gagal menghubungkan ke layanan AI. Silakan coba beberapa saat lagi.");
+      updateToast(toastId, { type: 'error', message: "Gagal menghubungkan ke layanan AI." });
     } finally {
       setIsGenerating(false);
     }
@@ -162,12 +169,15 @@ export function NoteDetailPage() {
       });
     });
     
+    addToast({ type: 'success', message: `${generatedCards.length} kartu flash berhasil disimpan ke deck!` });
     setIsSaved(true);
   };
 
   const handleAnalyzeContent = async () => {
     setIsAnalyzing(true);
     setAiSuggestions(null);
+    const toastId = addToast({ type: 'loading', message: 'AI sedang menganalisis catatan...' });
+
     try {
       const res = await fetch("/api/ai/suggest-tags", {
         method: "POST",
@@ -183,12 +193,13 @@ export function NoteDetailPage() {
           tags: data.tags || [],
           icon: data.icon || "FileText"
         });
+        updateToast(toastId, { type: 'success', message: 'Analisis AI selesai!' });
       } else {
-        alert(data.error || "Gagal menganalisis konten dengan AI.");
+        updateToast(toastId, { type: 'error', message: data.error || "Gagal menganalisis konten." });
       }
     } catch (err: any) {
       console.error("Analysis failed:", err);
-      alert("Terjadi kesalahan saat menganalisis catatan.");
+      updateToast(toastId, { type: 'error', message: "Terjadi kesalahan koneksi saat menganalisis." });
     } finally {
       setIsAnalyzing(false);
     }
