@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
-import { Plus, Search, Book, MoreVertical, BookOpen, CheckCircle2, Bookmark, Flame, PenTool, ExternalLink, Filter } from "lucide-react"
+import { Plus, Search, Book, MoreVertical, BookOpen, CheckCircle2, Bookmark, Flame, PenTool, ExternalLink, Filter, Sparkles } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog"
 import { useLibraryStore } from "../../store/libraryStore"
+import { useToastStore } from "../../store/toastStore"
 import { BookStatus } from "../../types"
 import { cn } from "../../utils/cn"
 
@@ -15,6 +16,7 @@ export function LibraryPage() {
   const [totalPages, setTotalPages] = useState("")
   const [coverUrl, setCoverUrl] = useState("")
   const [status, setStatus] = useState<BookStatus>('owned')
+  const [isFetchingInfo, setIsFetchingInfo] = useState(false)
   
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<BookStatus | 'all'>('all')
@@ -23,6 +25,40 @@ export function LibraryPage() {
   const authors = useLibraryStore((state) => state.authors)
   const addBook = useLibraryStore((state) => state.addBook)
   const addAuthor = useLibraryStore((state) => state.addAuthor)
+  const addToast = useToastStore(state => state.addToast)
+  const updateToast = useToastStore(state => state.updateToast)
+
+  const handleAutofill = async () => {
+    if (!title.trim() || !authorName.trim()) {
+      addToast({ type: 'info', message: 'Masukkan judul dan penulis terlebih dahulu.' });
+      return;
+    }
+    
+    setIsFetchingInfo(true);
+    const toastId = addToast({ type: 'loading', message: 'Mencari informasi buku...' });
+    
+    try {
+      const res = await fetch("/api/ai/book-info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title.trim(), author: authorName.trim() }),
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        if (data.totalPages) setTotalPages(String(data.totalPages));
+        if (data.coverUrl) setCoverUrl(data.coverUrl);
+        updateToast(toastId, { type: 'success', message: 'Informasi buku berhasil ditemukan.' });
+      } else {
+        updateToast(toastId, { type: 'error', message: data.error || 'Gagal mencari info buku.' });
+      }
+    } catch (error) {
+      console.error(error);
+      updateToast(toastId, { type: 'error', message: 'Koneksi gagal saat mencari info buku.' });
+    } finally {
+      setIsFetchingInfo(false);
+    }
+  }
 
   const handleAddBook = (e: any) => {
     e.preventDefault()
@@ -260,7 +296,20 @@ export function LibraryPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Total Halaman</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">Total Halaman</label>
+                  {title.trim() && authorName.trim() && (
+                    <button 
+                      type="button"
+                      onClick={handleAutofill}
+                      disabled={isFetchingInfo}
+                      className="text-[10px] font-semibold flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      {isFetchingInfo ? 'Mencari...' : 'Autofill AI'}
+                    </button>
+                  )}
+                </div>
                 <input 
                   value={totalPages}
                   onChange={(e) => setTotalPages(e.target.value)}

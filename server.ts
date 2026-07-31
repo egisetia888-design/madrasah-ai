@@ -61,6 +61,7 @@ interface AICallOptions {
   jsonMode?: boolean;
   responseSchema?: any;
   timeoutMs?: number;
+  tools?: any[];
 }
 
 async function executeAIRequest(options: AICallOptions): Promise<string> {
@@ -68,6 +69,8 @@ async function executeAIRequest(options: AICallOptions): Promise<string> {
   
   const aiPromise = (async () => {
     const gemini = getGeminiClient();
+
+    let geminiError: any = null;
 
     // Try Google GenAI SDK first
     if (gemini) {
@@ -81,6 +84,9 @@ async function executeAIRequest(options: AICallOptions): Promise<string> {
             config.responseSchema = options.responseSchema;
           }
         }
+        if (options.tools) {
+          config.tools = options.tools;
+        }
 
         const response = await gemini.models.generateContent({
           model: "gemini-3.6-flash",
@@ -92,6 +98,7 @@ async function executeAIRequest(options: AICallOptions): Promise<string> {
           return response.text;
         }
       } catch (err: any) {
+        geminiError = err;
         console.warn("[AI Provider] Gemini API request failed, trying OpenRouter fallback:", err?.message || err);
       }
     }
@@ -138,8 +145,18 @@ async function executeAIRequest(options: AICallOptions): Promise<string> {
         return data.choices?.[0]?.message?.content || "";
       } catch (err: any) {
         clearTimeout(timer);
+        if (geminiError) {
+           throw new Error(`Gemini API Error: ${geminiError?.message || geminiError}. OpenRouter Fallback Error: ${err?.message || err}`);
+        }
         throw err;
       }
+    }
+
+    if (geminiError) {
+      if (geminiError?.message?.includes('429') || geminiError?.message?.includes('RESOURCE_EXHAUSTED')) {
+         throw new Error("Kuota Gemini API Anda telah habis (Error 429). Silakan gunakan kunci API baru atau tunggu beberapa saat.");
+      }
+      throw new Error(`Gemini API Error: ${geminiError?.message || geminiError}`);
     }
 
     throw new Error("Layanan AI belum dikonfigurasi. Silakan pastikan GEMINI_API_KEY atau OPENROUTER_API_KEY tersedia di Settings > Secrets.");
@@ -518,6 +535,60 @@ async function startServer() {
     } catch (error: any) {
       console.error("AI Literature Summarizer Error:", error);
       res.status(500).json({ error: error.message || "Failed to summarize literature" });
+    }
+  });
+
+  app.post("/api/ai/book-info", async (req, res) => {
+    try {
+      const { title, author } = req.body;
+      const cacheKey = getCacheKey("book-info", { title, author });
+      
+      const cached = aiCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log(`[Cache Hit] /api/ai/book-info`);
+        return res.json(cached.data);
+      }
+      
+      const systemInstruction = `
+      You are a smart library metadata assistant. Your task is to find the total pages and a valid book cover image URL for a given book title and author.
+      
+      Instructions for Cover URL:
+      1. Try to find the exact ISBN-10 or ISBN-13 for the book.
+      2. If you find a valid ISBN, return the cover URL using the Open Library API format: "https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg"
+      3. Alternatively, if you know the exact Open Library Cover ID, use: "https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"
+      4. If you cannot confidently determine the ISBN or Cover ID, return an empty string "" instead of guessing or returning an invalid URL.
+      5. The URL MUST be a direct image link (.jpg or .png) and MUST exactly match the book requested.
+      
+      Instructions for Total Pages:
+      1. Provide the exact or highly accurate estimated total pages for the book.
+      
+      Respond ONLY with a raw JSON object matching the schema.
+      `;
+
+      const schema = {
+        type: Type.OBJECT,
+        properties: {
+          totalPages: { type: Type.INTEGER },
+          coverUrl: { type: Type.STRING }
+        },
+        required: ["totalPages", "coverUrl"]
+      };
+
+      const text = await executeAIRequest({
+        systemInstruction,
+        userPrompt: `Title: ${title}\nAuthor: ${author}`,
+        jsonMode: true,
+        responseSchema: schema,
+        tools: [{ googleSearch: {} }]
+      });
+
+      const resultData = cleanAndParseJson(text, { totalPages: 0, coverUrl: "" });
+      
+      aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
+      res.json(resultData);
+    } catch (error: any) {
+      console.error("AI Book Info Error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch book info" });
     }
   });
 

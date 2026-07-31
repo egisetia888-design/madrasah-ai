@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { X, Zap } from "lucide-react"
 import { useUIStore } from "../../store/uiStore"
 import { useNotesStore } from "../../store/notesStore"
+import { useToastStore } from "../../store/toastStore"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/Dialog"
 import { Button } from "../ui/Button"
 
@@ -9,6 +10,7 @@ export function QuickAddDialog() {
   const open = useUIStore(state => state.quickAddOpen)
   const setOpen = useUIStore(state => state.setQuickAddOpen)
   const addNote = useNotesStore(state => state.addNote)
+  const addToast = useToastStore(state => state.addToast)
   
   const [content, setContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -42,16 +44,12 @@ export function QuickAddDialog() {
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!content.trim() || isSubmitting) return;
-
     setIsSubmitting(true);
     
     // Auto-generate title from first line or a default
     const lines = content.trim().split('\n');
     let title = lines[0].substring(0, 50);
     if (title.length === 50) title += "...";
-    
-    // Generate content (remove title from content if it was the only line, or keep it)
-    // Actually, keeping the whole content as body is fine.
     
     addNote({
       title: title || "Tangkapan Kilat",
@@ -62,6 +60,7 @@ export function QuickAddDialog() {
       tags: [],
     })
     
+    addToast({ type: 'success', message: 'Tangkapan berhasil disimpan ke Inbox!' })
     setOpen(false)
   }
 
@@ -79,7 +78,7 @@ export function QuickAddDialog() {
           <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Tangkapan Kilat</span>
+              <span className="text-sm font-medium text-gray-700 font-display">Tangkapan Kilat</span>
             </div>
             <div className="flex items-center gap-2">
                <span className="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Cmd+Enter to save</span>
@@ -95,7 +94,7 @@ export function QuickAddDialog() {
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Tulis ide, kutipan, atau tugas apa pun yang terlintas... (tidak perlu format, folder, atau tag)"
-              className="w-full h-32 md:h-40 resize-none border-0 focus:ring-0 p-0 text-base md:text-lg text-gray-900 placeholder:text-gray-400 bg-transparent"
+              className="w-full h-32 md:h-40 resize-none border-0 outline-none focus:outline-none focus:ring-0 p-0 text-base md:text-lg text-gray-900 placeholder:text-gray-400 bg-transparent"
             />
           </div>
           <div className="px-4 py-3 border-t border-gray-100 bg-white flex justify-end">

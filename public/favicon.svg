@@ -9,7 +9,7 @@
       <stop offset="100%" stop-color="#d97706" />
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <rect width="512" height="512"  fill="url(#bg)"/>
   <!-- Elegant abstract mosque arch / open book geometry -->
   <path d="M256 100 C160 200 160 380 160 412 L352 412 C352 380 352 200 256 100 Z" fill="#ffffff" opacity="0.95"/>
   <path d="M256 150 C190 230 190 380 190 412 L322 412 C322 380 322 230 256 150 Z" fill="url(#gold)"/>
