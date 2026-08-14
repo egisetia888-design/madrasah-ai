@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Project, Task, TaskStatus } from '../types';
+import { createSyncMetadata, updateSyncMetadata } from './syncUtils';
+import { SyncMetadata } from '../types';
 import { syncSaveProject, syncDeleteProject } from '../lib/firestoreSync';
 
 localforage.config({
@@ -25,11 +27,11 @@ interface ProjectsState {
   projects: Project[];
   tasks: Task[];
   
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => string;
+  addProject: (project: Omit<Project, 'id' | 'createdAt' | keyof SyncMetadata>) => string;
   updateProject: (id: string, project: Partial<Project>) => void;
   deleteProject: (id: string) => void;
   
-  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | keyof SyncMetadata>) => void;
   updateTaskStatus: (id: string, status: TaskStatus) => void;
   updateTaskTitle: (id: string, title: string) => void;
   deleteTask: (id: string) => void;
@@ -47,7 +49,8 @@ export const useProjectsStore = create<ProjectsState>()(
           ...projectData,
           id,
           createdAt: Date.now(),
-          updatedAt: Date.now(),
+          ...createSyncMetadata(),
+          
         };
         set((state) => ({
           projects: [newProject, ...state.projects]
@@ -60,7 +63,7 @@ export const useProjectsStore = create<ProjectsState>()(
         set((state) => {
           const updatedProjects = state.projects.map(p => {
             if (p.id === id) {
-              const updated = { ...p, ...projectData, updatedAt: Date.now() };
+              const updated = { ...p, ...projectData, ...updateSyncMetadata(p) };
               syncSaveProject(updated);
               return updated;
             }
@@ -86,7 +89,8 @@ export const useProjectsStore = create<ProjectsState>()(
               ...taskData,
               id: crypto.randomUUID(),
               createdAt: Date.now(),
-              updatedAt: Date.now(),
+          ...createSyncMetadata(),
+              
             }
           ]
         }
@@ -95,7 +99,7 @@ export const useProjectsStore = create<ProjectsState>()(
       updateTaskStatus: (id, status) => set((state) => ({
         tasks: state.tasks.map(t => 
           t.id === id 
-            ? { ...t, status, updatedAt: Date.now() } 
+            ? { ...t, status,  } 
             : t
         )
       })),
@@ -103,7 +107,7 @@ export const useProjectsStore = create<ProjectsState>()(
       updateTaskTitle: (id, title) => set((state) => ({
         tasks: state.tasks.map(t => 
           t.id === id 
-            ? { ...t, title, updatedAt: Date.now() } 
+            ? { ...t, title,  } 
             : t
         )
       })),

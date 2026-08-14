@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
-import { Plus, Search, Book, MoreVertical, BookOpen, CheckCircle2, Bookmark, Flame, PenTool, ExternalLink, Filter, Sparkles } from "lucide-react"
+import { Plus, Search, Book, MoreVertical, BookOpen, CheckCircle2, Bookmark, Flame, PenTool, ExternalLink, Filter, Sparkles, X } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog"
 import { useLibraryStore } from "../../store/libraryStore"
 import { useToastStore } from "../../store/toastStore"
@@ -120,10 +120,10 @@ export function LibraryPage() {
 
   const getStatusColor = (status: BookStatus) => {
     switch (status) {
-      case 'reading': return 'text-gray-900 bg-gray-50 border-gray-200';
-      case 'finished': return 'text-gray-900 bg-gray-50 border-gray-200';
-      case 'wishlist': return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'summarized': return 'text-gray-900 bg-gray-50 border-gray-200';
+      case 'reading': return 'text-gray-900 bg-gray-100 border-gray-300';
+      case 'finished': return 'text-gray-900 bg-gray-100 border-gray-300';
+      case 'wishlist': return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'summarized': return 'text-gray-900 bg-gray-100 border-gray-300';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   }
@@ -142,21 +142,22 @@ export function LibraryPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto pb-12">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Pustaka</h1>
-          <p className="text-gray-500 mt-2 text-sm max-w-xl">Kelola koleksi buku, artikel, dan referensi Anda. Bangun basis pengetahuan dengan merangkum dan menghubungkan gagasan.</p>
+    <div className="space-y-6 animate-in fade-in duration-500 w-full min-w-0 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 font-display">Pustaka</h1>
+          <p className="text-gray-500 mt-1 text-xs sm:text-sm max-w-xl leading-relaxed">
+            Kelola koleksi buku, artikel, dan referensi Anda. Bangun basis pengetahuan dengan merangkum dan menghubungkan gagasan.
+          </p>
         </div>
-        <Button className="gap-2 shrink-0" onClick={() => setIsAddOpen(true)}>
+        <Button className="w-full sm:w-auto gap-2 shrink-0 h-11 sm:h-9" onClick={() => setIsAddOpen(true)}>
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Tambah Materi</span>
-          <span className="sm:hidden">Tambah</span>
+          <span>Tambah Materi</span>
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-gray-200 pb-4">
-        <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3 h-11 w-full sm:max-w-md focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent transition-all"> 
+      <div className="space-y-3 border-b border-gray-200 pb-4">
+        <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-3 h-11 w-full focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent transition-all"> 
            <Search className="w-4 h-4 text-gray-400 shrink-0" />
            <input 
                type="text" 
@@ -165,22 +166,28 @@ export function LibraryPage() {
                placeholder="Cari judul buku, penulis..." 
                className="bg-transparent border-none outline-none text-sm w-full text-gray-900 placeholder:text-gray-400"
            />
+           {searchQuery && (
+             <button onClick={() => setSearchQuery("")} className="text-gray-400 hover:text-gray-600 p-1">
+               <X className="w-3.5 h-3.5" />
+             </button>
+           )}
         </div>
         
-        <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 hide-scrollbar mask-edges">
+        {/* Horizontal Mobile-Optimized Scrollable Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full no-scrollbar py-1 scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
+                "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer",
                 activeTab === tab.id 
-                  ? "bg-gray-900 text-white shadow-sm" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  ? "bg-gray-900 text-white shadow-sm font-semibold" 
+                  : "bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100"
               )}
             >
-              <tab.icon className={cn("w-4 h-4", activeTab === tab.id ? "text-gray-300" : "text-gray-400")} />
-              {tab.label}
+              <tab.icon className={cn("w-3.5 h-3.5 shrink-0", activeTab === tab.id ? "text-gray-300" : "text-gray-400")} />
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
@@ -188,32 +195,32 @@ export function LibraryPage() {
 
       <div className="grid grid-cols-1 gap-6">
         {books.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-             <div className="w-16 h-16 bg-white shadow-sm rounded-2xl flex items-center justify-center mb-6 text-gray-400 border border-gray-100">
-               <Book className="w-8 h-8" />
+          <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50 p-6">
+             <div className="w-14 h-14 bg-white shadow-sm rounded-2xl flex items-center justify-center mb-4 text-gray-400 border border-gray-100">
+               <Book className="w-7 h-7" />
              </div>
-             <h3 className="text-lg font-semibold text-gray-900">Pustaka Anda masih kosong</h3>
-             <p className="text-sm text-gray-500 mt-2 mb-6 max-w-sm leading-relaxed">
+             <h3 className="text-base font-semibold text-gray-900 font-display">Pustaka Anda masih kosong</h3>
+             <p className="text-xs sm:text-sm text-gray-500 mt-1 mb-5 max-w-sm leading-relaxed">
                Tambahkan buku atau materi untuk mulai membangun Sistem Operasi Pengetahuan Pribadi Anda.
              </p>
-             <Button onClick={() => setIsAddOpen(true)} className="gap-2">
+             <Button onClick={() => setIsAddOpen(true)} className="gap-2 w-full sm:w-auto">
                <Plus className="w-4 h-4" />
                Tambah Buku Pertama
              </Button>
           </div>
         ) : filteredBooks.length === 0 ? (
-           <div className="text-center py-16 text-gray-500">
+           <div className="text-center py-16 text-gray-500 text-sm">
              Tidak ada materi yang sesuai dengan pencarian atau filter saat ini.
            </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
             {filteredBooks.map(book => {
               const progressPct = book.totalPages && book.totalPages > 0 
                 ? Math.min(100, Math.round((book.progress / book.totalPages) * 100))
                 : 0;
                 
               return (
-                <div key={book.id} onClick={() => navigate(`/library/${book.id}`)} className="group flex flex-col gap-3 cursor-pointer">
+                <div key={book.id} onClick={() => navigate(`/library/${book.id}`)} className="group flex flex-col gap-2.5 cursor-pointer">
                   <div className="aspect-[2/3] w-full bg-gray-100 rounded-xl border border-gray-200 flex flex-col items-center justify-center text-center transition-all group-hover:border-gray-300 group-hover:shadow-md relative overflow-hidden">
                     {book.coverImage && (
                       <img 
@@ -223,41 +230,31 @@ export function LibraryPage() {
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     )}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-0 bg-gray-100">
-                      <Book className="w-10 h-10 text-gray-300 mb-3" />
-                      <span className="text-xs text-gray-400 font-medium line-clamp-3 px-2">{book.title}</span>
+                    <div className="p-3 flex flex-col items-center justify-center h-full z-0">
+                      <Book className="w-8 h-8 text-gray-300 mb-2" />
+                      <span className="text-xs font-semibold text-gray-600 line-clamp-2">{book.title}</span>
                     </div>
-                    
-                    {book.coverImage && (
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); window.open(book.coverImage, '_blank'); }}
-                          title="Buka Gambar Sampul"
-                          className="p-1.5 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-md text-gray-600 hover:text-gray-900 shadow-sm"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                    
                     <div className="absolute top-2 left-2 z-20">
-                      <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded border shadow-sm backdrop-blur-md", getStatusColor(book.status))}>
+                      <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/95 backdrop-blur-sm text-gray-900 border border-gray-200 shadow-xs font-mono">
                         {getStatusLabel(book.status)}
                       </span>
                     </div>
-                    
-                    {(book.status === 'reading' || progressPct > 0) && (
-                      <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-200/80 backdrop-blur-sm z-10">
-                        <div className="h-full bg-gray-900 transition-all duration-500" style={{ width: `${progressPct}%` }} />
-                      </div>
-                    )}
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight group-hover:text-gray-900 transition-colors">{book.title}</h4>
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-1 font-medium">{getAuthorName(book.authorId)}</p>
-                    {book.status === 'reading' && book.totalPages && (
-                       <p className="text-[10px] text-gray-400 mt-1.5 font-mono">{book.progress} / {book.totalPages} hal ({progressPct}%)</p>
-                    )}
+                    <h3 className="font-semibold text-xs sm:text-sm text-gray-900 line-clamp-1 group-hover:text-gray-600 transition-colors font-display">
+                      {book.title}
+                    </h3>
+                    <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
+                      {getAuthorName(book.authorId)}
+                    </p>
+                    {book.totalPages && book.totalPages > 0 ? (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-gray-900 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-mono shrink-0">{progressPct}%</span>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               )

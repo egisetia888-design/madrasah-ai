@@ -14,20 +14,17 @@ export function Toaster() {
         <div
           key={toast.id}
           className={cn(
-            "flex items-start gap-3 p-4 rounded-xl border shadow-lg animate-in slide-in-from-bottom-5 fade-in duration-300",
-            toast.type === 'loading' && "bg-white border-gray-200 text-gray-900",
-            toast.type === 'success' && "bg-green-50 border-green-200 text-green-900",
-            toast.type === 'error' && "bg-red-50 border-red-200 text-red-900",
-            toast.type === 'info' && "bg-blue-50 border-blue-200 text-blue-900"
+            "flex items-start gap-3 p-4 rounded-xl border shadow-lg animate-in slide-in-from-bottom-5 fade-in duration-300 bg-white border-gray-200 text-gray-900",
+            toast.type === 'error' && "border-gray-900/40 bg-gray-50/50"
           )}
         >
           <div className="shrink-0 mt-0.5">
-            {toast.type === 'loading' && <Loader2 className="w-5 h-5 animate-spin text-blue-500" />}
-            {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-green-600" />}
-            {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-red-600" />}
-            {toast.type === 'info' && <Info className="w-5 h-5 text-blue-600" />}
+            {toast.type === 'loading' && <Loader2 className="w-5 h-5 animate-spin text-gray-900" />}
+            {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-gray-900" />}
+            {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-gray-900" />}
+            {toast.type === 'info' && <Info className="w-5 h-5 text-gray-700" />}
           </div>
-          <div className="flex-1 text-sm font-medium">
+          <div className="flex-1 text-sm font-medium text-gray-900">
             {toast.message}
           </div>
           <button

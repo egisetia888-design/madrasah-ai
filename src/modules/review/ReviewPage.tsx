@@ -40,16 +40,15 @@ export function ReviewPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Ulasan</h1>
-          <p className="text-gray-500 mt-1 text-sm">Pengulangan berjarak dan kartu flash untuk retensi pengetahuan.</p>
+    <div className="space-y-6 animate-in fade-in duration-500 w-full min-w-0 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 font-display">Ulasan</h1>
+          <p className="text-gray-500 mt-1 text-xs sm:text-sm">Pengulangan berjarak dan kartu flash untuk retensi pengetahuan.</p>
         </div>
-        <Button className="gap-2 shrink-0" onClick={() => setIsAddOpen(true)}>
+        <Button className="w-full sm:w-auto gap-2 shrink-0 h-11 sm:h-9" onClick={() => setIsAddOpen(true)}>
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Dek Baru</span>
-          <span className="sm:hidden">Tambah</span>
+          <span>Dek Baru</span>
         </Button>
       </div>
 

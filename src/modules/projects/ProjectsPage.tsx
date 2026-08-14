@@ -62,11 +62,11 @@ export function ProjectsPage() {
 
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
-      case 'active': return 'text-gray-800 bg-gray-50 border-gray-200';
-      case 'completed': return 'text-gray-800 bg-gray-50 border-gray-200';
+      case 'active': return 'text-gray-900 bg-gray-100 border-gray-300';
+      case 'completed': return 'text-gray-900 bg-gray-100 border-gray-300';
       case 'planned': return 'text-gray-700 bg-gray-50 border-gray-200';
-      case 'review': return 'text-gray-800 bg-gray-50 border-gray-200';
-      case 'archived': return 'text-orange-700 bg-orange-50 border-orange-200';
+      case 'review': return 'text-gray-800 bg-gray-100 border-gray-200';
+      case 'archived': return 'text-gray-500 bg-gray-50 border-gray-200';
       default: return 'text-gray-700 bg-gray-50 border-gray-200';
     }
   }
@@ -83,21 +83,22 @@ export function ProjectsPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto pb-12">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Proyek</h1>
-          <p className="text-gray-500 mt-2 text-sm max-w-xl">Kelola inisiatif pembelajaran Anda, capai tujuan, dan atur tugas-tugas kompleks dalam satu tempat.</p>
+    <div className="space-y-6 animate-in fade-in duration-500 w-full min-w-0 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 font-display">Proyek</h1>
+          <p className="text-gray-500 mt-1 text-xs sm:text-sm max-w-xl leading-relaxed">
+            Kelola inisiatif pembelajaran Anda, capai tujuan, dan atur tugas-tugas kompleks dalam satu tempat.
+          </p>
         </div>
-        <Button className="gap-2 shrink-0" onClick={() => setIsAddOpen(true)}>
+        <Button className="w-full sm:w-auto gap-2 shrink-0 h-11 sm:h-9" onClick={() => setIsAddOpen(true)}>
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Proyek Baru</span>
-          <span className="sm:hidden">Tambah</span>
+          <span>Proyek Baru</span>
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-gray-200 pb-4">
-        <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3 h-11 w-full sm:max-w-md focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent transition-all"> 
+      <div className="space-y-3 border-b border-gray-200 pb-4">
+        <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-3 h-11 w-full focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent transition-all"> 
            <Search className="w-4 h-4 text-gray-400 shrink-0" />
            <input 
                type="text" 
@@ -108,20 +109,20 @@ export function ProjectsPage() {
            />
         </div>
         
-        <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 hide-scrollbar mask-edges">
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full no-scrollbar py-1 scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
+                "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer",
                 activeTab === tab.id 
-                  ? "bg-gray-900 text-white shadow-sm" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  ? "bg-gray-900 text-white shadow-sm font-semibold" 
+                  : "bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100"
               )}
             >
-              <tab.icon className={cn("w-4 h-4", activeTab === tab.id ? "text-gray-300" : "text-gray-400")} />
-              {tab.label}
+              <tab.icon className={cn("w-3.5 h-3.5 shrink-0", activeTab === tab.id ? "text-gray-300" : "text-gray-400")} />
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>

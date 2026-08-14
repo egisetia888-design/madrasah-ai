@@ -30,14 +30,29 @@ Pengembangan **Madrasah — Personal Knowledge Operating System** dibagi ke dala
 
 ## 7.2 Riwayat Perubahan (Changelog)
 
-### v1.1.0 (Rilis Aktual - 13 Juli 2026)
+### v1.2.0 (Rilis Terkini - Agustus 2026)
+* **Penyempurnaan Ergonomi Mobile-First (Mobile Web App Mastery)**:
+  - Mengimplementasikan bilah tab gulir horisontal (`no-scrollbar`) dengan penanganan gestur sentuh mulus di seluruh modul (**Pustaka**, **Proyek**, **Catatan**, **Kurikulum**, **Alur Menulis**, **Review**, **Konsep**, dan **Graf Pengetahuan**).
+  - Menstandarkan area sentuh minimal **44px** (`h-11`) untuk seluruh tombol aksi mobile dan input navigasi.
+  - Mengisolasi tingkatan penumpukan z-index dialog modal pada **`z-[100]`** dengan latar belakang redup (*backdrop blur*), mencegah konflik interaksi dengan bilah navigasi bawah (`MobileNav`).
+  - Menambahkan *snap-scroll* pada papan Kanban modul **Alur Menulis** untuk transisi kolom yang alami di layar ponsel.
+* **Integrasi Gateway AI HCNSEC**:
+  - Mengadopsi provider **HCNSEC** (`HCNSEC_API_KEY`, `HCNSEC_BASE_URL`, `HCNSEC_MODEL`) sebagai jalur utama komunikasi kecerdasan buatan dengan kompatibilitas protokol OpenAI Chat Completions.
+  - Memperbarui mekanisme caching respons AI (TTL 1 jam) dan sanitasi parsing JSON robust.
+* **Penyempurnaan Modul Konsep & Pustaka**:
+  - Integrasi pencarian cover dan metadata buku otomatis melalui OpenLibrary API (`/api/ai/book-info`).
+  - Penambahan modul Konsep untuk pelacakan unit pengetahuan abstrak dan bukti asal-usul (*provenance*).
+* **Standardisasi Dokumentasi Teknis Profesional**:
+  - Sinkronisasi menyeluruh seluruh dokumen di `/docs/` sebagai *Single Source of Truth*.
+
+### v1.1.0 (Rilis 13 Juli 2026)
 * **Penyempurnaan Estetika Visual (Monochrome Overhaul)**:
-  - Melakukan pembersihan menyeluruh terhadap palet warna sekunder (biru, indigo, hijau, ungu, dll.) di seluruh modul, menggantinya dengan skema warna monokromatik hitam-putih-slate yang elegan.
-  - Menghapus tombol melayang "Quick Add" di sudut kanan bawah karena mengganggu keterbacaan layout halaman fungsional dan melanggar prinsip kebersihan ruang visual.
+  - Melakukan pembersihan menyeluruh terhadap palet warna sekunder di seluruh modul menuju skema monokromatik hitam-putih-slate murni (Maksimal 3 warna).
+  - Menghapus tombol melayang "Quick Add" untuk memastikan kejernihan ruang visual.
 * **Pembersihan Infrastruktur & Bundler**:
   - Mengonfigurasi bundler esbuild untuk mengompilasi berkas `server.ts` menjadi berkas CommonJS tunggal (`dist/server.cjs`) guna menyelesaikan isu kebergantungan relatif ESM di lingkungan Cloud Run.
 * **Overhaul Dokumentasi**:
-  - Menyusun ulang seluruh sistem dokumentasi ke dalam struktur direktori `/docs` modular yang komprehensif sebagai *Single Source of Truth* proyek.
+  - Menyusun ulang seluruh sistem dokumentasi ke dalam struktur direktori `/docs` modular.
 
 ### v1.0.0 (Rilis Perdana - Juni 2026)
 * **Peluncuran Madrasah Personal Knowledge Operating System**:

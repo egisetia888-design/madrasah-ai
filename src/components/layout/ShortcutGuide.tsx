@@ -37,7 +37,7 @@ export function ShortcutGuide() {
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white rounded-2xl border border-gray-100 shadow-2xl">
         <DialogHeader className="px-6 py-4 bg-gray-50/50 border-b border-gray-100">
           <DialogTitle className="flex items-center gap-2 text-gray-900 font-display">
-            <Keyboard className="w-5 h-5 text-indigo-500" />
+            <Keyboard className="w-5 h-5 text-gray-900" />
             Panduan Pintasan Papan Ketik
           </DialogTitle>
         </DialogHeader>
@@ -50,7 +50,7 @@ export function ShortcutGuide() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {group.items.map((item, itemIdx) => (
-                  <div key={itemIdx} className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50 border border-gray-100 hover:border-indigo-100 transition-colors">
+                  <div key={itemIdx} className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50 border border-gray-100 hover:border-gray-300 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400">
                         <item.icon className="w-4 h-4" />
@@ -74,8 +74,8 @@ export function ShortcutGuide() {
           ))}
         </div>
         
-        <div className="px-6 py-4 bg-indigo-50/50 border-t border-indigo-100/50">
-          <p className="text-[10px] text-indigo-600 font-medium text-center italic">
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+          <p className="text-[10px] text-gray-500 font-medium text-center italic">
             Tips: Gunakan pintasan untuk meningkatkan alur kerja "Madrasah" Anda.
           </p>
         </div>

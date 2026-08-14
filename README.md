@@ -49,13 +49,22 @@ npm install
 ```
 
 ### 2. Konfigurasi Variabel Lingkungan
-Salin `.env.example` menjadi `.env` dan masukkan kunci API OpenRouter Anda:
+Salin `.env.example` menjadi `.env` dan masukkan kunci API serta konfigurasi penyedia AI Anda (disarankan **HCNSEC**):
 ```bash
 cp .env.example .env
 ```
-Isi variabel di dalam `.env`:
+Isi variabel utama di dalam `.env`:
 ```env
-OPENROUTER_API_KEY="sk-or-v1-your-key-here"
+# Penyedia AI Utama (HCNSEC / OpenAI-Compatible Provider)
+HCNSEC_API_KEY="your-hcnsec-api-key"
+HCNSEC_BASE_URL="https://api.hcnsec.com/v1"
+HCNSEC_MODEL="google/gemini-2.5-flash"
+
+# Alternatif Google GenAI SDK (Opsional)
+GEMINI_API_KEY=""
+
+# Alternatif OpenRouter (Opsional)
+OPENROUTER_API_KEY=""
 ```
 
 ### 3. Jalankan Server Lokal
@@ -66,4 +75,4 @@ Aplikasi Anda akan segera mengudara secara terintegrasi pada port **3000** di al
 
 ---
 
-*Madrasah — Personal Knowledge Operating System dirancang dengan ketulusan dan fungsionalitas tinggi untuk menemani petualangan intelektual Anda.*
+*Madrasah — Personal Knowledge Operating System dirancang dengan ketulusan, kesederhanaan monokrom, dan fungsionalitas tinggi untuk menemani petualangan intelektual Anda.*

@@ -35,8 +35,9 @@ export function KnowledgeGraphPage() {
     project: true,
     concept: true,
     book: true,
-    author: true
-  })
+    author: true,
+    source_fragment: true
+  } as Record<string, boolean>)
 
   useEffect(() => {
     const search = searchParams.get("search");
@@ -99,6 +100,30 @@ export function KnowledgeGraphPage() {
     svg.selectAll("*").remove() 
     svg.attr("width", width).attr("height", height)
 
+    // Setup markers
+    const markerColors: Record<string, string> = {
+      default: "#9ca3af",
+      contradicts: "#111827",
+      supports: "#4b5563",
+      expands_on: "#6b7280"
+    };
+
+    Object.entries(markerColors).forEach(([key, color]) => {
+      svg.append("defs").append("marker")
+        .attr("id", `arrowhead-${key}`)
+        .attr("viewBox", "-0 -5 10 10")
+        .attr("refX", 25)
+        .attr("refY", 0)
+        .attr("orient", "auto")
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("xoverflow", "visible")
+        .append("svg:path")
+        .attr("d", "M 0,-5 L 10 ,0 L 0,5")
+        .attr("fill", color)
+        .style("stroke", "none");
+    });
+
     // Setup zoom
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
@@ -121,13 +146,39 @@ export function KnowledgeGraphPage() {
       .force("collide", d3.forceCollide().radius((d: any) => d.type === 'concept' ? 40 : 30).iterations(2))
 
     // Edges
-    const link = g.append("g")
-      .attr("stroke", "#e5e7eb")
-      .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", 1.5)
-      .selectAll("line")
+    const linkGroup = g.append("g")
+      .selectAll("g")
       .data(graphLinks)
-      .join("line")
+      .join("g")
+
+    const link = linkGroup.append("line")
+      .attr("stroke", (d: any) => {
+        if (d.label === 'contradicts') return markerColors.contradicts;
+        if (d.label === 'supports') return markerColors.supports;
+        if (d.label === 'expands_on') return markerColors.expands_on;
+        return "#e5e7eb";
+      })
+      .attr("stroke-opacity", 0.6)
+      .attr("stroke-width", (d: any) => d.label ? 2 : 1.5)
+      .attr("marker-end", (d: any) => {
+        if (d.label === 'contradicts') return `url(#arrowhead-contradicts)`;
+        if (d.label === 'supports') return `url(#arrowhead-supports)`;
+        if (d.label === 'expands_on') return `url(#arrowhead-expands_on)`;
+        return `url(#arrowhead-default)`;
+      });
+
+    // Edge Labels
+    const linkText = linkGroup.append("text")
+      .attr("fill", (d: any) => {
+        if (d.label === 'contradicts') return markerColors.contradicts;
+        if (d.label === 'supports') return markerColors.supports;
+        if (d.label === 'expands_on') return markerColors.expands_on;
+        return "#9ca3af";
+      })
+      .attr("font-size", "10px")
+      .attr("dy", -4)
+      .attr("text-anchor", "middle")
+      .text((d: any) => d.label || "");
 
     // Nodes
     const node = g.append("g")
@@ -279,24 +330,28 @@ export function KnowledgeGraphPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] min-h-[400px] md:min-h-[600px] animate-in fade-in duration-500 max-w-7xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-13rem)] md:h-[calc(100vh-8rem)] min-h-[460px] md:min-h-[600px] animate-in fade-in duration-500 w-full min-w-0 max-w-7xl mx-auto pb-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between shrink-0 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between shrink-0 mb-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Knowledge Graph</h1>
-          <p className="text-gray-500 mt-1">Visualisasi hubungan antar catatan, konsep, dan pustaka.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 font-display">Knowledge Graph</h1>
+          <p className="text-gray-500 mt-0.5 text-xs sm:text-sm">Visualisasi hubungan antar catatan, konsep, dan pustaka.</p>
         </div>
         
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
-            <button onClick={() => setViewMode('graph')} className={cn("p-1.5 rounded-md transition-colors", viewMode === 'graph' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
+          <div className="flex items-center bg-gray-100 rounded-xl p-1 border border-gray-200">
+            <button onClick={() => setViewMode('graph')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'graph' ? 'bg-white shadow-sm text-gray-900 font-semibold' : 'text-gray-500 hover:text-gray-700')}>
                <Network className="w-4 h-4" />
             </button>
-            <button onClick={() => setViewMode('list')} className={cn("p-1.5 rounded-md transition-colors", viewMode === 'list' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
+            <button onClick={() => setViewMode('list')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'list' ? 'bg-white shadow-sm text-gray-900 font-semibold' : 'text-gray-500 hover:text-gray-700')}>
                <List className="w-4 h-4" />
             </button>
           </div>
-          <Button variant="outline" className="gap-2 shrink-0">
+          <Button variant="outline" className="gap-2 shrink-0 h-9" onClick={() => {
+            if (wrapperRef.current?.requestFullscreen) {
+              wrapperRef.current.requestFullscreen();
+            }
+          }}>
             <Maximize className="w-4 h-4" />
             <span className="hidden sm:inline">Layar Penuh</span>
           </Button>
@@ -307,34 +362,34 @@ export function KnowledgeGraphPage() {
       <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
         
         {/* Left Side: Graph / List */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden relative">
+        <div ref={wrapperRef} className="flex-1 flex flex-col min-w-0 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden relative">
           
           {/* Toolbar Overlay (Graph Mode) */}
           {viewMode === 'graph' && (
-            <div className="absolute top-4 left-4 right-4 z-10 flex flex-wrap gap-3 items-center justify-between pointer-events-none">
-              <div className="flex items-center gap-1.5 flex-wrap bg-white/90 backdrop-blur-md border border-gray-200 rounded-lg p-1.5 shadow-sm pointer-events-auto">
-                <button onClick={() => toggleFilter('note')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.note ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
-                  <FileText className="w-3.5 h-3.5" /> Catatan
+            <div className="absolute top-3 left-3 right-3 z-10 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between pointer-events-none">
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto no-scrollbar bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl p-1.5 shadow-sm pointer-events-auto shrink-0">
+                <button onClick={() => toggleFilter('note')} className={cn("px-2.5 py-1 text-xs font-medium rounded-lg flex items-center gap-1 transition-all whitespace-nowrap", filters.note ? "bg-gray-900 text-white font-semibold" : "bg-transparent text-gray-600 hover:bg-gray-100")}>
+                  <FileText className="w-3.5 h-3.5" /> <span>Catatan</span>
                 </button>
-                <button onClick={() => toggleFilter('writing')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.writing ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
-                  <PenTool className="w-3.5 h-3.5" /> Tulisan
+                <button onClick={() => toggleFilter('writing')} className={cn("px-2.5 py-1 text-xs font-medium rounded-lg flex items-center gap-1 transition-all whitespace-nowrap", filters.writing ? "bg-gray-900 text-white font-semibold" : "bg-transparent text-gray-600 hover:bg-gray-100")}>
+                  <PenTool className="w-3.5 h-3.5" /> <span>Tulisan</span>
                 </button>
-                <button onClick={() => toggleFilter('project')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.project ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
-                  <Briefcase className="w-3.5 h-3.5" /> Proyek
+                <button onClick={() => toggleFilter('project')} className={cn("px-2.5 py-1 text-xs font-medium rounded-lg flex items-center gap-1 transition-all whitespace-nowrap", filters.project ? "bg-gray-900 text-white font-semibold" : "bg-transparent text-gray-600 hover:bg-gray-100")}>
+                  <Briefcase className="w-3.5 h-3.5" /> <span>Proyek</span>
                 </button>
-                <button onClick={() => toggleFilter('concept')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.concept ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
-                  <Hash className="w-3.5 h-3.5" /> Konsep
+                <button onClick={() => toggleFilter('concept')} className={cn("px-2.5 py-1 text-xs font-medium rounded-lg flex items-center gap-1 transition-all whitespace-nowrap", filters.concept ? "bg-gray-900 text-white font-semibold" : "bg-transparent text-gray-600 hover:bg-gray-100")}>
+                  <Hash className="w-3.5 h-3.5" /> <span>Konsep</span>
                 </button>
-                <button onClick={() => toggleFilter('book')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.book ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
-                  <Book className="w-3.5 h-3.5" /> Pustaka
+                <button onClick={() => toggleFilter('book')} className={cn("px-2.5 py-1 text-xs font-medium rounded-lg flex items-center gap-1 transition-all whitespace-nowrap", filters.book ? "bg-gray-900 text-white font-semibold" : "bg-transparent text-gray-600 hover:bg-gray-100")}>
+                  <Book className="w-3.5 h-3.5" /> <span>Pustaka</span>
                 </button>
-                <button onClick={() => toggleFilter('author')} className={cn("px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-colors", filters.author ? "bg-gray-100 text-gray-900 font-semibold" : "bg-transparent text-gray-400 hover:bg-gray-100")}>
-                  <User className="w-3.5 h-3.5" /> Penulis
+                <button onClick={() => toggleFilter('author')} className={cn("px-2.5 py-1 text-xs font-medium rounded-lg flex items-center gap-1 transition-all whitespace-nowrap", filters.author ? "bg-gray-900 text-white font-semibold" : "bg-transparent text-gray-600 hover:bg-gray-100")}>
+                  <User className="w-3.5 h-3.5" /> <span>Penulis</span>
                 </button>
               </div>
               
-              <div className="flex items-center bg-white/90 backdrop-blur-md border border-gray-200 rounded-lg px-3 py-2 w-64 shadow-sm pointer-events-auto">
-                <Search className="w-4 h-4 text-gray-400 shrink-0" />
+              <div className="flex items-center bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl px-3 py-1.5 w-full sm:w-56 shadow-sm pointer-events-auto">
+                <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 <input
                     type="text"
                     placeholder="Cari node..."

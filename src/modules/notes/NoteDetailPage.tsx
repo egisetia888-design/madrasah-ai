@@ -1,11 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { ArrowLeft, Save, Trash2, Eye, PenTool, ChevronDown, BrainCircuit, CheckCircle2, Folder, Tag as TagIcon, X, Sparkles, Check, Trash, RotateCcw } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Eye, PenTool, ChevronDown, BrainCircuit, CheckCircle2, Folder, Tag as TagIcon, X, Sparkles, Check, Trash, RotateCcw, Plus } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useNotesStore } from "../../store/notesStore";
 import { useReviewStore } from "../../store/reviewStore";
 import { useLibraryStore } from "../../store/libraryStore";
+import { useKnowledgeStore } from "../../store/knowledgeStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog";
 import { NoteStatus, NoteType } from "../../types";
 import Markdown from "react-markdown";
@@ -23,6 +24,13 @@ export function NoteDetailPage() {
   const addTag = useNotesStore(state => state.addTag);
   const books = useLibraryStore(state => state.books);
   
+  const concepts = useKnowledgeStore(state => state.concepts);
+  const sourceFragments = useKnowledgeStore(state => state.sourceFragments);
+  const relations = useKnowledgeStore(state => state.relations);
+  const addRelation = useKnowledgeStore(state => state.addRelation);
+  const deleteRelation = useKnowledgeStore(state => state.deleteRelation);
+  const addSourceFragment = useKnowledgeStore(state => state.addSourceFragment);
+  
   const decks = useReviewStore(state => state.decks);
   const addFlashcard = useReviewStore(state => state.addFlashcard);
   
@@ -31,6 +39,28 @@ export function NoteDetailPage() {
   
   const note = notes.find(n => n.id === id);
   
+  const noteRelations = useMemo(() => {
+    if (!note) return [];
+    return relations.filter(r => r.sourceNodeId === note.id);
+  }, [relations, note]);
+  
+  const linkedFragments = useMemo(() => {
+    return noteRelations
+      .filter(r => r.relationType === 'references')
+      .map(r => sourceFragments.find(f => f.id === r.targetNodeId))
+      .filter(Boolean);
+  }, [noteRelations, sourceFragments]);
+  
+  const linkedConcepts = useMemo(() => {
+    return noteRelations
+      .filter(r => r.relationType === 'expands_on' || r.relationType === 'supports' || r.relationType === 'contradicts')
+      .map(r => ({
+         relation: r,
+         concept: concepts.find(c => c.id === r.targetNodeId)
+      }))
+      .filter(item => item.concept);
+  }, [noteRelations, concepts]);
+
   const [title, setTitle] = useState(note?.title || "");
   const [content, setContent] = useState(note?.content || "");
   const [rawQuote, setRawQuote] = useState(note?.rawQuote || "");
@@ -55,6 +85,39 @@ export function NoteDetailPage() {
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
   const [isSaved, setIsSaved] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isLinkConceptOpen, setIsLinkConceptOpen] = useState(false);
+  const [isLinkFragmentOpen, setIsLinkFragmentOpen] = useState(false);
+  
+  // Link states
+  const [selectedConcept, setSelectedConcept] = useState<string>("");
+  const [selectedFragment, setSelectedFragment] = useState<string>("");
+  const [relationType, setRelationType] = useState<string>("references");
+
+  const handleLinkConcept = () => {
+    if (!selectedConcept) return;
+    addRelation({
+      sourceNodeId: note.id,
+      targetNodeId: selectedConcept,
+      relationType: relationType as any,
+      confidenceScore: 1.0,
+      createdBy: 'user',
+      verifiedBySystem: true,
+    });
+    setIsLinkConceptOpen(false);
+  };
+  
+  const handleLinkFragment = () => {
+    if (!selectedFragment) return;
+    addRelation({
+      sourceNodeId: note.id,
+      targetNodeId: selectedFragment,
+      relationType: 'references',
+      confidenceScore: 1.0,
+      createdBy: 'user',
+      verifiedBySystem: true,
+    });
+    setIsLinkFragmentOpen(false);
+  };
   const [aiSuggestions, setAiSuggestions] = useState<{ tags: string[], icon: string } | null>(null);
 
   useEffect(() => {
@@ -280,14 +343,14 @@ export function NoteDetailPage() {
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button 
             variant="outline" 
-            className="gap-2 text-indigo-600 bg-indigo-50 border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200" 
+            className="gap-2 text-gray-900 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300" 
             onClick={handleAnalyzeContent}
             disabled={isAnalyzing}
           >
             <Sparkles className={`w-4 h-4 ${isAnalyzing ? 'animate-pulse' : ''}`} />
             <span className="hidden sm:inline">{isAnalyzing ? "Menganalisis..." : "Analisis Catatan"}</span>
           </Button>
-          <Button variant="outline" className="gap-2 text-gray-800 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300" onClick={() => setIsGeneratorOpen(true)}>
+          <Button variant="outline" className="gap-2 text-gray-900 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300" onClick={() => setIsGeneratorOpen(true)}>
             <BrainCircuit className="w-4 h-4" />
             <span className="hidden sm:inline">Buat Flashcard AI</span>
           </Button>
@@ -298,7 +361,7 @@ export function NoteDetailPage() {
           <Button variant="ghost" className="gap-2 text-gray-900 hover:text-gray-800 hover:bg-gray-50" onClick={() => setIsDeleteDialogOpen(true)}>
             <Trash2 className="w-4 h-4" />
           </Button>
-          <Button onClick={handleSave} className="gap-2 bg-gray-900 hover:bg-gray-800">
+          <Button onClick={handleSave} className="gap-2 bg-gray-900 hover:bg-gray-800 text-white">
             <Save className="w-4 h-4" />
             <span className="hidden sm:inline">{isSaving ? "Tersimpan!" : "Simpan"}</span>
           </Button>
@@ -307,32 +370,32 @@ export function NoteDetailPage() {
 
       <div className="space-y-6 flex-1 flex flex-col">
         {aiSuggestions && (
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-2 animate-in slide-in-from-top duration-300">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-2 animate-in slide-in-from-top duration-300">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-600" />
-                <h3 className="text-sm font-semibold text-indigo-900">Saran AI (Draf)</h3>
+                <Sparkles className="w-4 h-4 text-gray-900" />
+                <h3 className="text-sm font-semibold text-gray-900 font-display">Saran AI (Draf)</h3>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" onClick={discardSuggestions} className="h-8 text-indigo-600 hover:bg-indigo-100">Tolak</Button>
-                <Button size="sm" onClick={approveSuggestions} className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white gap-1">
+                <Button size="sm" variant="ghost" onClick={discardSuggestions} className="h-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100">Tolak</Button>
+                <Button size="sm" onClick={approveSuggestions} className="h-8 bg-gray-900 hover:bg-gray-800 text-white gap-1">
                   <Check className="w-3 h-3" /> Terima Saran
                 </Button>
               </div>
             </div>
             <div className="flex flex-wrap gap-4 items-center">
-              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-indigo-100">
-                <span className="text-xs text-indigo-400 font-medium uppercase tracking-wider">Ikon:</span>
+              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-200">
+                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider font-mono">Ikon:</span>
                 {(() => {
                   const Icon = (LucideIcons as any)[aiSuggestions.icon] || LucideIcons.FileText;
-                  return <Icon className="w-4 h-4 text-indigo-600" />;
+                  return <Icon className="w-4 h-4 text-gray-900" />;
                 })()}
-                <span className="text-xs font-medium text-indigo-900">{aiSuggestions.icon}</span>
+                <span className="text-xs font-medium text-gray-900">{aiSuggestions.icon}</span>
               </div>
               <div className="flex flex-wrap gap-1 items-center">
-                <span className="text-xs text-indigo-400 font-medium uppercase tracking-wider mr-1">Tag:</span>
+                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider mr-1 font-mono">Tag:</span>
                 {aiSuggestions.tags.map((t, i) => (
-                  <span key={i} className="px-2 py-0.5 text-[10px] font-bold bg-white text-indigo-600 rounded-lg border border-indigo-100 tracking-wide uppercase">
+                  <span key={i} className="px-2 py-0.5 text-[10px] font-bold bg-white text-gray-800 rounded-lg border border-gray-200 tracking-wide uppercase">
                     #{t}
                   </span>
                 ))}
@@ -469,11 +532,11 @@ export function NoteDetailPage() {
 
         {previewMode ? (
           <div className="space-y-6 flex-1 py-4">
-            {(rawQuote || referenceCitation) && (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
+            {(rawQuote || referenceCitation || linkedFragments.length > 0 || linkedConcepts.length > 0) && (
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-6">
                 {rawQuote && (
                   <div>
-                    <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Kutipan Mentah</h3>
+                    <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Kutipan Mentah (Legacy)</h3>
                     <blockquote className="border-l-2 border-gray-300 pl-4 italic text-gray-700 font-serif">
                       <Markdown>{rawQuote}</Markdown>
                     </blockquote>
@@ -481,8 +544,35 @@ export function NoteDetailPage() {
                 )}
                 {referenceCitation && (
                   <div>
-                    <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Sumber Referensi Asli</h3>
+                    <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Sumber Referensi Asli (Legacy)</h3>
                     <p className="text-sm text-gray-700">{referenceCitation}</p>
+                  </div>
+                )}
+                {linkedFragments.length > 0 && (
+                  <div>
+                    <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Source Fragments</h3>
+                    <div className="space-y-3">
+                      {linkedFragments.map((f: import("../../types").SourceFragment) => (
+                        <blockquote key={f.id} className="border-l-2 border-gray-400 pl-4 italic text-gray-700 font-serif">
+                          <Markdown>{f.quote}</Markdown>
+                          <div className="text-xs text-gray-400 mt-2 not-italic font-sans">— {f.location}</div>
+                        </blockquote>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {linkedConcepts.length > 0 && (
+                  <div>
+                    <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Tautan Konsep</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {linkedConcepts.map((lc: { relation: import("../../types").Relation, concept: import("../../types").Concept }) => (
+                        <div key={lc.relation.id} className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                          <BrainCircuit className="w-4 h-4 text-gray-900" />
+                          <span className="font-medium text-gray-900">{lc.concept.name}</span>
+                          <span className="text-[10px] text-gray-500 uppercase tracking-wider bg-gray-100 px-1.5 py-0.5 rounded font-mono">{lc.relation.relationType}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -514,7 +604,50 @@ export function NoteDetailPage() {
                </div>
             </div>
             
-            <div className="space-y-2 flex-1 flex flex-col">
+            <div className="space-y-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700">Tautan & Kutipan V2</label>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsLinkFragmentOpen(true)}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Source Fragment
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setIsLinkConceptOpen(true)}>
+                    <BrainCircuit className="w-4 h-4 mr-1" />
+                    Konsep
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                {linkedFragments.map((f: import("../../types").SourceFragment) => (
+                  <div key={f.id} className="flex items-start justify-between bg-white border border-gray-200 rounded-lg p-3">
+                    <div className="flex-1">
+                      <p className="text-sm italic text-gray-700 font-serif line-clamp-2">"{f.quote}"</p>
+                      <p className="text-xs text-gray-400 mt-1">{f.location}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => deleteRelation(noteRelations.find(r => r.targetNodeId === f.id)?.id || "")} className="ml-4 h-auto py-1 px-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 border-gray-200">
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+                
+                <div className="flex flex-wrap gap-2">
+                  {linkedConcepts.map((lc: { relation: import("../../types").Relation, concept: import("../../types").Concept }) => (
+                    <div key={lc.relation.id} className="bg-white border border-gray-200 rounded-lg pl-3 pr-1 py-1 text-sm flex items-center gap-2">
+                      <BrainCircuit className="w-4 h-4 text-gray-900" />
+                      <span className="font-medium text-gray-900">{lc.concept.name}</span>
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider bg-gray-100 px-1.5 py-0.5 rounded font-mono">{lc.relation.relationType}</span>
+                      <button onClick={() => deleteRelation(lc.relation.id)} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-900 ml-1">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 flex-1 flex flex-col pt-4 border-t border-gray-100">
               <label className="text-sm font-medium text-gray-700">Inferensi / Opini Sendiri</label>
               <textarea
                 value={content}
@@ -537,6 +670,68 @@ export function NoteDetailPage() {
         <DialogFooter>
           <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
           <Button variant="destructive" onClick={handleDelete} className="bg-gray-900 hover:bg-gray-800 text-white">Hapus</Button>
+        </DialogFooter>
+      </Dialog>
+      
+      <Dialog open={isLinkConceptOpen} onOpenChange={setIsLinkConceptOpen}>
+        <DialogHeader>
+          <DialogTitle>Tautkan Konsep</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Pilih Konsep</label>
+            <select
+              value={selectedConcept}
+              onChange={(e) => setSelectedConcept(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-900"
+            >
+              <option value="">-- Pilih Konsep --</option>
+              {concepts.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipe Relasi</label>
+            <select
+              value={relationType}
+              onChange={(e) => setRelationType(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-900"
+            >
+              <option value="expands_on">Expands On (Mengembangkan)</option>
+              <option value="supports">Supports (Mendukung)</option>
+              <option value="contradicts">Contradicts (Bertentangan)</option>
+            </select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setIsLinkConceptOpen(false)}>Batal</Button>
+          <Button onClick={handleLinkConcept} disabled={!selectedConcept}>Tautkan</Button>
+        </DialogFooter>
+      </Dialog>
+      
+      <Dialog open={isLinkFragmentOpen} onOpenChange={setIsLinkFragmentOpen}>
+        <DialogHeader>
+          <DialogTitle>Tautkan Source Fragment</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Pilih Source Fragment</label>
+            <select
+              value={selectedFragment}
+              onChange={(e) => setSelectedFragment(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-900"
+            >
+              <option value="">-- Pilih Fragment --</option>
+              {sourceFragments.map(f => (
+                <option key={f.id} value={f.id}>{f.quote.substring(0, 50)}...</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setIsLinkFragmentOpen(false)}>Batal</Button>
+          <Button onClick={handleLinkFragment} disabled={!selectedFragment}>Tautkan</Button>
         </DialogFooter>
       </Dialog>
       

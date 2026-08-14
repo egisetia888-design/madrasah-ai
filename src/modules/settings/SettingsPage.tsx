@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, Download, Upload, Trash2, AlertTriangle, CheckCircle2, PlayCircle, FileText, Search, BrainCircuit, RefreshCw } from 'lucide-react';
+import { Database, Download, Upload, Trash2, AlertTriangle, CheckCircle2, PlayCircle, FileText, Search, BrainCircuit, RefreshCw, Layers } from 'lucide-react';
 import localforage from 'localforage';
 import { Button } from '../../components/ui/Button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/Dialog';
@@ -7,6 +7,7 @@ import { useTourStore } from '../../store/tourStore';
 import { useNotesStore } from '../../store/notesStore';
 import { useLibraryStore } from '../../store/libraryStore';
 import { useWritingStore } from '../../store/writingStore';
+import { migrateNotesToFragments } from '../../utils/dataMigration';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -14,9 +15,25 @@ export function SettingsPage() {
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [mdExportStatus, setMdExportStatus] = useState<string | null>(null);
+  const [migrationStatus, setMigrationStatus] = useState<string | null>(null);
   const startTour = useTourStore(state => state.startTour);
   const [indexStatus, setIndexStatus] = useState<string | null>(null);
   const [isIndexing, setIsIndexing] = useState(false);
+
+  const handleMigration = () => {
+    try {
+      const count = migrateNotesToFragments();
+      if (count > 0) {
+        setMigrationStatus(`Berhasil memigrasi ${count} catatan ke format SourceFragment baru.`);
+      } else {
+        setMigrationStatus("Tidak ada catatan yang perlu dimigrasi (sudah up-to-date).");
+      }
+      setTimeout(() => setMigrationStatus(null), 5000);
+    } catch (err) {
+      console.error(err);
+      setMigrationStatus("Terjadi kesalahan saat memigrasi data.");
+    }
+  };
 
   const handleReindex = async () => {
     setIsIndexing(true);
@@ -313,6 +330,40 @@ export function SettingsPage() {
 
         <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+            <Layers className="w-5 h-5 text-gray-400" />
+            <h2 className="text-lg font-medium text-gray-900">Pembaruan Arsitektur Data (V2)</h2>
+          </div>
+          <div className="p-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              <div className="flex-1">
+                <p className="text-sm text-gray-600 mb-4">
+                  Sistem Madrasah kini mendukung <strong>SourceFragment</strong> dan abstraksi <strong>Konsep</strong> yang berdiri sendiri (Arsitektur V2). Eksekusi migrasi ini akan memisahkan <em>Kutipan Mentah</em> (Raw Quotes) di dalam catatan lama Anda menjadi SourceFragment mandiri tanpa menghapus data aslinya.
+                </p>
+                <p className="text-xs text-gray-500 mb-4">
+                  Proses ini memastikan kutipan lama Anda dapat digunakan ulang (reusable) dan memperkuat penelusuran referensi (provenance) di masa depan.
+                </p>
+              </div>
+              <div className="w-full md:w-auto shrink-0 space-y-2">
+                <Button 
+                  onClick={handleMigration} 
+                  variant="outline" 
+                  className="w-full gap-2 text-gray-900 border-gray-200 hover:bg-gray-50"
+                >
+                  <Layers className="w-4 h-4" />
+                  Migrasi Data Catatan Lama
+                </Button>
+                {migrationStatus && (
+                  <p className="text-[10px] text-gray-900 flex items-center gap-1 justify-center md:justify-start">
+                    <CheckCircle2 className="w-3 h-3 text-gray-500" /> {migrationStatus}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
             <BrainCircuit className="w-5 h-5 text-gray-400" />
             <h2 className="text-lg font-medium text-gray-900">AI & Pencarian Semantik (Lokal)</h2>
           </div>
@@ -339,6 +390,40 @@ export function SettingsPage() {
                 {indexStatus && (
                   <p className="text-[10px] text-gray-900 flex items-center gap-1 justify-center md:justify-start">
                     <CheckCircle2 className="w-3 h-3 text-gray-500" /> {indexStatus}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+            <Layers className="w-5 h-5 text-gray-400" />
+            <h2 className="text-lg font-medium text-gray-900">Pembaruan Arsitektur Data (V2)</h2>
+          </div>
+          <div className="p-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              <div className="flex-1">
+                <p className="text-sm text-gray-600 mb-4">
+                  Sistem Madrasah kini mendukung <strong>SourceFragment</strong> dan abstraksi <strong>Konsep</strong> yang berdiri sendiri (Arsitektur V2). Eksekusi migrasi ini akan memisahkan <em>Kutipan Mentah</em> (Raw Quotes) di dalam catatan lama Anda menjadi SourceFragment mandiri tanpa menghapus data aslinya.
+                </p>
+                <p className="text-xs text-gray-500 mb-4">
+                  Proses ini memastikan kutipan lama Anda dapat digunakan ulang (reusable) dan memperkuat penelusuran referensi (provenance) di masa depan.
+                </p>
+              </div>
+              <div className="w-full md:w-auto shrink-0 space-y-2">
+                <Button 
+                  onClick={handleMigration} 
+                  variant="outline" 
+                  className="w-full gap-2 text-gray-900 border-gray-200 hover:bg-gray-50"
+                >
+                  <Layers className="w-4 h-4" />
+                  Migrasi Data Catatan Lama
+                </Button>
+                {migrationStatus && (
+                  <p className="text-[10px] text-gray-900 flex items-center gap-1 justify-center md:justify-start">
+                    <CheckCircle2 className="w-3 h-3 text-gray-500" /> {migrationStatus}
                   </p>
                 )}
               </div>

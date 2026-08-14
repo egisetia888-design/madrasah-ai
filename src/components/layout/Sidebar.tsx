@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Library, PenTool, Map, Settings, LogOut, Briefcase, FileText, Network, FlaskConical, Search, Brain, BarChart2, Star, Clock, Pin, Zap, Keyboard } from "lucide-react"
+import { LayoutDashboard, Library, PenTool, Map, Settings, LogOut, Briefcase, FileText, Network, FlaskConical, Search, Brain, BarChart2, Star, Clock, Pin, Zap, Keyboard, BrainCircuit } from "lucide-react"
 import { cn } from "../../utils/cn"
 import { useUIStore } from "../../store/uiStore"
 import { useAuthStore } from "../../store/authStore"
@@ -10,6 +10,7 @@ const workspaceItems = [
   { name: "Beranda", href: "/", icon: LayoutDashboard },
   { name: "Pustaka", href: "/library", icon: Library },
   { name: "Catatan", href: "/notes", icon: FileText },
+  { name: "Konsep", href: "/concepts", icon: BrainCircuit },
   { name: "Graf Analisa", href: "/graph", icon: Network },
   { name: "Review", href: "/review", icon: Brain },
   { name: "Tulisan", href: "/writing", icon: PenTool },

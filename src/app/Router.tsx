@@ -19,6 +19,7 @@ import { DeckDetailPage } from "../modules/review/DeckDetailPage"
 import { ReviewSessionPage } from "../modules/review/ReviewSessionPage"
 import { SettingsPage } from "../modules/settings/SettingsPage"
 import { AnalyticsPage } from "../modules/analytics/AnalyticsPage"
+import { ConceptsPage } from "../modules/concepts/ConceptsPage"
 import { useAuthStore } from "../store/authStore"
 
 function ProtectedRoute() {
@@ -112,6 +113,10 @@ const router = createBrowserRouter([
           {
             path: "settings",
             element: <SettingsPage />,
+          },
+          {
+            path: "concepts",
+            element: <ConceptsPage />,
           }
         ]
       }

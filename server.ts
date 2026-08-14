@@ -6,7 +6,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 dotenv.config();
 
-// Simple in-memory cache for AI responses
+// In-memory cache for AI responses
 const aiCache = new Map<string, { timestamp: number, data: any }>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
@@ -18,23 +18,43 @@ function cleanAndParseJson(text: string, fallback: any = {}) {
   if (!text) return fallback;
   try {
     let cleanText = text.trim();
+    // Strip markdown code fences if present
     if (cleanText.startsWith("```")) {
-      cleanText = cleanText.replace(/^```[a-zA-Z]*\n/, "");
+      cleanText = cleanText.replace(/^```[a-zA-Z0-9_-]*\n?/, "");
       if (cleanText.endsWith("```")) {
         cleanText = cleanText.slice(0, -3);
       }
     }
-    return JSON.parse(cleanText.trim());
-  } catch (error) {
-    const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-    if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[0]);
-      } catch (e) {
-        // ignore fallback below
+    cleanText = cleanText.trim();
+    
+    // Direct parse attempt
+    try {
+      return JSON.parse(cleanText);
+    } catch (directErr) {
+      // Find outermost JSON object or array
+      const firstBrace = cleanText.indexOf('{');
+      const lastBrace = cleanText.lastIndexOf('}');
+      const firstBracket = cleanText.indexOf('[');
+      const lastBracket = cleanText.lastIndexOf(']');
+
+      let candidate = "";
+      if (firstBrace !== -1 && lastBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+        candidate = cleanText.substring(firstBrace, lastBrace + 1);
+      } else if (firstBracket !== -1 && lastBracket !== -1) {
+        candidate = cleanText.substring(firstBracket, lastBracket + 1);
       }
+
+      if (candidate) {
+        // Fix trailing commas if any (e.g. [1, 2, ])
+        const sanitized = candidate
+          .replace(/,\s*}/g, '}')
+          .replace(/,\s*]/g, ']');
+        return JSON.parse(sanitized);
+      }
+      throw directErr;
     }
-    console.error("JSON Parsing Error on AI output:", text.substring(0, 100) + "...");
+  } catch (error) {
+    console.error("JSON Parsing Error on AI output:", text.substring(0, 150) + "...");
     return fallback;
   }
 }
@@ -64,46 +84,84 @@ interface AICallOptions {
   tools?: any[];
 }
 
+function formatAIEndpoint(rawBaseUrl?: string): string {
+  let url = (rawBaseUrl || "").trim();
+  if (!url) return "https://openrouter.ai/api/v1/chat/completions";
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = `https://${url}`;
+  }
+  url = url.replace(/\/+$/, "");
+  if (url.endsWith("/chat/completions")) {
+    return url;
+  }
+  if (url.endsWith("/v1")) {
+    return `${url}/chat/completions`;
+  }
+  return `${url}/chat/completions`;
+}
+
 async function executeAIRequest(options: AICallOptions): Promise<string> {
-  const timeoutMs = options.timeoutMs || 25000;
+  const timeoutMs = options.timeoutMs || 60000;
   
   const aiPromise = (async () => {
-    const gemini = getGeminiClient();
+    // 1. Check for custom / HCNSEC or OpenAI-compatible Base URL & Key configuration
+    const hcnsecApiKey = process.env.HCNSEC_API_KEY || process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
+    const hcnsecBaseUrl = process.env.HCNSEC_BASE_URL || process.env.AI_BASE_URL || process.env.OPENAI_BASE_URL || process.env.BASE_URL;
+    const hcnsecModel = process.env.HCNSEC_MODEL || process.env.AI_MODEL || "google/gemini-2.5-flash";
 
-    let geminiError: any = null;
+    if (hcnsecApiKey || hcnsecBaseUrl) {
+      const apiKey = (hcnsecApiKey || process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY || "").trim();
+      const endpoint = formatAIEndpoint(hcnsecBaseUrl);
 
-    // Try Google GenAI SDK first
-    if (gemini) {
+      const messages = [
+        { role: "system", content: options.systemInstruction },
+        { role: "user", content: options.userPrompt }
+      ];
+
+      const body: any = {
+        model: hcnsecModel,
+        messages
+      };
+
+      if (options.jsonMode) {
+        body.response_format = { type: "json_object" };
+      }
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs - 2000);
+
       try {
-        const config: any = {
-          systemInstruction: options.systemInstruction,
-        };
-        if (options.jsonMode) {
-          config.responseMimeType = "application/json";
-          if (options.responseSchema) {
-            config.responseSchema = options.responseSchema;
-          }
-        }
-        if (options.tools) {
-          config.tools = options.tools;
-        }
-
-        const response = await gemini.models.generateContent({
-          model: "gemini-3.6-flash",
-          contents: options.userPrompt,
-          config
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": process.env.APP_URL || "https://madrasah.remix",
+            "X-Title": "Remix Madrasah"
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal
         });
+        clearTimeout(timer);
 
-        if (response.text) {
-          return response.text;
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`HCNSEC / AI Provider error (${response.status}): ${errText}`);
         }
+
+        const data = await response.json() as any;
+        return data.choices?.[0]?.message?.content || "";
       } catch (err: any) {
-        geminiError = err;
-        console.warn("[AI Provider] Gemini API request failed, trying OpenRouter fallback:", err?.message || err);
+        clearTimeout(timer);
+        console.warn("[AI Provider] HCNSEC call failed, checking fallbacks:", err?.message || err);
+        // If user configured HCNSEC explicitly, surface meaningful error if fallbacks are disabled
+        if (hcnsecApiKey && !process.env.OPENROUTER_API_KEY && !process.env.GEMINI_API_KEY) {
+          throw new Error(`HCNSEC Provider Error: ${err?.message || err}`);
+        }
       }
     }
 
-    // OpenRouter Fallback
+    // 2. OpenRouter provider (if OPENROUTER_API_KEY is configured)
     if (process.env.OPENROUTER_API_KEY) {
       const messages = [
         { role: "system", content: options.systemInstruction },
@@ -120,7 +178,7 @@ async function executeAIRequest(options: AICallOptions): Promise<string> {
       }
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs - 1000);
+      const timer = setTimeout(() => controller.abort(), timeoutMs - 2000);
 
       try {
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -136,34 +194,58 @@ async function executeAIRequest(options: AICallOptions): Promise<string> {
         });
         clearTimeout(timer);
 
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
+        if (response.ok) {
+          const data = await response.json() as any;
+          return data.choices?.[0]?.message?.content || "";
         }
-
-        const data = await response.json() as any;
-        return data.choices?.[0]?.message?.content || "";
+        const errText = await response.text();
+        console.warn(`[AI Provider] OpenRouter returned ${response.status}: ${errText}`);
       } catch (err: any) {
         clearTimeout(timer);
-        if (geminiError) {
-           throw new Error(`Gemini API Error: ${geminiError?.message || geminiError}. OpenRouter Fallback Error: ${err?.message || err}`);
+        console.warn("[AI Provider] OpenRouter request failed:", err?.message || err);
+      }
+    }
+
+    // 3. Google GenAI SDK fallback (if GEMINI_API_KEY is configured)
+    const gemini = getGeminiClient();
+    if (gemini) {
+      try {
+        const config: any = {
+          systemInstruction: options.systemInstruction,
+        };
+        if (options.jsonMode) {
+          config.responseMimeType = "application/json";
+          if (options.responseSchema) {
+            config.responseSchema = options.responseSchema;
+          }
         }
-        throw err;
+        if (options.tools) {
+          config.tools = options.tools;
+        }
+
+        const response = await gemini.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: options.userPrompt,
+          config
+        });
+
+        if (response.text) {
+          return response.text;
+        }
+      } catch (err: any) {
+        console.warn("[AI Provider] Gemini API request failed:", err?.message || err);
+        if (err?.message?.includes('429') || err?.message?.includes('RESOURCE_EXHAUSTED')) {
+          throw new Error("Kuota AI Anda telah habis (Rate Limit 429). Silakan gunakan kunci API baru atau tunggu beberapa saat.");
+        }
+        throw new Error(`AI Provider Error: ${err?.message || err}`);
       }
     }
 
-    if (geminiError) {
-      if (geminiError?.message?.includes('429') || geminiError?.message?.includes('RESOURCE_EXHAUSTED')) {
-         throw new Error("Kuota Gemini API Anda telah habis (Error 429). Silakan gunakan kunci API baru atau tunggu beberapa saat.");
-      }
-      throw new Error(`Gemini API Error: ${geminiError?.message || geminiError}`);
-    }
-
-    throw new Error("Layanan AI belum dikonfigurasi. Silakan pastikan GEMINI_API_KEY atau OPENROUTER_API_KEY tersedia di Settings > Secrets.");
+    throw new Error("Layanan AI belum dikonfigurasi. Silakan pastikan HCNSEC_API_KEY, OPENROUTER_API_KEY, atau GEMINI_API_KEY tersedia di Settings > Secrets.");
   })();
 
   const timeoutPromise = new Promise<string>((_, reject) => {
-    setTimeout(() => reject(new Error("Permintaan AI melebihi batas waktu (timeout 25 detik). Silakan coba lagi.")), timeoutMs);
+    setTimeout(() => reject(new Error("Permintaan AI melebihi batas waktu (timeout). Silakan coba lagi.")), timeoutMs);
   });
 
   return Promise.race([aiPromise, timeoutPromise]);
@@ -187,7 +269,7 @@ async function startServer() {
 
   const aiLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 20, // Limit each IP to 20 AI requests per minute
+    max: 30, // Limit each IP to 30 AI requests per minute
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Terlalu banyak permintaan ke AI. Silakan tunggu beberapa saat." }
@@ -208,10 +290,16 @@ async function startServer() {
   // AI Routes
   app.post("/api/ai/zettelkasten", async (req, res) => {
     try {
-      const { prompt, notes = [] } = req.body;
+      const { prompt, notes = [], concepts = [], fragments = [], relations = [] } = req.body;
       const sanitizedNotes = Array.isArray(notes) 
         ? notes.slice(0, 10).map((n: any) => ({ id: n.id, title: n.title, excerpt: (n.content || '').slice(0, 500) }))
         : [];
+      
+      const sanitizedConcepts = Array.isArray(concepts)
+        ? concepts.slice(0, 5).map((c: any) => ({ name: c.name, definition: c.definition })) : [];
+        
+      const sanitizedFragments = Array.isArray(fragments)
+        ? fragments.slice(0, 5).map((f: any) => ({ quote: f.quote, context: f.context })) : [];
 
       const cacheKey = getCacheKey("zettelkasten", { prompt, notesCount: sanitizedNotes.length });
       
@@ -222,15 +310,19 @@ async function startServer() {
       }
       
       const systemInstruction = `
-      You are a Smart Zettelkasten Assistant. Your job is to analyze the user's notes and help them:
-      1. Find connections and relationships between different concepts.
-      2. Suggest new ideas or insights based on their notes.
-      3. Identify gaps in their knowledge.
+      You are a Smart PKOS (Personal Knowledge Operating System) Assistant for Madrasah.
+      Your job is to analyze the user's semantic knowledge base and help them:
+      1. Trace provenance: Understand how concepts are formed from source fragments and notes.
+      2. Find semantic relationships (supports, contradicts, expands) between different knowledge blocks.
+      3. Suggest new ideas or identify gaps based on the graph.
       
-      User's current notes for context:
-      ${JSON.stringify(sanitizedNotes, null, 2)}
+      User's Context:
+      Notes: ${JSON.stringify(sanitizedNotes)}
+      Concepts: ${JSON.stringify(sanitizedConcepts)}
+      Source Fragments: ${JSON.stringify(sanitizedFragments)}
+      Relations: ${JSON.stringify(relations.slice(0, 10))}
       
-      Respond directly and helpfully in Indonesian. Format your response cleanly using Markdown. Keep responses concise and structured.
+      Respond directly and helpfully in Indonesian. Format your response cleanly using Markdown. Use citations/provenance where possible.
       `;
 
       const text = await executeAIRequest({
@@ -250,10 +342,13 @@ async function startServer() {
 
   app.post("/api/ai/suggest-tags", async (req, res) => {
     try {
-      const { content, notes = [] } = req.body;
+      const { content, notes = [], concepts = [] } = req.body;
       const sanitizedContent = String(content || '').slice(0, 4000);
       const sanitizedNotes = Array.isArray(notes)
         ? notes.slice(0, 10).map((n: any) => ({ id: n.id, title: n.title }))
+        : [];
+      const sanitizedConcepts = Array.isArray(concepts)
+        ? concepts.slice(0, 10).map((c: any) => ({ id: c.id, name: c.name }))
         : [];
 
       const cacheKey = getCacheKey("suggest-tags", { content: sanitizedContent });
@@ -265,15 +360,17 @@ async function startServer() {
       }
       
       const systemInstruction = `
-      You are a Smart Zettelkasten Assistant. Your job is to analyze a new knowledge snippet from the user and:
-      1. Suggest 3-5 relevant tags (short keywords in Indonesian or English).
-      2. Suggest 1 most relevant Lucide-react icon name (e.g., 'Brain', 'Book', 'Code', 'Globe', 'Database').
-      3. Suggest 1-3 connections to existing notes (return the exact titles of the relevant existing notes).
+      You are a Knowledge Taxonomy Assistant. Analyze a new knowledge snippet from the user and:
+      1. Suggest 3-5 relevant abstract concepts or tags (short keywords in Indonesian or English).
+      2. Suggest 1 most relevant Lucide-react icon name (e.g., 'Brain', 'Book', 'Database', 'FileText', 'Sparkles', 'Layers', 'Code', 'PenTool').
+      3. Suggest 1-3 connections to existing notes (return exact titles).
       
-      User's existing notes titles for context:
-      ${JSON.stringify(sanitizedNotes, null, 2)}
+      Context references:
+      Existing Notes: ${JSON.stringify(sanitizedNotes)}
+      Existing Concepts: ${JSON.stringify(sanitizedConcepts)}
       
-      Respond ONLY with a raw JSON object matching the schema.
+      Respond ONLY with a raw JSON object matching the schema:
+      {"tags": ["tag1", "tag2"], "icon": "Brain", "connections": ["Note Title"]}
       `;
 
       const schema = {
@@ -293,7 +390,18 @@ async function startServer() {
         responseSchema: schema
       });
 
-      const resultData = cleanAndParseJson(text, { tags: [], icon: "FileText", connections: [] });
+      const parsed = cleanAndParseJson(text, { tags: [], icon: "FileText", connections: [] });
+      
+      const rawTags = Array.isArray(parsed.tags) ? parsed.tags : [];
+      const tags = rawTags.map((t: any) => String(t).trim()).filter(Boolean);
+      
+      let icon = typeof parsed.icon === 'string' ? parsed.icon.replace(/[^a-zA-Z]/g, '') : 'FileText';
+      if (!icon) icon = 'FileText';
+
+      const rawConns = Array.isArray(parsed.connections) ? parsed.connections : [];
+      const connections = rawConns.map((c: any) => String(c).trim()).filter(Boolean);
+
+      const resultData = { tags, icon, connections };
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
       res.json(resultData);
@@ -317,10 +425,11 @@ async function startServer() {
       }
       
       const systemInstruction = `
-      You are an expert at creating Spaced Repetition Flashcards. Your job is to analyze the provided note content and extract 5-10 crucial Question & Answer pairs.
+      You are an expert at creating Spaced Repetition Flashcards. Your job is to analyze the provided note content and extract 5-10 crucial Question & Answer pairs in Indonesian.
       Focus on core concepts, important facts, and principles.
       
-      Respond ONLY with a raw JSON object matching the schema.
+      Respond ONLY with a raw JSON object with the "flashcards" array:
+      {"flashcards": [{"front": "Pertanyaan...", "back": "Jawaban..."}]}
       `;
 
       const schema = {
@@ -348,7 +457,24 @@ async function startServer() {
         responseSchema: schema
       });
 
-      const resultData = cleanAndParseJson(text, { flashcards: [] });
+      const parsed = cleanAndParseJson(text, { flashcards: [] });
+      const rawList = Array.isArray(parsed.flashcards) 
+        ? parsed.flashcards 
+        : (Array.isArray(parsed.cards) ? parsed.cards : (Array.isArray(parsed) ? parsed : []));
+
+      const flashcards = rawList
+        .map((c: any) => {
+          if (!c || typeof c !== 'object') return null;
+          const front = String(c.front || c.question || c.q || c.pertanyaan || c.tanya || c.prompt || '').trim();
+          const back = String(c.back || c.answer || c.a || c.jawaban || c.jawab || c.solution || c.penjelasan || '').trim();
+          if (front && back) {
+            return { front, back };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      const resultData = { flashcards };
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
       res.json(resultData);
@@ -376,7 +502,7 @@ async function startServer() {
       If it's partially correct, give them a lower quality score (e.g., 2 or 3) and explain what they missed.
       If it's completely wrong, grade it as incorrect (quality 0 or 1).
       
-      Quality Scale (0-5):
+      Quality Scale (0-5 integer):
       0: Complete blackout / completely wrong.
       1: Incorrect, but remembered something related.
       2: Incorrect, but it seemed easy to recall the right answer after seeing it.
@@ -384,7 +510,8 @@ async function startServer() {
       4: Correct, after some hesitation.
       5: Perfect, fluent recall.
  
-      Respond ONLY with a raw JSON object matching the schema.
+      Respond ONLY with a raw JSON object matching the schema:
+      {"isCorrect": true, "quality": 4, "feedback": "Penjelasan singkat evaluasi dalam Bahasa Indonesia."}
       `;
 
       const schema = {
@@ -404,7 +531,19 @@ async function startServer() {
         responseSchema: schema
       });
 
-      const resultData = cleanAndParseJson(text, { isCorrect: false, quality: 1, feedback: "Gagal memproses penilaian dari AI." });
+      const parsed = cleanAndParseJson(text, { isCorrect: false, quality: 1, feedback: "Jawaban perlu diperdalam lagi." });
+      
+      let rawQuality = parsed.quality ?? parsed.score ?? parsed.rating ?? (parsed.isCorrect ? 4 : 1);
+      let quality = typeof rawQuality === 'number' ? Math.round(rawQuality) : parseInt(String(rawQuality), 10);
+      if (isNaN(quality)) quality = (parsed.isCorrect || parsed.correct) ? 4 : 1;
+      quality = Math.max(0, Math.min(5, quality));
+
+      const isCorrect = typeof parsed.isCorrect === 'boolean' 
+        ? parsed.isCorrect 
+        : (typeof parsed.correct === 'boolean' ? parsed.correct : quality >= 3);
+      const feedback = String(parsed.feedback || parsed.explanation || parsed.ulasan || (isCorrect ? 'Jawaban Anda tepat.' : 'Jawaban belum tepat.')).trim();
+
+      const resultData = { isCorrect, quality, feedback };
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
       res.json(resultData);
@@ -435,7 +574,21 @@ async function startServer() {
  
       Provide all responses in Indonesian.
  
-      Respond ONLY with a raw JSON object matching the schema.
+      Respond ONLY with a raw JSON object matching the schema:
+      {
+        "title": "Judul Jalur Belajar",
+        "description": "Deskripsi singkat",
+        "phases": [
+          {
+            "title": "Fase 1: Judul",
+            "description": "Deskripsi fase",
+            "order": 1,
+            "competencies": [
+              { "title": "Kompetensi 1", "description": "Deskripsi kompetensi" }
+            ]
+          }
+        ]
+      }
       `;
 
       const schema = {
@@ -477,7 +630,36 @@ async function startServer() {
         responseSchema: schema
       });
 
-      const resultData = cleanAndParseJson(text, { title: topic, description: "Gagal membuat silabus.", phases: [] });
+      const parsed = cleanAndParseJson(text, { title: topic, description: "Silabus pembelajaran komprehensif.", phases: [] });
+      
+      const rawPhases = Array.isArray(parsed.phases) 
+        ? parsed.phases 
+        : (Array.isArray(parsed.fase) ? parsed.fase : (Array.isArray(parsed.stages) ? parsed.stages : (Array.isArray(parsed.modules) ? parsed.modules : [])));
+
+      const phases = rawPhases.map((p: any, idx: number) => {
+        const rawComps = Array.isArray(p.competencies) 
+          ? p.competencies 
+          : (Array.isArray(p.kompetensi) ? p.kompetensi : (Array.isArray(p.tasks) ? p.tasks : (Array.isArray(p.steps) ? p.steps : (Array.isArray(p.items) ? p.items : []))));
+
+        const competencies = rawComps.map((c: any, cIdx: number) => ({
+          title: String(c.title || c.name || c.kompetensi || c.task || `Kompetensi ${cIdx + 1}`).trim(),
+          description: String(c.description || c.deskripsi || '').trim(),
+          order: typeof c.order === 'number' ? c.order : cIdx + 1
+        })).filter((c: any) => Boolean(c.title));
+
+        return {
+          title: String(p.title || p.name || p.phase_name || p.phaseTitle || p.fase || `Fase ${idx + 1}`).trim(),
+          description: String(p.description || p.deskripsi || '').trim(),
+          order: typeof p.order === 'number' ? p.order : idx + 1,
+          competencies
+        };
+      }).filter((p: any) => Boolean(p.title));
+
+      const resultData = {
+        title: String(parsed.title || parsed.name || topic).trim(),
+        description: String(parsed.description || parsed.deskripsi || `Panduan belajar untuk ${topic}`).trim(),
+        phases
+      };
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
       res.json(resultData);
@@ -499,26 +681,30 @@ async function startServer() {
       }
       
       const systemInstruction = `
-      You are an expert academic assistant.
-      The user will provide the abstract, introduction, or full text of an academic paper or book chapter.
-      Your task is to summarize the paper into exactly 3 key points:
-      1. Masalah Utama (The Main Problem)
-      2. Metodologi (The Methodology)
-      3. Kesimpulan (The Conclusion)
+      You are an expert academic assistant for literature reviews.
+      The user will provide the abstract, notes, or full text of an academic paper or book chapter.
+      Your task is to summarize the material into exactly 3 key sections in Indonesian:
+      1. Masalah Utama (The Main Problem / Core Challenge)
+      2. Metodologi (The Methodology / Approach / Argument Structure)
+      3. Kesimpulan (The Key Conclusion / Takeaway)
  
-      Provide all responses in Indonesian.
- 
-      Respond ONLY with a raw JSON object matching the schema.
+      Respond ONLY with a raw JSON object matching this schema:
+      {
+        "mainProblem": "Penjelasan masalah utama...",
+        "methodology": "Penjelasan metodologi...",
+        "conclusion": "Penjelasan kesimpulan..."
+      }
       `;
 
       const schema = {
         type: Type.OBJECT,
         properties: {
+          mainProblem: { type: Type.STRING },
           problem: { type: Type.STRING },
           methodology: { type: Type.STRING },
           conclusion: { type: Type.STRING }
         },
-        required: ["problem", "methodology", "conclusion"]
+        required: ["mainProblem", "methodology", "conclusion"]
       };
 
       const text = await executeAIRequest({
@@ -528,7 +714,38 @@ async function startServer() {
         responseSchema: schema
       });
 
-      const resultData = cleanAndParseJson(text, { problem: "Tidak dapat menyimpulkan masalah utama.", methodology: "Tidak dapat menyimpulkan metodologi.", conclusion: "Tidak dapat menyimpulkan kesimpulan." });
+      const parsed = cleanAndParseJson(text, {});
+      const mainProblem = String(
+        parsed.mainProblem || 
+        parsed.problem || 
+        parsed.masalahUtama || 
+        parsed.masalah_utama || 
+        parsed.inti_masalah || 
+        "Masalah utama belum diekstrak secara spesifik."
+      ).trim();
+
+      const methodology = String(
+        parsed.methodology || 
+        parsed.metodologi || 
+        parsed.metode || 
+        parsed.pendekatan || 
+        "Metodologi pendekatan konseptual."
+      ).trim();
+
+      const conclusion = String(
+        parsed.conclusion || 
+        parsed.kesimpulan || 
+        parsed.takeaway || 
+        parsed.summary || 
+        "Kesimpulan materi literatur."
+      ).trim();
+
+      const resultData = {
+        mainProblem,
+        problem: mainProblem,
+        methodology,
+        conclusion
+      };
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
       res.json(resultData);
@@ -560,9 +777,10 @@ async function startServer() {
       5. The URL MUST be a direct image link (.jpg or .png) and MUST exactly match the book requested.
       
       Instructions for Total Pages:
-      1. Provide the exact or highly accurate estimated total pages for the book.
+      1. Provide the exact or highly accurate estimated total pages for the book as an integer.
       
-      Respond ONLY with a raw JSON object matching the schema.
+      Respond ONLY with a raw JSON object matching the schema:
+      {"totalPages": 320, "coverUrl": "https://covers.openlibrary.org/b/isbn/..."}
       `;
 
       const schema = {
@@ -578,11 +796,29 @@ async function startServer() {
         systemInstruction,
         userPrompt: `Title: ${title}\nAuthor: ${author}`,
         jsonMode: true,
-        responseSchema: schema,
-        tools: [{ googleSearch: {} }]
+        responseSchema: schema
       });
 
-      const resultData = cleanAndParseJson(text, { totalPages: 0, coverUrl: "" });
+      const parsed = cleanAndParseJson(text, { totalPages: 0, coverUrl: "" });
+      
+      let rawPages = parsed.totalPages ?? parsed.total_pages ?? parsed.pages ?? parsed.pageCount ?? 0;
+      let totalPages = typeof rawPages === 'number' ? Math.round(rawPages) : parseInt(String(rawPages), 10) || 0;
+      if (totalPages < 0) totalPages = 0;
+
+      let coverUrl = typeof parsed.coverUrl === 'string' 
+        ? parsed.coverUrl 
+        : (parsed.cover_url || parsed.cover || parsed.image_url || parsed.imageUrl || "");
+
+      if (typeof coverUrl === 'string') {
+        coverUrl = coverUrl.trim();
+        if (!coverUrl.startsWith("http://") && !coverUrl.startsWith("https://")) {
+          coverUrl = "";
+        }
+      } else {
+        coverUrl = "";
+      }
+
+      const resultData = { totalPages, coverUrl };
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
       res.json(resultData);
@@ -615,4 +851,3 @@ async function startServer() {
 }
 
 startServer();
-

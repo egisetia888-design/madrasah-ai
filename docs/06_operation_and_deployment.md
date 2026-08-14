@@ -21,10 +21,13 @@ Aplikasi membutuhkan file `.env` di direktori akar untuk beroperasi dengan fungs
 
 | Nama Variabel | Status | Nilai Default | Keterangan |
 | :--- | :--- | :--- | :--- |
-| `GEMINI_API_KEY` | **Sangat Direkomendasikan** | *Kosong* | Kredensial Google GenAI API untuk akses langsung ke model Gemini. |
-| `OPENROUTER_API_KEY` | Opsional | *Kosong* | Kredensial autentikasi API OpenRouter alternatif (contoh: `sk-or-v1-...`). |
-| `OPENROUTER_MODEL` | Opsional | `google/gemini-2.5-flash` | Model kecerdasan buatan fallback OpenRouter jika `GEMINI_API_KEY` tidak tersedia. |
-| `APP_URL` | Opsional | `https://madrasah.remix` | Alamat URL tempat aplikasi di-hosting, dikirim ke OpenRouter sebagai penanda referer. |
+| `HCNSEC_API_KEY` | **Sangat Direkomendasikan** | *Kosong* | Kunci autentikasi API provider HCNSEC utama. |
+| `HCNSEC_BASE_URL` | **Sangat Direkomendasikan** | `https://api.hcnsec.com/v1` | URL basis endpoint API provider HCNSEC (OpenAI-compatible). |
+| `HCNSEC_MODEL` | Opsional | `google/gemini-2.5-flash` | Nama model AI yang ditargetkan di provider HCNSEC. |
+| `GEMINI_API_KEY` | Opsional | *Kosong* | Kredensial Google GenAI API resmi sebagai opsi fallback. |
+| `OPENROUTER_API_KEY` | Opsional | *Kosong* | Kredensial autentikasi API OpenRouter alternatif. |
+| `OPENROUTER_MODEL` | Opsional | `google/gemini-2.5-flash` | Model kecerdasan buatan fallback OpenRouter jika HCNSEC tidak dikonfigurasi. |
+| `APP_URL` | Opsional | `https://madrasah.remix` | Alamat URL aplikasi, dikirim sebagai header referer ke provider AI. |
 | `NODE_ENV` | Otomatis | `development` | Mengontrol mode jalannya aplikasi (`development` atau `production`). |
 
 ---
@@ -51,7 +54,7 @@ Aplikasi membutuhkan file `.env` di direktori akar untuk beroperasi dengan fungs
    ```bash
    cp .env.example .env
    ```
-   Buka file `.env` menggunakan editor teks Anda dan masukkan kunci API OpenRouter yang valid.
+   Buka file `.env` menggunakan editor teks Anda dan masukkan kunci API HCNSEC atau provider pilihan Anda.
 
 4. **Jalankan Server Pengembangan**
    Mulai server terintegrasi lokal:

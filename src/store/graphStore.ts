@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Node, Edge } from '../types';
+import { createSyncMetadata, updateSyncMetadata } from './syncUtils';
+import { SyncMetadata } from '../types';
 
 localforage.config({
   name: 'madrasah_db',

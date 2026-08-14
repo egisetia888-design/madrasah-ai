@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Note, Folder, Tag } from '../types';
+import { createSyncMetadata, updateSyncMetadata } from './syncUtils';
+import { SyncMetadata } from '../types';
 import { generateEmbedding } from '../lib/semanticSearch';
 import { syncSaveNote, syncDeleteNote } from '../lib/firestoreSync';
 
@@ -27,7 +29,7 @@ interface NotesState {
   folders: Folder[];
   tags: Tag[];
   
-  addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => string;
+  addNote: (note: Omit<Note, 'id' | 'createdAt' | keyof SyncMetadata>) => string;
   updateNote: (id: string, note: Partial<Note>) => void;
   deleteNote: (id: string) => void;
 
@@ -55,7 +57,8 @@ export const useNotesStore = create<NotesState>()(
           ...noteData,
           id,
           createdAt: Date.now(),
-          updatedAt: Date.now(),
+          ...createSyncMetadata(),
+          
         };
         set((state) => ({
           notes: [newNote, ...state.notes]
@@ -68,7 +71,7 @@ export const useNotesStore = create<NotesState>()(
         set((state) => {
           const updatedNotes = state.notes.map(n => {
             if (n.id === id) {
-              const updated = { ...n, ...noteData, updatedAt: Date.now() };
+              const updated = { ...n, ...noteData, ...updateSyncMetadata(n) };
               syncSaveNote(updated);
               return updated;
             }
@@ -90,7 +93,7 @@ export const useNotesStore = create<NotesState>()(
         set((state) => ({
           folders: [
             ...state.folders,
-            { id, name, parentId, createdAt: Date.now() }
+            { id, name, parentId, createdAt: Date.now(), ...createSyncMetadata() }
           ]
         }));
         return id;
@@ -112,7 +115,7 @@ export const useNotesStore = create<NotesState>()(
         
         const id = crypto.randomUUID();
         set((state) => ({
-          tags: [...state.tags, { id, name }]
+          tags: [...state.tags, { id, name, ...createSyncMetadata() }]
         }));
         return id;
       },

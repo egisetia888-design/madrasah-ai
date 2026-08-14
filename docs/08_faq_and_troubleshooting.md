@@ -12,8 +12,8 @@ Dokumen ini dirancang untuk menjawab pertanyaan-pertanyaan yang sering diajukan 
 ### Q: Mengapa aplikasi mengusung tema warna monokromatik hitam-putih?
 **A**: Madrasah adalah sebuah sistem operasi kognitif yang dirancang untuk mendukung pembelajaran mendalam (*deep work*). Warna-warni cerah yang berlebihan di layar terbukti secara ilmiah dapat memicu distorsi konsentrasi dan beban sensorik berlebih. Dengan membatasi palet visual ke nuansa hitam-putih-slate, kami menciptakan lingkungan digital yang "hening", di mana satu-satunya hal yang menarik perhatian Anda adalah esensi dari pemikiran Anda sendiri.
 
-### Q: Apakah saya wajib memiliki API Key OpenRouter untuk menggunakan Madrasah?
-**A**: **Tidak wajib**. Seluruh fungsi inti Madrasah—mulai dari menulis catatan Markdown, menyusun pustaka, membuat peta jalan kurikulum, memvisualisasikan Knowledge Graph, melacak proyek, hingga melatih flashcard secara manual—dapat beroperasi 100% tanpa API Key. Anda hanya membutuhkan `OPENROUTER_API_KEY` jika ingin menggunakan fungsionalitas cerdas bertenaga AI seperti *AI Syllabus Planner*, *AI Flashcard Generator*, *AI Grading Assistant*, dan *AI Zettelkasten Assistant*.
+### Q: Apakah saya wajib memiliki API Key untuk menggunakan Madrasah?
+**A**: **Tidak wajib**. Seluruh fungsi inti Madrasah—mulai dari menulis catatan Markdown, menyusun pustaka, membuat peta jalan kurikulum, memvisualisasikan Knowledge Graph, melacak proyek, hingga melatih flashcard secara manual—dapat beroperasi 100% tanpa API Key. Anda hanya membutuhkan `HCNSEC_API_KEY` (atau `GEMINI_API_KEY` / `OPENROUTER_API_KEY`) jika ingin menggunakan fungsionalitas cerdas bertenaga AI seperti *AI Syllabus Planner*, *AI Flashcard Generator*, *AI Grading Assistant*, dan *AI Zettelkasten Assistant*.
 
 ---
 
@@ -22,16 +22,23 @@ Dokumen ini dirancang untuk menjawab pertanyaan-pertanyaan yang sering diajukan 
 ### Kendala 1: Fitur AI Tidak Merespons / Mengembalikan Kesalahan "Error 500"
 * **Gejala**: Saat mengklik tombol "Mulai Silabus AI", "Rekomendasi Tag", atau melakukan ulasan flashcard, aplikasi menampilkan pesan kesalahan atau animasi memuat berputar tanpa henti.
 * **Kemungkinan Penyebab**:
-  1. Variabel `OPENROUTER_API_KEY` di dalam berkas `.env` server kosong atau tidak valid.
+  1. Variabel `HCNSEC_API_KEY` atau `HCNSEC_BASE_URL` di dalam berkas `.env` server kosong atau tidak valid.
   2. Server backend tidak mendeteksi file `.env` karena server dinyalakan sebelum file tersebut dibuat.
-  3. Kuota saldo pada akun OpenRouter Anda telah habis.
+  3. Kuota saldo pada akun provider AI Anda telah habis atau terkena pembatasan frekuensi (*Rate Limit*).
 * **Solusi**:
   1. Buka berkas `.env` di komputer server Anda, pastikan isinya telah sesuai dengan template `.env.example`.
-  2. Pastikan tidak ada spasi tambahan di sekitar kunci API Anda.
-  3. Matikan proses pengembangan server di terminal Anda, lalu jalankan kembali menggunakan perintah `npm run dev` agar server memuat ulang variabel lingkungan yang baru dideklarasikan.
-  4. Periksa dasbor OpenRouter Anda untuk memastikan saldo API Anda mencukupi dan kuota harian tidak terlampaui.
+  2. Pastikan tidak ada spasi tambahan atau karakter tersembunyi di sekitar kunci API Anda.
+  3. Jika mengubah variabel lingkungan, restart server pengembangan (`npm run dev`) agar sistem memuat konfigurasi terbaru.
+  4. Periksa dasbor provider AI Anda untuk memastikan saldo dan token API Anda mencukupi.
 
-### Kendala 2: Catatan atau Progress Membaca Hilang Setelah Peramban Ditutup
+### Kendala 2: Tab Navigasi atau Konten Terpotong pada Layar Smartphone
+* **Gejala**: Bilah tab tidak menampilkan semua menu atau layout terpotong di perangkat seluler.
+* **Kemungkinan Penyebab**: Pengguna belum menggeser (*swipe/scroll*) bilah tab horisontal yang dirancang khusus untuk menghemat ruang vertikal.
+* **Solusi**:
+  1. Geser bilah tab secara horisontal ke kiri atau kanan (didukung sentuhan gestur alami).
+  2. Pastikan menggunakan browser modern yang mendukung CSS Flexbox dan scrolling touch.
+
+### Kendala 3: Catatan atau Progress Membaca Hilang Setelah Peramban Ditutup
 * **Gejala**: Ketika membuka kembali aplikasi Madrasah keesokan harinya, seluruh data yang telah diinput sebelumnya hilang dan aplikasi kembali ke kondisi kosong (Onboarding Tour muncul kembali).
 * **Kemungkinan Penyebab**:
   1. Anda membuka aplikasi menggunakan Mode Penyamaran (*Incognito Mode / Private Browsing*), di mana peramban secara otomatis menghapus seluruh data `localStorage` begitu tab ditutup.
@@ -41,7 +48,7 @@ Dokumen ini dirancang untuk menjawab pertanyaan-pertanyaan yang sering diajukan 
   2. Kecualikan alamat domain Madrasah (misalnya `localhost:3000` atau URL deployment Anda) dari daftar pembersihan otomatis di pengaturan ekstensi peramban Anda.
   3. Lakukan pencatatan penting dan ekspor berkala jika Anda berniat melakukan pembersihan menyeluruh terhadap sistem komputer Anda.
 
-### Kendala 3: Tampilan Graf Pengetahuan Lambat atau Patah-Patah (*Lagging*)
+### Kendala 4: Tampilan Graf Pengetahuan Lambat atau Patah-Patah (*Lagging*)
 * **Gejala**: Animasi penarikan simpul pada Graf Pengetahuan terasa berat, patah-patah, atau memakan utilisasi CPU peramban yang sangat tinggi.
 * **Kemungkinan Penyebab**: Jumlah catatan di dalam Otak Kedua Anda telah mencapai ratusan hingga ribuan simpul, sehingga mesin rendering SVG D3.js memproses terlalu banyak kalkulasi fisika (*force simulation*) secara bersamaan.
 * **Solusi**:

@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { LearningPath, Phase, Competency } from '../types';
+import { createSyncMetadata, updateSyncMetadata } from './syncUtils';
+import { SyncMetadata } from '../types';
 
 localforage.config({
   name: 'madrasah_db',
@@ -25,13 +27,13 @@ interface CurriculumState {
   phases: Phase[];
   competencies: Competency[];
   
-  addPath: (path: Omit<LearningPath, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => void;
+  addPath: (path: Omit<LearningPath, 'id' | 'createdAt' | keyof SyncMetadata> & { id?: string }) => void;
   updatePath: (id: string, updates: Partial<LearningPath>) => void;
   deletePath: (id: string) => void;
-  addPhase: (phase: Omit<Phase, 'id'> & { id?: string }) => void;
+  addPhase: (phase: Omit<Phase, 'id' | keyof SyncMetadata> & { id?: string }) => void;
   updatePhase: (id: string, updates: Partial<Phase>) => void;
   deletePhase: (id: string) => void;
-  addCompetency: (comp: Omit<Competency, 'id'>) => void;
+  addCompetency: (comp: Omit<Competency, 'id' | keyof SyncMetadata>) => void;
   updateCompetency: (id: string, updates: Partial<Competency>) => void;
   deleteCompetency: (id: string) => void;
 }
@@ -49,14 +51,15 @@ export const useCurriculumStore = create<CurriculumState>()(
             ...pathData,
             id: pathData.id || crypto.randomUUID(),
             createdAt: Date.now(),
-            updatedAt: Date.now(),
+          ...createSyncMetadata(),
+            
           },
           ...state.paths
         ]
       })),
       
       updatePath: (id, updates) => set((state) => ({
-        paths: state.paths.map(p => p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p)
+        paths: state.paths.map(p => p.id === id ? { ...p, ...updates, ...updateSyncMetadata(p) } : p)
       })),
 
       deletePath: (id) => set((state) => ({
@@ -71,12 +74,13 @@ export const useCurriculumStore = create<CurriculumState>()(
           {
             ...phase,
             id: phase.id || crypto.randomUUID(),
+            ...createSyncMetadata(),
           }
         ]
       })),
 
       updatePhase: (id, updates) => set((state) => ({
-        phases: state.phases.map(ph => ph.id === id ? { ...ph, ...updates } : ph)
+        phases: state.phases.map(ph => ph.id === id ? { ...ph, ...updates, ...updateSyncMetadata(ph) } : ph)
       })),
 
       deletePhase: (id) => set((state) => ({
@@ -90,12 +94,13 @@ export const useCurriculumStore = create<CurriculumState>()(
           {
             ...comp,
             id: crypto.randomUUID(),
+            ...createSyncMetadata(),
           }
         ]
       })),
 
       updateCompetency: (id, updates) => set((state) => ({
-        competencies: state.competencies.map(c => c.id === id ? { ...c, ...updates } : c)
+        competencies: state.competencies.map(c => c.id === id ? { ...c, ...updates, ...updateSyncMetadata(c) } : c)
       })),
 
       deleteCompetency: (id) => set((state) => ({

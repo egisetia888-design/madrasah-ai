@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { NavLink, useLocation } from "react-router-dom"
-import { LayoutDashboard, Library, PenTool, Map, Briefcase, FileText, Network, FlaskConical, Menu, X, Brain, BarChart2, Settings, Command, Zap } from "lucide-react"
+import { LayoutDashboard, Library, PenTool, Map, Briefcase, FileText, Network, FlaskConical, Menu, X, Brain, BarChart2, Settings, Command, Zap, BrainCircuit } from "lucide-react"
 import { cn } from "../../utils/cn"
 import { useUIStore } from "../../store/uiStore"
 
@@ -8,6 +8,7 @@ const workspaceItems = [
   { name: "Beranda", href: "/", icon: LayoutDashboard },
   { name: "Pustaka", href: "/library", icon: Library },
   { name: "Catatan", href: "/notes", icon: FileText },
+  { name: "Konsep", href: "/concepts", icon: BrainCircuit },
   { name: "Graf Analisa", href: "/graph", icon: Network },
   { name: "Review", href: "/review", icon: Brain },
   { name: "Tulisan", href: "/writing", icon: PenTool },
@@ -19,7 +20,7 @@ const mainNavItems = [
   workspaceItems[0], // Beranda
   workspaceItems[1], // Pustaka
   workspaceItems[2], // Catatan
-  workspaceItems[5], // Tulisan
+  workspaceItems[3], // Konsep
 ]
 
 export function MobileNav() {

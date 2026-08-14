@@ -1,12 +1,30 @@
 export type UUID = string;
 
-export interface Author {
+export type SyncStatus = 'local_only' | 'pending_sync' | 'syncing' | 'synced' | 'conflict' | 'failed';
+
+export interface ConflictData {
+  detectedAt: number;
+  localRevision: number;
+  remoteRevision: number;
+  remoteData: any;
+  reason: 'concurrent_edit' | 'stale_local';
+  resolution?: 'local_wins' | 'remote_wins' | 'manual_merge';
+}
+
+export interface SyncMetadata {
+  revision: number;
+  updatedAt: number;
+  syncStatus: SyncStatus;
+  conflict?: ConflictData;
+}
+
+export interface Author extends SyncMetadata {
   id: UUID;
   name: string;
   createdAt: number;
 }
 
-export interface Category {
+export interface Category extends SyncMetadata {
   id: UUID;
   name: string;
   createdAt: number;
@@ -14,7 +32,7 @@ export interface Category {
 
 export type BookStatus = 'wishlist' | 'owned' | 'reading' | 'finished' | 'summarized' | 'connected' | 'applied' | 'published';
 
-export interface Book {
+export interface Book extends SyncMetadata {
   id: UUID;
   title: string;
   authorId: UUID | null;
@@ -24,50 +42,68 @@ export interface Book {
   totalPages?: number;
   coverImage?: string;
   createdAt: number;
-  updatedAt: number;
 }
 
 export type NoteType = 'knowledge' | 'project' | 'writing' | 'personal' | 'research';
 export type NoteStatus = 'unprocessed' | 'processed';
 
-export interface Note {
+export interface SourceFragment extends SyncMetadata {
   id: UUID;
-  title: string;
-  content: string; // Inferensi/Opini Sendiri (atau konten utama)
-  rawQuote?: string; // Kutipan Mentah dari Literatur Kredibel
-  referenceCitation?: string; // Teks sumber referensi asli
-  type: NoteType;
-  status: NoteStatus;
-  sourceId?: UUID | null; // For book/research notes
-  folderId: UUID | null;
-  tags: UUID[];
-  embedding?: number[]; // Vector representation
-  icon?: string; // Lucide icon name
+  sourceId: UUID | null;
+  quote: string;
+  location: string;
+  context?: string;
+  reliabilityScore: number;
   createdAt: number;
-  updatedAt: number;
 }
 
-export interface Folder {
+export type ConceptEvolutionStatus = 'emerging' | 'defined' | 'mastered';
+
+export interface Concept extends SyncMetadata {
+  id: UUID;
+  name: string;
+  definition: string;
+  aliases: string[];
+  evolutionStatus: ConceptEvolutionStatus;
+  createdAt: number;
+}
+
+export interface Note extends SyncMetadata {
+  id: UUID;
+  title: string;
+  content: string;
+  rawQuote?: string;
+  referenceCitation?: string;
+  type: NoteType;
+  status: NoteStatus;
+  sourceId?: UUID | null;
+  folderId: UUID | null;
+  tags: UUID[];
+  embedding?: number[];
+  icon?: string;
+  createdAt: number;
+}
+
+export interface Folder extends SyncMetadata {
   id: UUID;
   name: string;
   parentId: UUID | null;
   createdAt: number;
 }
 
-export interface Tag {
+export interface Tag extends SyncMetadata {
   id: UUID;
   name: string;
 }
 
-export interface LearningPath {
+export interface LearningPath extends SyncMetadata {
   id: UUID;
   title: string;
   description: string;
   createdAt: number;
-  updatedAt: number;
 }
 
-export interface Phase {
+export interface Phase extends SyncMetadata {
   id: UUID;
   pathId: UUID;
   title: string;
@@ -76,7 +112,7 @@ export interface Phase {
 
 export type CompetencyStatus = 'not-started' | 'in-progress' | 'done';
 
-export interface Competency {
+export interface Competency extends SyncMetadata {
   id: UUID;
   phaseId: UUID;
   title: string;
@@ -91,41 +127,38 @@ export type TaskStatus = 'todo' | 'in-progress' | 'done';
 
 export type ProjectStatus = 'planned' | 'active' | 'review' | 'completed' | 'archived';
 
-export interface Project {
+export interface Project extends SyncMetadata {
   id: UUID;
   title: string;
   description: string;
   status: ProjectStatus;
   dueDate?: number;
   createdAt: number;
-  updatedAt: number;
 }
 
-export interface Task {
+export interface Task extends SyncMetadata {
   id: UUID;
   projectId: UUID | null;
   title: string;
   status: TaskStatus;
   order: number;
   createdAt: number;
-  updatedAt: number;
 }
 
 export type WritingStatus = 'idea' | 'outline' | 'draft' | 'editing' | 'review' | 'published';
 
-export interface Draft {
+export interface Draft extends SyncMetadata {
   id: UUID;
   title: string;
   content: string;
   status: WritingStatus;
-  embedding?: number[]; // Vector representation
-  icon?: string; // Lucide icon name
-  tags?: string[]; // Tag names or IDs
+  embedding?: number[];
+  icon?: string;
+  tags?: string[];
   createdAt: number;
-  updatedAt: number;
 }
 
-export type NodeType = 'note' | 'book' | 'author' | 'concept' | 'writing' | 'project';
+export type NodeType = 'note' | 'book' | 'author' | 'concept' | 'writing' | 'project' | 'source_fragment';
 
 export interface Node {
   id: UUID;
@@ -140,26 +173,39 @@ export interface Edge {
   label?: string;
 }
 
+export type RelationType = 'supports' | 'contradicts' | 'expands_on' | 'defines' | 'is_a' | 'part_of' | 'references' | 'applies';
+export type RelationCreator = 'user' | 'ai_agent';
 
-export interface Deck {
+export interface Relation extends SyncMetadata {
+  id: UUID;
+  sourceNodeId: UUID;
+  targetNodeId: UUID;
+  relationType: RelationType;
+  confidenceScore: number;
+  createdBy: RelationCreator;
+  explanation?: string;
+  verifiedBySystem: boolean;
+  createdAt: number;
+}
+
+
+export interface Deck extends SyncMetadata {
   id: UUID;
   name: string;
   description: string;
-  noteId?: UUID | null; // Review flashcards wajib berbasis note
+  noteId?: UUID | null;
   createdAt: number;
-  updatedAt: number;
 }
 
-export interface Flashcard {
+export interface Flashcard extends SyncMetadata {
   id: UUID;
   front: string;
   back: string;
   deckId: UUID | null;
-  noteId?: UUID | null; // Flashcards wajib berbasis note
+  noteId?: UUID | null;
   interval: number;
   repetition: number;
   efactor: number;
   dueDate: number;
   createdAt: number;
-  updatedAt: number;
 }

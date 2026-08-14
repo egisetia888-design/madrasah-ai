@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Deck, Flashcard } from '../types';
+import { createSyncMetadata, updateSyncMetadata } from './syncUtils';
+import { SyncMetadata } from '../types';
 
 localforage.config({
   name: 'madrasah_db',
@@ -24,10 +26,10 @@ interface ReviewState {
   decks: Deck[];
   flashcards: Flashcard[];
   
-  addDeck: (deck: Omit<Deck, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => string;
+  addDeck: (deck: Omit<Deck, 'id' | 'createdAt' | keyof SyncMetadata> & { id?: string }) => string;
   deleteDeck: (id: string) => void;
   
-  addFlashcard: (flashcard: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt' | 'interval' | 'repetition' | 'efactor' | 'dueDate'>) => void;
+  addFlashcard: (flashcard: Omit<Flashcard, 'id' | 'createdAt' | 'interval' | 'repetition' | 'efactor' | 'dueDate' | keyof SyncMetadata>) => void;
   reviewFlashcard: (id: string, quality: number) => void; // quality 0-5
 }
 
@@ -45,7 +47,8 @@ export const useReviewStore = create<ReviewState>()(
               ...deckData,
               id,
               createdAt: Date.now(),
-              updatedAt: Date.now(),
+          ...createSyncMetadata(),
+              
             },
             ...state.decks
           ]
@@ -69,7 +72,8 @@ export const useReviewStore = create<ReviewState>()(
             efactor: 2.5,
             dueDate: Date.now(),
             createdAt: Date.now(),
-            updatedAt: Date.now(),
+          ...createSyncMetadata(),
+            
           }
         ]
       })),
@@ -102,7 +106,8 @@ export const useReviewStore = create<ReviewState>()(
             repetition,
             interval,
             dueDate,
-            updatedAt: Date.now(),
+            ...updateSyncMetadata(f),
+            
           };
         })
       })),

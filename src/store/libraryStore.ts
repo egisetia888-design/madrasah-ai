@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Book, Author, Category } from '../types';
+import { createSyncMetadata, updateSyncMetadata } from './syncUtils';
+import { SyncMetadata } from '../types';
 import { syncSaveBook, syncDeleteBook } from '../lib/firestoreSync';
 
 localforage.config({
@@ -27,7 +29,7 @@ interface LibraryState {
   categories: Category[];
   
   // Actions
-  addBook: (book: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => string;
+  addBook: (book: Omit<Book, 'id' | 'createdAt' | keyof SyncMetadata>) => string;
   updateBook: (id: string, book: Partial<Book>) => void;
   deleteBook: (id: string) => void;
   
@@ -48,7 +50,8 @@ export const useLibraryStore = create<LibraryState>()(
           ...bookData,
           id,
           createdAt: Date.now(),
-          updatedAt: Date.now(),
+          ...createSyncMetadata(),
+          
         };
         set((state) => ({
           books: [newBook, ...state.books]
@@ -61,7 +64,7 @@ export const useLibraryStore = create<LibraryState>()(
         set((state) => {
           const updatedBooks = state.books.map(b => {
             if (b.id === id) {
-              const updated = { ...b, ...bookData, updatedAt: Date.now() };
+              const updated = { ...b, ...bookData, ...updateSyncMetadata(b) };
               syncSaveBook(updated);
               return updated;
             }
@@ -81,7 +84,7 @@ export const useLibraryStore = create<LibraryState>()(
       addAuthor: (name) => {
         const id = crypto.randomUUID();
         set((state) => ({
-          authors: [...state.authors, { id, name, createdAt: Date.now() }]
+          authors: [...state.authors, { id, name, createdAt: Date.now(), ...createSyncMetadata() }]
         }));
         return id;
       },
@@ -89,7 +92,7 @@ export const useLibraryStore = create<LibraryState>()(
       addCategory: (name) => {
         const id = crypto.randomUUID();
         set((state) => ({
-          categories: [...state.categories, { id, name, createdAt: Date.now() }]
+          categories: [...state.categories, { id, name, createdAt: Date.now(), ...createSyncMetadata() }]
         }));
         return id;
       }

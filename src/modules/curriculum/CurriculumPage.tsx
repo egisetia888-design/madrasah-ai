@@ -106,33 +106,32 @@ export function CurriculumPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Kurikulum</h1>
-          <p className="text-gray-500 mt-1 text-sm">Kelola peta jalan belajar dan progres Anda.</p>
+    <div className="space-y-6 animate-in fade-in duration-500 w-full min-w-0 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 font-display">Kurikulum</h1>
+          <p className="text-gray-500 mt-1 text-xs sm:text-sm">Kelola peta jalan belajar dan progres Anda.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 shrink-0 border-gray-200 text-gray-800 bg-gray-50/50 hover:bg-gray-50" onClick={() => setIsAiOpen(true)}>
-            <Sparkles className="w-4 h-4 text-gray-900" />
-            <span className="hidden sm:inline">AI Syllabus Planner</span>
+        <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+          <Button variant="outline" className="gap-2 h-11 sm:h-9" onClick={() => setIsAiOpen(true)}>
+            <Sparkles className="w-4 h-4 text-gray-700" />
+            <span>AI Planner</span>
           </Button>
-          <Button className="gap-2 shrink-0" onClick={() => setIsAddOpen(true)}>
+          <Button className="gap-2 h-11 sm:h-9" onClick={() => setIsAddOpen(true)}>
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Kurikulum Baru</span>
-            <span className="sm:hidden">Tambah</span>
+            <span>Kurikulum Baru</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3 h-11 md:h-10 w-full md:max-w-md focus-within:ring-1 focus-within:ring-gray-900 transition-shadow">
+      <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-3 h-11 w-full max-w-full sm:max-w-md focus-within:ring-2 focus-within:ring-gray-900 transition-all">
          <Search className="w-4 h-4 text-gray-400 shrink-0" />
          <input 
             type="text" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari kurikulum belajar..." 
-            className="bg-transparent border-none outline-none text-base md:text-sm w-full text-gray-900 placeholder:text-gray-400"
+            className="bg-transparent border-none outline-none text-sm w-full text-gray-900 placeholder:text-gray-400"
          />
       </div>
 

@@ -11,6 +11,7 @@ import { AboutDialog } from "./AboutDialog"
 import { Search } from "lucide-react"
 import { useUIStore } from "../../store/uiStore"
 import { Toaster } from "../ui/Toaster"
+import { SyncConflictManager } from "../SyncConflictManager"
 
 export function MainLayout() {
   const searchOpen = useUIStore(state => state.searchOpen)
@@ -46,24 +47,27 @@ export function MainLayout() {
   }, [searchOpen, setSearchOpen, shortcutGuideOpen, setShortcutGuideOpen, setQuickAddOpen])
 
   return (
-    <div className="flex min-h-screen bg-gray-50/50 text-gray-900 font-sans">
+    <div className="flex min-h-screen bg-gray-50/50 text-gray-900 font-sans flex-col md:flex-row w-full overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+      <main className="flex-1 w-full min-w-0 overflow-y-auto overflow-x-hidden pb-20 md:pb-0 flex flex-col">
+        <SyncConflictManager />
         {/* Mobile Header */}
-        <div className="md:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setAboutOpen(true)}>
-             <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center shadow-sm group-active:scale-95 transition-transform">
+        <div className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100 px-3.5 py-2.5 flex items-center justify-between gap-2 min-w-0">
+          <div className="flex items-center gap-2.5 cursor-pointer group shrink-0" onClick={() => setAboutOpen(true)}>
+             <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center shadow-sm group-active:scale-95 transition-transform">
                <span className="text-white font-bold text-sm">M</span>
              </div>
-             <span className="font-semibold text-[17px] tracking-tight">Madrasah</span>
+             <span className="font-semibold text-base tracking-tight font-display">Madrasah</span>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setSearchOpen(true)} className="p-2 -mr-2 text-gray-500 hover:text-gray-900 rounded-full">
-              <Search className="w-5 h-5" />
+          <div className="flex items-center gap-1.5 min-w-0 shrink">
+            <button 
+              onClick={() => setSearchOpen(true)} 
+              className="p-2 text-gray-500 hover:text-gray-900 active:bg-gray-100 rounded-lg shrink-0"
+              aria-label="Cari"
+            >
+              <Search className="w-4 h-4" />
             </button>
-            <div className="scale-90 origin-right">
-              <HijriClock />
-            </div>
+            <HijriClock mobileCompact={true} />
           </div>
         </div>
 
@@ -72,7 +76,7 @@ export function MainLayout() {
           <HijriClock />
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-6 md:py-10">
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-5 sm:py-6 md:py-10 min-w-0 flex-1">
           <Outlet />
         </div>
       </main>

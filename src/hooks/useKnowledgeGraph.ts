@@ -4,7 +4,8 @@ import { useNotesStore } from "../store/notesStore";
 import { useWritingStore } from "../store/writingStore";
 import { useProjectsStore } from "../store/projectsStore";
 import { useLibraryStore } from "../store/libraryStore";
-import { Node, Edge } from "../types";
+import { useKnowledgeStore } from "../store/knowledgeStore";
+import { Node, Edge, Relation } from "../types";
 
 export function useKnowledgeGraph() {
   const storeNodes = useGraphStore(state => state.nodes);
@@ -14,6 +15,10 @@ export function useKnowledgeGraph() {
   const drafts = useWritingStore(state => state.drafts);
   const projects = useProjectsStore(state => state.projects);
   const books = useLibraryStore(state => state.books);
+  
+  const concepts = useKnowledgeStore(state => state.concepts);
+  const fragments = useKnowledgeStore(state => state.sourceFragments);
+  const relations = useKnowledgeStore(state => state.relations);
 
   return useMemo(() => {
     const nodes: Node[] = [...storeNodes];
@@ -69,12 +74,30 @@ export function useKnowledgeGraph() {
     drafts.forEach(draft => addNodeIfMissing(draft.id, draft.title, 'writing'));
     projects.forEach(project => addNodeIfMissing(project.id, project.title, 'project'));
     books.forEach(book => addNodeIfMissing(book.id, book.title, 'book'));
+    
+    // V2 Domain entities
+    concepts.forEach(concept => addNodeIfMissing(concept.id, concept.name, 'concept'));
+    fragments.forEach(fragment => {
+      // Create a short label for fragment
+      const shortQuote = fragment.quote.length > 30 ? fragment.quote.substring(0, 30) + '...' : fragment.quote;
+      addNodeIfMissing(fragment.id, `Frg: ${shortQuote}`, 'source_fragment');
+    });
 
-    // Second pass: Extract relations
+    // Add V2 Relations as Edges for Graph Visualization
+    relations.forEach(rel => {
+       addEdgeIfMissing(rel.sourceNodeId, rel.targetNodeId, rel.relationType);
+    });
+
+    // Second pass: Extract implicit relations from text
     notes.forEach(note => {
       extractTags(note.content, note.id);
       extractTags(note.title, note.id);
       extractWikilinks(note.content, note.id);
+      
+      // Implicit relation from note to book
+      if (note.sourceId) {
+        addEdgeIfMissing(note.id, note.sourceId, 'source');
+      }
     });
     
     drafts.forEach(draft => {
@@ -89,6 +112,13 @@ export function useKnowledgeGraph() {
       extractWikilinks(project.description, project.id);
     });
 
+    // Extract fragments source relation
+    fragments.forEach(fragment => {
+      if (fragment.sourceId) {
+        addEdgeIfMissing(fragment.id, fragment.sourceId, 'extracted_from');
+      }
+    });
+
     return { nodes, edges };
-  }, [storeNodes, storeEdges, notes, drafts, projects, books]);
+  }, [storeNodes, storeEdges, notes, drafts, projects, books, concepts, fragments, relations]);
 }

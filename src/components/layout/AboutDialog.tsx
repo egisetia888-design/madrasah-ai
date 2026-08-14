@@ -62,7 +62,7 @@ export function AboutDialog() {
             <button className="text-gray-400 hover:text-gray-900 transition-colors">
               <Github className="w-5 h-5" />
             </button>
-            <button className="text-gray-400 hover:text-indigo-500 transition-colors">
+            <button className="text-gray-400 hover:text-gray-900 transition-colors">
               <Heart className="w-5 h-5" />
             </button>
           </div>

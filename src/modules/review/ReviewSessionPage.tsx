@@ -177,19 +177,19 @@ export function ReviewSessionPage() {
 
       {showAnswer && !isEvaluating && (
         <div className="grid grid-cols-4 gap-2 shrink-0 animate-in slide-in-from-bottom-2 duration-300">
-          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-gray-200 hover:bg-gray-50 hover:text-gray-800" onClick={() => handleReview(0)}>
+          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-gray-200 hover:bg-gray-100 hover:text-gray-900" onClick={() => handleReview(0)}>
             <span className="font-semibold text-sm md:text-base">Ulangi</span>
             <span className="text-[10px] md:text-xs text-gray-400 font-normal">1m</span>
           </Button>
-          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-orange-200 hover:bg-orange-50 hover:text-orange-700" onClick={() => handleReview(3)}>
+          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-gray-200 hover:bg-gray-100 hover:text-gray-900" onClick={() => handleReview(3)}>
             <span className="font-semibold text-sm md:text-base">Sulit</span>
             <span className="text-[10px] md:text-xs text-gray-400 font-normal">1h</span>
           </Button>
-          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-gray-200 hover:bg-gray-50 hover:text-gray-800" onClick={() => handleReview(4)}>
+          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-gray-200 hover:bg-gray-100 hover:text-gray-900" onClick={() => handleReview(4)}>
             <span className="font-semibold text-sm md:text-base">Sedang</span>
             <span className="text-[10px] md:text-xs text-gray-400 font-normal">3h</span>
           </Button>
-          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-gray-200 hover:bg-gray-50 hover:text-gray-800" onClick={() => handleReview(5)}>
+          <Button variant="outline" className="h-16 flex flex-col gap-1 px-1 border-gray-200 hover:bg-gray-100 hover:text-gray-900" onClick={() => handleReview(5)}>
             <span className="font-semibold text-sm md:text-base">Mudah</span>
             <span className="text-[10px] md:text-xs text-gray-400 font-normal">4h</span>
           </Button>

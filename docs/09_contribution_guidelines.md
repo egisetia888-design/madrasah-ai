@@ -60,7 +60,9 @@ npm run build
 ```
 Proses build harus selesai dengan sukses dan menghasilkan aset terkompresi di folder `/dist`.
 
-### 3. Kebersihan Kode (Clean Code Practices)
+### 3. Kebersihan Kode & Ergonomi Mobile (Clean Code & Mobile First)
+- **Aksesibilitas Mobile**: Uji setiap komponen baru pada resolusi viewport mobile (360px–420px). Pastikan target sentuh minimal 44px dan bilah tab menggunakan scrolling horisontal dengan utilitas `no-scrollbar`.
 - **Hapus Console Logs**: Pastikan tidak ada sisa `console.log` pengembangan yang tertinggal di dalam komponen produksi.
 - **Modularitas**: Hindari menulis seluruh logika di dalam satu berkas besar (seperti menumpuk semua kode di `App.tsx`). Pisahkan sub-komponen ke dalam berkas-berkas mandiri di dalam direktori `src/components/` atau `src/modules/` masing-masing.
 - **Optimasi Impor**: Susun baris impor di bagian atas berkas secara rapi (impor pustaka eksternal diletakkan terlebih dahulu, diikuti impor modul internal proyek).
+- **Pemeliharaan Dokumentasi (Documentation Hygiene)**: Setiap kali menambahkan modul atau memodifikasi rute API, perbarui berkas terkait di `/docs/` sebagai sumber kebenaran tunggal (*Single Source of Truth*).

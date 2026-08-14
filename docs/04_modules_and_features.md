@@ -40,13 +40,15 @@ Modul ini berfungsi untuk merancang dan memantau jalur pembelajaran mandiri.
 Modul penyimpanan literatur digital dan cetak.
 - **Fungsi**: Mengelola daftar buku, kitab, artikel jurnal, atau dokumen bacaan pengguna.
 - **Fitur Utama**:
-  - **Metadata Terstruktur**: Melacak nama penulis, kategori, jumlah halaman, dan persentase progres membaca.
+  - **Metadata Terstruktur & OpenLibrary Resolver**: Melacak nama penulis, kategori, jumlah halaman, dan persentase progres membaca. Terintegrasi dengan OpenLibrary API untuk melengkapi ISBN, data tahun terbit, dan resolusi gambar sampul (*book covers*) otomatis.
   - **Status Pembacaan**: Buku dikategorikan ke dalam status: *Wishlist*, *Owned*, *Reading*, *Finished*, *Summarized*, *Connected*, *Applied*, hingga *Published*.
   - **Pembuat Catatan Instan**: Di dalam halaman detail buku, pengguna dapat menulis "Catatan Cepat" (*Quick Note*). Catatan ini secara otomatis didaftarkan ke modul **Zettelkasten** dengan referensi `sourceId` yang mengarah kembali ke buku tersebut.
+  - **Ringkasan Literatur AI**: Memindai kutipan panjang buku untuk mengekstrak masalah utama, metodologi, dan kesimpulan ke dalam format catatan terstruktur.
+  - **Ergonomi Mobile**: Filter status bacaan disajikan dalam bentuk bilah tab gulir horisontal (`no-scrollbar`) yang responsif terhadap gestur usap.
 
 ---
 
-## 4.3 Pilar 3: Zettelkasten (The Cognitive Core)
+## 4.3 Pilar 3: Zettelkasten & Jaring Kognitif (The Cognitive Core)
 
 ### 🧠 Otak Kedua (Notes & Inbox)
 Pusat dari seluruh sistem penataan ide, dibangun dengan metode pencatatan Zettelkasten.
@@ -59,13 +61,21 @@ Pusat dari seluruh sistem penataan ide, dibangun dengan metode pencatatan Zettel
     2. **AI Suggest Connections**: Merekomendasikan catatan lain yang relevan di dalam pustaka pengguna untuk dihubungkan.
     3. **AI Chat & Synthesis**: Membedah isi catatan, merangkum, atau memformulasikan argumen baru berdasarkan referensi silang.
 
+### 💡 Konsep (Conceptual Knowledge Units)
+Modul pematangan unit-unit pemikiran abstrak yang diekstraksi dari berbagai literatur.
+- **Fungsi**: Menampung konsep inti yang memiliki definisi baku dan melacak asal-usul kelahirannya (*provenance*).
+- **Fitur Utama**:
+  - **Status Kedewasaan Konsep**: Melacak evolusi konsep dari tahap *Raw* (Mentah), *Seedling* (Bibit Tumbuh), hingga *Mature* (Kristalisasi Matang).
+  - **Asal-Usul Rujukan (Source Fragments)**: Menghubungkan definisi konsep langsung ke kutipan kalimat atau halaman buku referensi di Pustaka.
+  - **Dukungan Graf Relasional**: Konsep otomatis terpetakan sebagai simpul sentral di dalam Graf Pengetahuan.
+
 ### 📊 Graf Pengetahuan (Knowledge Graph)
 Visualisasi jaringan kognitif berbasis teori graf.
 - **Fungsi**: Membantu pengguna melihat hubungan tersembunyi antarkonsep yang telah mereka catat.
 - **Fitur Utama**:
   - **Visualisasi D3.js**: Render graf dinamis di mana setiap simpul (*node*) merepresentasikan Catatan, Buku, Penulis, atau Konsep, dan garis (*edge*) menggambarkan koneksi antar-elemen.
-  - **Filter Tipe Simpul**: Pengguna dapat menyembunyikan atau menampilkan tipe simpul tertentu untuk merapikan visualisasi graf.
-  - **Pencarian & Penyorotan**: Ketik nama konsep untuk menyorot simpul yang relevan beserta koneksi terdekatnya (*neighbors*).
+  - **Filter Tipe Simpul & Mode Layar Penuh**: Pengguna dapat menyembunyikan atau menampilkan tipe simpul tertentu dan memperbesar kanvas graf ke mode satu layar penuh (*fullscreen*).
+  - **Bottom Sheet Detail Mobile**: Mengetuk simpul di layar ponsel memicu panel informasi meluncur dari bawah layar (*bottom sheet*), menjaga kanvas graf tetap terlihat.
 
 ### 🔁 Latihan & Tinjauan (Spaced Repetition)
 Sistem pelatihan memori berbasis sains kognitif untuk mencegah kurva lupa (*forgetting curve*).
@@ -84,12 +94,14 @@ Manajemen eksekusi tugas praktis untuk mengubah ilmu menjadi amal nyata.
 - **Fungsi**: Menyusun tugas-tugas terukur berdasarkan ide atau proyek yang sedang dikerjakan.
 - **Fitur Utama**:
   - **Status Proyek**: Melacak proyek dari fase *Planned*, *Active*, *Review*, *Completed*, hingga *Archived*.
-  - **Sistem Daftar Tugas (Task Board)**: Menambahkan tugas-tugas konkret di bawah proyek, menyusun urutannya, dan mencentangnya setelah selesai dikerjakan.
+  - **Sistem Daftar Tugas (Task Checklist)**: Menambahkan tugas konkret di bawah proyek, menyusun urutan, dan mencentangnya setelah selesai dikerjakan.
+  - **Tampilan Tab Responsif**: Pengalihan cepat antara daftar proyek aktif dan arsip menggunakan tab sentuh horisontal.
 
-### ✍️ Menulis (Draft Studio)
-Studio penulisan kreatif bebas gangguan (*distraction-free writing studio*).
-- **Fungsi**: Ruang tenang untuk merangkai karya tulis akhir seperti esai, artikel, buku, atau tugas akademik.
+### ✍️ Alur Menulis (Distraction-Free Writing Studio)
+Studio penulisan kreatif dengan pipa penerbitan 5-tahap.
+- **Fungsi**: Ruang tenang untuk merangkai karya tulis akhir seperti esai, artikel, kitab ringkasan, atau makalah ilmiah.
 - **Fitur Utama**:
-  - **Fokus Sunyi**: Antarmuka bersih tanpa panel samping yang mengalihkan perhatian untuk menulis draf panjang.
-  - **Status Draf**: Mengelola perkembangan tulisan dari status *Idea*, *Outline*, *Draft*, *Editing*, *Review*, hingga *Published*.
+  - **Dual Mode View (Kanban & List)**: Menyajikan draf dalam bentuk kartu Kanban multi-kolom yang mendukung *snap-scroll* di ponsel atau tabel daftar (*List View*) yang ringkas.
+  - **Pipeline 5 Tahap Penerbitan**: Mengelola tulisan dari *Ide*, *Kerangka*, *Draf*, *Revisi*, hingga *Terbit*.
+  - **Fokus Sunyi & Penghitung Kata**: Editor Markdown minim gangguan dengan metrik jumlah kata dan estimasi waktu membaca secara langsung.
   - **Integrasi Referensi Otak Kedua**: Mempermudah pengguna meninjau ulang catatan penting di Otak Kedua tanpa perlu keluar dari studio menulis.

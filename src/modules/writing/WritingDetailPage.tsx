@@ -59,7 +59,7 @@ export function WritingDetailPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [title, content, status, draft.id]);
+  }, [title, content, status, draft?.id]);
 
   if (!draft) {
     return (
@@ -145,7 +145,7 @@ export function WritingDetailPage() {
             <div className="flex items-center gap-2">
               <Button 
                 variant="outline" 
-                className="gap-2 text-indigo-600 bg-indigo-50 border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200" 
+                className="gap-2 text-gray-900 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300" 
                 onClick={handleAnalyzeContent}
                 disabled={isAnalyzing}
               >
@@ -180,32 +180,32 @@ export function WritingDetailPage() {
 
           <div className="space-y-6">
             {aiSuggestions && (
-              <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-2 animate-in slide-in-from-top duration-300">
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-2 animate-in slide-in-from-top duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-indigo-600" />
-                    <h3 className="text-sm font-semibold text-indigo-900">Saran AI (Draf)</h3>
+                    <Sparkles className="w-4 h-4 text-gray-900" />
+                    <h3 className="text-sm font-semibold text-gray-900 font-display">Saran AI (Draf)</h3>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="ghost" onClick={discardSuggestions} className="h-8 text-indigo-600 hover:bg-indigo-100">Tolak</Button>
-                    <Button size="sm" onClick={approveSuggestions} className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white gap-1">
+                    <Button size="sm" variant="ghost" onClick={discardSuggestions} className="h-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100">Tolak</Button>
+                    <Button size="sm" onClick={approveSuggestions} className="h-8 bg-gray-900 hover:bg-gray-800 text-white gap-1">
                       <Check className="w-3 h-3" /> Terima Saran
                     </Button>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-4 items-center">
-                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-indigo-100">
-                    <span className="text-xs text-indigo-400 font-medium uppercase tracking-wider">Ikon:</span>
+                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-200">
+                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wider font-mono">Ikon:</span>
                     {(() => {
                       const Icon = (LucideIcons as any)[aiSuggestions.icon] || LucideIcons.FileText;
-                      return <Icon className="w-4 h-4 text-indigo-600" />;
+                      return <Icon className="w-4 h-4 text-gray-900" />;
                     })()}
-                    <span className="text-xs font-medium text-indigo-900">{aiSuggestions.icon}</span>
+                    <span className="text-xs font-medium text-gray-900">{aiSuggestions.icon}</span>
                   </div>
                   <div className="flex flex-wrap gap-1 items-center">
-                    <span className="text-xs text-indigo-400 font-medium uppercase tracking-wider mr-1">Tag:</span>
+                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wider mr-1 font-mono">Tag:</span>
                     {aiSuggestions.tags.map((t, i) => (
-                      <span key={i} className="px-2 py-0.5 text-[10px] font-bold bg-white text-indigo-600 rounded-lg border border-indigo-100 tracking-wide uppercase">
+                      <span key={i} className="px-2 py-0.5 text-[10px] font-bold bg-white text-gray-800 rounded-lg border border-gray-200 tracking-wide uppercase">
                         #{t}
                       </span>
                     ))}

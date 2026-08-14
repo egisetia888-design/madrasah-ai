@@ -5,6 +5,7 @@ import { Plus, Search, FileText, Folder as FolderIcon, MoreVertical, Sparkles, L
 import * as LucideIcons from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog"
 import { useNotesStore } from "../../store/notesStore"
+import { useKnowledgeStore } from "../../store/knowledgeStore"
 import Markdown from 'react-markdown'
 import { NoteType } from "../../types"
 import { cn } from "../../utils/cn"
@@ -130,10 +131,11 @@ export function NotesPage() {
     setIsSuggesting(true);
     const toastId = addToast({ type: 'loading', message: 'AI sedang menganalisis saran tag...' });
     try {
+      const { concepts } = useKnowledgeStore.getState();
       const res = await fetch("/api/ai/suggest-tags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, notes }),
+        body: JSON.stringify({ content, notes, concepts }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -167,10 +169,13 @@ export function NotesPage() {
     setAiResponse("");
     const toastId = addToast({ type: 'loading', message: 'AI sedang memproses pertanyaan...' });
     try {
+      // Get knowledge base contexts
+      const { concepts, sourceFragments, relations } = useKnowledgeStore.getState();
+
       const res = await fetch("/api/ai/zettelkasten", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, notes }),
+        body: JSON.stringify({ prompt, notes, concepts, fragments: sourceFragments, relations }),
       });
       
       const data = await res.json();
@@ -200,21 +205,48 @@ export function NotesPage() {
   }
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-7xl mx-auto pb-20">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-8">
+    <div className="flex flex-col h-full animate-in fade-in duration-500 w-full min-w-0 max-w-7xl mx-auto pb-20">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Knowledge Database</h1>
-          <p className="text-gray-500 mt-1">Zettelkasten & Catatan Pembelajaran Anda</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 font-display">Knowledge Database</h1>
+          <p className="text-gray-500 mt-0.5 text-xs sm:text-sm">Zettelkasten & Catatan Pembelajaran Anda</p>
         </div>
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <Button variant="outline" className="gap-2" onClick={() => setIsAssistantOpen(true)}>
+        <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+          <Button variant="outline" className="gap-2 h-11 sm:h-9" onClick={() => setIsAssistantOpen(true)}>
             <Sparkles className="w-4 h-4 text-gray-500" />
-            <span className="hidden sm:inline">Tanya AI</span>
+            <span>Tanya AI</span>
           </Button>
-          <Button className="gap-2" onClick={() => setIsAddOpen(true)}>
+          <Button className="gap-2 h-11 sm:h-9" onClick={() => setIsAddOpen(true)}>
             <Plus className="w-4 h-4" />
-            Catatan Baru
+            <span>Catatan Baru</span>
           </Button>
+        </div>
+      </div>
+
+      {/* Quick Mobile Horizontal Category Tabs */}
+      <div className="lg:hidden mb-4 space-y-2.5">
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full no-scrollbar py-1 scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
+          {[
+            { id: 'all', label: 'Semua' },
+            { id: 'knowledge', label: 'Knowledge' },
+            { id: 'research', label: 'Research' },
+            { id: 'project', label: 'Project' },
+            { id: 'writing', label: 'Writing' },
+            { id: 'personal', label: 'Personal' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={cn(
+                "px-3.5 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer",
+                activeTab === tab.id
+                  ? "bg-gray-900 text-white shadow-sm font-semibold"
+                  : "bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
       
@@ -223,7 +255,7 @@ export function NotesPage() {
         <div className="lg:hidden flex items-center justify-between bg-white border border-gray-200 rounded-xl p-3.5 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
             <Filter className="w-4 h-4 text-gray-500" />
-            <span>Saring Catatan</span>
+            <span>Filter Folder & Tag</span>
           </div>
           <Button 
             type="button" 
@@ -232,7 +264,7 @@ export function NotesPage() {
             onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
             className="h-8 px-3 text-xs font-semibold"
           >
-            {mobileFiltersOpen ? "Sembunyikan" : "Saring / Cari"}
+            {mobileFiltersOpen ? "Tutup" : "Buka Filter"}
           </Button>
         </div>
 

@@ -121,11 +121,11 @@ export function ProjectDetailPage() {
 
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
-      case 'active': return 'text-gray-800 bg-gray-50 border-gray-200';
-      case 'completed': return 'text-gray-800 bg-gray-50 border-gray-200';
+      case 'active': return 'text-gray-900 bg-gray-100 border-gray-300';
+      case 'completed': return 'text-gray-900 bg-gray-100 border-gray-300';
       case 'planned': return 'text-gray-700 bg-gray-50 border-gray-200';
-      case 'review': return 'text-gray-800 bg-gray-50 border-gray-200';
-      case 'archived': return 'text-orange-700 bg-orange-50 border-orange-200';
+      case 'review': return 'text-gray-800 bg-gray-100 border-gray-200';
+      case 'archived': return 'text-gray-500 bg-gray-50 border-gray-200';
       default: return 'text-gray-700 bg-gray-50 border-gray-200';
     }
   }

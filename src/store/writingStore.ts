@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Draft } from '../types';
+import { createSyncMetadata, updateSyncMetadata } from './syncUtils';
+import { SyncMetadata } from '../types';
 import { generateEmbedding } from '../lib/semanticSearch';
 import { syncSaveDraft, syncDeleteDraft } from '../lib/firestoreSync';
 
@@ -25,7 +27,7 @@ const storage = {
 interface WritingState {
   drafts: Draft[];
   
-  addDraft: (draft: Omit<Draft, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => string;
+  addDraft: (draft: Omit<Draft, 'id' | 'createdAt' | 'status' | keyof SyncMetadata>) => string;
   updateDraft: (id: string, draft: Partial<Draft>) => void;
   deleteDraft: (id: string) => void;
   indexDraft: (id: string) => Promise<void>;
@@ -43,7 +45,8 @@ export const useWritingStore = create<WritingState>()(
           id,
           status: 'draft',
           createdAt: Date.now(),
-          updatedAt: Date.now(),
+          ...createSyncMetadata(),
+          
         };
         set((state) => ({
           drafts: [newDraft, ...state.drafts]
@@ -56,7 +59,7 @@ export const useWritingStore = create<WritingState>()(
         set((state) => {
           const updatedDrafts = state.drafts.map(d => {
             if (d.id === id) {
-              const updated = { ...d, ...draftData, updatedAt: Date.now() };
+              const updated = { ...d, ...draftData, ...updateSyncMetadata(d) };
               syncSaveDraft(updated);
               return updated;
             }
