@@ -1,18 +1,26 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, BrainCircuit, Edit2, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Search, BrainCircuit, Edit2, Trash2, Network, Sparkles, Zap, ArrowRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog";
 import { Button } from "../../components/ui/Button";
 import { useKnowledgeStore } from "../../store/knowledgeStore";
+import { useToastStore } from "../../store/toastStore";
+import { autoLinkSingleEntity, runAutoLinker, scanTextForEntities } from "../../utils/autoLinker";
 import { ConceptEvolutionStatus } from "../../types";
+import { cn } from "../../utils/cn";
 
 export function ConceptsPage() {
+  const navigate = useNavigate();
   const concepts = useKnowledgeStore(state => state.concepts);
   const addConcept = useKnowledgeStore(state => state.addConcept);
   const updateConcept = useKnowledgeStore(state => state.updateConcept);
   const deleteConcept = useKnowledgeStore(state => state.deleteConcept);
+  const relations = useKnowledgeStore(state => state.relations);
+  const addToast = useToastStore(state => state.addToast);
   
   const [search, setSearch] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isAutoLinking, setIsAutoLinking] = useState(false);
   const [editingConceptId, setEditingConceptId] = useState<string | null>(null);
 
   // Form State
@@ -28,6 +36,35 @@ export function ConceptsPage() {
       c.aliases.some(a => a.toLowerCase().includes(search.toLowerCase()))
     );
   }, [concepts, search]);
+
+  const liveDetected = useMemo(() => {
+    return scanTextForEntities(`${name}\n${definition}\n${aliases}`);
+  }, [name, definition, aliases]);
+
+  const handleGlobalAutoLink = () => {
+    setIsAutoLinking(true);
+    const toastId = addToast({ type: 'loading', message: 'Memindai relasi konsep di seluruh basis pengetahuan...' });
+    setTimeout(() => {
+      try {
+        const result = runAutoLinker();
+        if (result.newAdded > 0) {
+          addToast({
+            type: 'success',
+            message: `Berhasil menemukan ${result.totalDiscovered} koneksi dan menambahkan ${result.newAdded} relasi konsep baru!`
+          });
+        } else {
+          addToast({
+            type: 'info',
+            message: `Seluruh ${result.totalDiscovered} relasi konsep sudah tersinkronisasi.`
+          });
+        }
+      } catch (err: any) {
+        addToast({ type: 'error', message: 'Gagal menjalankan sinkronisasi otomatis.' });
+      } finally {
+        setIsAutoLinking(false);
+      }
+    }, 400);
+  };
 
   const handleOpenAdd = () => {
     setName("");
@@ -52,6 +89,7 @@ export function ConceptsPage() {
     
     const parsedAliases = aliases.split(",").map(a => a.trim()).filter(Boolean);
 
+    let targetId = editingConceptId;
     if (editingConceptId) {
       updateConcept(editingConceptId, {
         name,
@@ -60,7 +98,7 @@ export function ConceptsPage() {
         evolutionStatus
       });
     } else {
-      addConcept({
+      targetId = addConcept({
         name,
         definition,
         aliases: parsedAliases,
@@ -68,6 +106,16 @@ export function ConceptsPage() {
       });
     }
     
+    if (targetId) {
+      const linked = autoLinkSingleEntity(targetId, `${name}\n${definition}\n${aliases}`, 'concept', name);
+      if (linked > 0) {
+        addToast({
+          type: 'success',
+          message: `Konsep disimpan & ${linked} relasi otomatis tertaut ke basis pengetahuan!`
+        });
+      }
+    }
+
     setIsAddOpen(false);
   };
 
@@ -88,12 +136,23 @@ export function ConceptsPage() {
             <BrainCircuit className="w-6 h-6 text-gray-900 shrink-0" />
             <span>Konsep</span>
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">Kelola dan kembangkan unit pengetahuan abstrak secara independen.</p>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">Kelola dan kembangkan unit pengetahuan abstrak secara otomatis tertaut.</p>
         </div>
-        <Button onClick={handleOpenAdd} className="w-full sm:w-auto gap-2 shrink-0 h-11 sm:h-9">
-          <Plus className="w-4 h-4" />
-          <span>Konsep Baru</span>
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button 
+            variant="outline" 
+            onClick={handleGlobalAutoLink} 
+            disabled={isAutoLinking}
+            className="flex-1 sm:flex-initial gap-2 h-11 sm:h-9 text-gray-900 border-gray-300 hover:bg-gray-100"
+          >
+            <Zap className={cn("w-4 h-4 text-gray-900", isAutoLinking && "animate-spin")} />
+            <span>{isAutoLinking ? "Menautkan..." : "Tautkan Otomatis"}</span>
+          </Button>
+          <Button onClick={handleOpenAdd} className="flex-1 sm:flex-initial gap-2 shrink-0 h-11 sm:h-9">
+            <Plus className="w-4 h-4" />
+            <span>Konsep Baru</span>
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -122,36 +181,50 @@ export function ConceptsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredConcepts.map(concept => (
-            <div key={concept.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group relative flex flex-col h-full">
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-semibold text-gray-900 line-clamp-1">{concept.name}</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusColor(concept.evolutionStatus)}`}>
-                  {concept.evolutionStatus}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 line-clamp-3 mb-4 flex-1">
-                {concept.definition || <span className="italic text-gray-400">Belum ada definisi.</span>}
-              </p>
-              {concept.aliases.length > 0 && (
-                <div className="mb-4 flex flex-wrap gap-1">
-                  {concept.aliases.map(alias => (
-                    <span key={alias} className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                      {alias}
-                    </span>
-                  ))}
+          {filteredConcepts.map(concept => {
+            const relCount = relations.filter(r => r.sourceNodeId === concept.id || r.targetNodeId === concept.id).length;
+            return (
+              <div key={concept.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group relative flex flex-col h-full">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-gray-900 line-clamp-1">{concept.name}</h3>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusColor(concept.evolutionStatus)}`}>
+                    {concept.evolutionStatus}
+                  </span>
                 </div>
-              )}
-              <div className="flex gap-2 pt-3 border-t border-gray-50 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="outline" size="sm" onClick={() => handleOpenEdit(concept)} className="flex-1 py-1 h-auto text-xs">
-                  <Edit2 className="w-3 h-3 mr-1" /> Edit
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => deleteConcept(concept.id)} className="px-2 h-auto text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-200">
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                <p className="text-sm text-gray-600 line-clamp-3 mb-4 flex-1">
+                  {concept.definition || <span className="italic text-gray-400">Belum ada definisi.</span>}
+                </p>
+                {concept.aliases.length > 0 && (
+                  <div className="mb-4 flex flex-wrap gap-1">
+                    {concept.aliases.map(alias => (
+                      <span key={alias} className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                        {alias}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between pt-3 border-t border-gray-50 text-xs text-gray-500">
+                  <button 
+                    onClick={() => navigate(`/graph?search=${encodeURIComponent(concept.name)}`)}
+                    className="flex items-center gap-1.5 font-medium hover:text-gray-900 transition-colors"
+                  >
+                    <Network className="w-3.5 h-3.5 text-gray-900" />
+                    <span>{relCount} relasi</span>
+                  </button>
+
+                  <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="outline" size="sm" onClick={() => handleOpenEdit(concept)} className="py-1 h-auto text-xs">
+                      <Edit2 className="w-3 h-3 mr-1" /> Edit
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => deleteConcept(concept.id)} className="px-2 h-auto text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-200">
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -208,6 +281,22 @@ export function ConceptsPage() {
                 <option value="mastered">Mastered (Sudah dikuasai sepenuhnya)</option>
               </select>
             </div>
+
+            {liveDetected.length > 0 && (
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-900">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Keterkaitan Terdeteksi ({liveDetected.length})</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {liveDetected.map(item => (
+                    <span key={item.id} className="text-[11px] bg-white border border-gray-200 px-2 py-0.5 rounded text-gray-700">
+                      [{item.type}] {item.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -219,3 +308,4 @@ export function ConceptsPage() {
     </div>
   );
 }
+

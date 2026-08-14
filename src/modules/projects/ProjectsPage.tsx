@@ -1,11 +1,13 @@
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
-import { Plus, Search, Briefcase, MoreVertical, LayoutList, Calendar, CheckCircle2, Clock, Inbox, PlayCircle, Filter } from "lucide-react"
+import { Plus, Search, Briefcase, MoreVertical, LayoutList, Calendar, CheckCircle2, Clock, Inbox, PlayCircle, Filter, Network } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog"
 import { useProjectsStore } from "../../store/projectsStore"
+import { useKnowledgeStore } from "../../store/knowledgeStore"
 import { ProjectStatus } from "../../types"
 import { cn } from "../../utils/cn"
+import { scanTextForEntities, autoLinkSingleEntity } from "../../utils/autoLinker"
 
 export function ProjectsPage() {
   const navigate = useNavigate()
@@ -21,17 +23,27 @@ export function ProjectsPage() {
   const projects = useProjectsStore(state => state.projects)
   const tasks = useProjectsStore(state => state.tasks)
   const addProject = useProjectsStore(state => state.addProject)
+  const relations = useKnowledgeStore(state => state.relations)
   
   const handleAddProject = (e: any) => {
     e.preventDefault()
     if (!title) return
     
+    const newProjectId = crypto.randomUUID();
     addProject({
+      id: newProjectId,
       title,
       description,
       status,
       dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
-    })
+    } as any)
+
+    // Auto-link entities mentioned in project title & description
+    try {
+      autoLinkSingleEntity(newProjectId, `${title}\n${description}`, 'project', title);
+    } catch (err) {
+      console.warn('Project auto-linking error:', err);
+    }
     
     setTitle("")
     setDescription("")
@@ -182,7 +194,18 @@ export function ProjectsPage() {
                       <span className="flex items-center gap-1.5">
                         <LayoutList className="w-3.5 h-3.5 text-gray-400" /> {doneTasks}/{totalTasks} Tugas Selesai
                       </span>
-                      <span>{progressPct}%</span>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const relCount = relations.filter(r => r.sourceNodeId === project.id || r.targetNodeId === project.id).length;
+                          if (relCount === 0) return null;
+                          return (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
+                              <Network className="w-2.5 h-2.5" /> {relCount}
+                            </span>
+                          );
+                        })()}
+                        <span>{progressPct}%</span>
+                      </div>
                     </div>
                     
                     <div className="flex items-center justify-between text-xs text-gray-400 font-medium pt-1">

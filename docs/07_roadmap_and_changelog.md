@@ -30,7 +30,14 @@ Pengembangan **Madrasah — Personal Knowledge Operating System** dibagi ke dala
 
 ## 7.2 Riwayat Perubahan (Changelog)
 
-### v1.2.0 (Rilis Terkini - Agustus 2026)
+### v1.0.0-beta (Rilis Terkini — Agustus 2026)
+* **Kreator & Identitas Resmi**:
+  - Dikelola oleh **egiistw88** dengan identitas resmi *Madrasah — Personal Knowledge OS*.
+  - Penyajian modal informasi sistem terpadu (**AboutDialog**) dengan metadata versi, kreator, dan kutipan filosofis.
+* **Mesin Penautan Otomatis (Automated Entity & Knowledge Linking Engine)**:
+  - Deteksi entitas waktu nyata (*live contextual detection*) di **Studio Menulis** dengan kemampuan penyisipan `[[WikiLink]]` satu sentuhan.
+  - Penautan otomatis konsep, buku rujukan, dan catatan saat pembuatan/penyuntingan proyek, draf tulisan, dan kurikulum belajar.
+  - Tampilan indikator badge relasi (*relation count badges*) dan panel penelusuran relasi pengetahuan interaktif pada halaman detail.
 * **Penyempurnaan Ergonomi Mobile-First (Mobile Web App Mastery)**:
   - Mengimplementasikan bilah tab gulir horisontal (`no-scrollbar`) dengan penanganan gestur sentuh mulus di seluruh modul (**Pustaka**, **Proyek**, **Catatan**, **Kurikulum**, **Alur Menulis**, **Review**, **Konsep**, dan **Graf Pengetahuan**).
   - Menstandarkan area sentuh minimal **44px** (`h-11`) untuk seluruh tombol aksi mobile dan input navigasi.
@@ -45,7 +52,7 @@ Pengembangan **Madrasah — Personal Knowledge Operating System** dibagi ke dala
 * **Standardisasi Dokumentasi Teknis Profesional**:
   - Sinkronisasi menyeluruh seluruh dokumen di `/docs/` sebagai *Single Source of Truth*.
 
-### v1.1.0 (Rilis 13 Juli 2026)
+### v0.9.0-alpha (Juli 2026)
 * **Penyempurnaan Estetika Visual (Monochrome Overhaul)**:
   - Melakukan pembersihan menyeluruh terhadap palet warna sekunder di seluruh modul menuju skema monokromatik hitam-putih-slate murni (Maksimal 3 warna).
   - Menghapus tombol melayang "Quick Add" untuk memastikan kejernihan ruang visual.
@@ -54,7 +61,7 @@ Pengembangan **Madrasah — Personal Knowledge Operating System** dibagi ke dala
 * **Overhaul Dokumentasi**:
   - Menyusun ulang seluruh sistem dokumentasi ke dalam struktur direktori `/docs` modular.
 
-### v1.0.0 (Rilis Perdana - Juni 2026)
+### v0.1.0-alpha (Juni 2026)
 * **Peluncuran Madrasah Personal Knowledge Operating System**:
   - Rilis awal dasbor Mission Control terintegrasi Hijri Clock.
   - Rilis modul Zettelkasten Catatan, Pustaka Literatur, Kurikulum Pembelajaran, Proyek Aktif, dan Studio Menulis.

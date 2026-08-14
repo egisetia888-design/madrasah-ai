@@ -1,12 +1,14 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
-import { Plus, PenLine, FileText, MoreVertical, LayoutGrid, List } from "lucide-react"
+import { Plus, PenLine, FileText, MoreVertical, LayoutGrid, List, Network, Sparkles } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog"
 import { useWritingStore } from "../../store/writingStore"
+import { useKnowledgeStore } from "../../store/knowledgeStore"
 import { WritingStatus } from "../../types"
 import { cn } from "../../utils/cn"
+import { scanTextForEntities, autoLinkSingleEntity } from "../../utils/autoLinker"
 
 const WRITING_PIPELINE: { id: WritingStatus; label: string }[] = [
   { id: 'idea', label: 'Ide' },
@@ -26,6 +28,7 @@ export function WritingPage() {
   
   const drafts = useWritingStore(state => state.drafts)
   const addDraft = useWritingStore(state => state.addDraft)
+  const relations = useKnowledgeStore(state => state.relations)
 
   const handleAddDraft = (e: any) => {
     e.preventDefault()
@@ -34,9 +37,15 @@ export function WritingPage() {
     const id = addDraft({
       title,
       content,
-      // Ideally we would pass 'status: "idea"' but the store defaults to 'draft' currently. 
-      // Need to fix the store to accept status or default to idea, but for now we'll rely on what it does.
+      status: 'idea',
     })
+
+    // Auto-link entities mentioned in title/content
+    try {
+      autoLinkSingleEntity(id, `${title}\n${content}`, 'writing', title);
+    } catch (e) {
+      console.warn('Auto-link error:', e);
+    }
 
     // Index for semantic search
     useWritingStore.getState().indexDraft(id);
@@ -46,29 +55,40 @@ export function WritingPage() {
     setIsAddOpen(false)
   }
 
-  const renderCard = (draft: any) => (
-    <div key={draft.id} onClick={() => navigate(`/writing/${draft.id}`)} className="group border border-gray-200 rounded-xl bg-white p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex flex-col h-40">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-2 pr-2 min-w-0">
-          {draft.icon && (
-            (() => {
-              const Icon = (LucideIcons as any)[draft.icon] || LucideIcons.FileText;
-              return <Icon className="w-3.5 h-3.5 text-gray-500 shrink-0" />;
-            })()
-          )}
-          <h3 className="font-medium text-gray-900 line-clamp-2 leading-snug">{draft.title}</h3>
+  const renderCard = (draft: any) => {
+    const relCount = relations.filter(r => r.sourceNodeId === draft.id || r.targetNodeId === draft.id).length;
+
+    return (
+      <div key={draft.id} onClick={() => navigate(`/writing/${draft.id}`)} className="group border border-gray-200 rounded-xl bg-white p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex flex-col h-40">
+        <div className="flex items-start justify-between mb-1.5">
+          <div className="flex items-center gap-2 pr-2 min-w-0">
+            {draft.icon && (
+              (() => {
+                const Icon = (LucideIcons as any)[draft.icon] || LucideIcons.FileText;
+                return <Icon className="w-3.5 h-3.5 text-gray-500 shrink-0" />;
+              })()
+            )}
+            <h3 className="font-medium text-gray-900 line-clamp-2 leading-snug">{draft.title}</h3>
+          </div>
+          <button className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-900 shrink-0">
+            <MoreVertical className="w-4 h-4" />
+          </button>
         </div>
-        <button className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-900 shrink-0">
-          <MoreVertical className="w-4 h-4" />
-        </button>
+        <p className="text-xs text-gray-500 line-clamp-2 flex-1 font-serif mt-1">{draft.content || "Mulai menulis..."}</p>
+        <div className="flex items-center justify-between text-[10px] text-gray-400 mt-auto pt-3 border-t border-gray-50 uppercase tracking-wider font-semibold">
+          <div className="flex items-center gap-2">
+            <span>{new Date(draft.updatedAt).toLocaleDateString()}</span>
+            {relCount > 0 && (
+              <span className="inline-flex items-center gap-0.5 text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded text-[9px] font-mono lowercase">
+                <Network className="w-2.5 h-2.5" /> {relCount} relasi
+              </span>
+            )}
+          </div>
+          <span>{draft.content.split(/\s+/).filter((w: string) => w.length > 0).length} kata</span>
+        </div>
       </div>
-      <p className="text-xs text-gray-500 line-clamp-2 flex-1 font-serif mt-1">{draft.content || "Mulai menulis..."}</p>
-      <div className="flex items-center justify-between text-[10px] text-gray-400 mt-auto pt-3 border-t border-gray-50 uppercase tracking-wider font-semibold">
-        <span>{new Date(draft.updatedAt).toLocaleDateString()}</span>
-        <span>{draft.content.split(/\s+/).filter((w: string) => w.length > 0).length} kata</span>
-      </div>
-    </div>
-  )
+    );
+  }
 
   const [activeStageFilter, setActiveStageFilter] = useState<WritingStatus | 'all'>('all')
 

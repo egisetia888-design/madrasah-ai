@@ -9,6 +9,7 @@ import { useNotesStore } from "../../store/notesStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog";
 import { WritingStatus } from "../../types";
 import { useToastStore } from "../../store/toastStore";
+import { scanTextForEntities, autoLinkSingleEntity } from "../../utils/autoLinker";
 
 const WRITING_PIPELINE: { id: WritingStatus; label: string }[] = [
   { id: 'idea', label: 'Ide' },
@@ -76,6 +77,13 @@ export function WritingDetailPage() {
     setIsSaving(true);
     updateDraft(draft.id, { title, content, status });
     
+    // Auto-link any detected entities in draft
+    try {
+      autoLinkSingleEntity(draft.id, `${title}\n${content}`, 'writing', title || 'Draf');
+    } catch (e) {
+      console.warn('Draft auto-link warning:', e);
+    }
+
     // Index for semantic search
     useWritingStore.getState().indexDraft(draft.id);
     
@@ -251,6 +259,9 @@ export function WritingDetailPage() {
         title={title} 
         content={content} 
         currentDraftId={draft.id} 
+        onInsertWikilink={(linkTitle) => {
+          setContent(prev => `${prev} [[${linkTitle}]] `);
+        }}
       />
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

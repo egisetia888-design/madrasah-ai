@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { ArrowLeft, Plus, MoreVertical, BookOpen, PenTool, Brain, Target, CheckCircle2, ChevronRight, Circle, Trash2, Edit2, Save } from "lucide-react";
+import { ArrowLeft, Plus, MoreVertical, BookOpen, PenTool, Brain, Target, CheckCircle2, ChevronRight, Circle, Trash2, Edit2, Save, Network, ArrowUpRight } from "lucide-react";
 import { useCurriculumStore } from "../../store/curriculumStore";
 import { useLibraryStore } from "../../store/libraryStore";
 import { useWritingStore } from "../../store/writingStore";
+import { useKnowledgeStore } from "../../store/knowledgeStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog";
+import { scanTextForEntities, autoLinkSingleEntity } from "../../utils/autoLinker";
 
 export function PathDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -73,7 +75,9 @@ export function PathDetailPage() {
     if (!newCompTitle.trim() || !activePhaseId) return;
     if (addCompetency) {
       const phaseComps = competencies.filter(c => c.phaseId === activePhaseId);
+      const newCompId = crypto.randomUUID();
       addCompetency({ 
+        id: newCompId,
         phaseId: activePhaseId, 
         title: newCompTitle, 
         order: phaseComps.length,
@@ -81,6 +85,18 @@ export function PathDetailPage() {
         bookIds: [],
         outputIds: []
       } as any);
+
+      // Auto-link entities mentioned in competency title
+      try {
+        autoLinkSingleEntity(
+          newCompId,
+          newCompTitle,
+          'concept',
+          newCompTitle
+        );
+      } catch (err) {
+        console.warn('Competency auto-link error:', err);
+      }
     }
     setNewCompTitle("");
     setIsAddCompOpen(false);

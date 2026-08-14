@@ -1,11 +1,15 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { ArrowLeft, Save, Trash2, Plus, LayoutList, CheckCircle2, Circle, Edit2, Calendar, Target, Clock, Inbox, PlayCircle } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Plus, LayoutList, CheckCircle2, Circle, Edit2, Calendar, Target, Clock, Inbox, PlayCircle, Network, Brain, Book, FileText, ArrowUpRight } from "lucide-react";
 import { useProjectsStore } from "../../store/projectsStore";
+import { useKnowledgeStore } from "../../store/knowledgeStore";
+import { useNotesStore } from "../../store/notesStore";
+import { useLibraryStore } from "../../store/libraryStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog";
 import { ProjectStatus, TaskStatus } from "../../types";
 import { cn } from "../../utils/cn";
+import { scanTextForEntities, autoLinkSingleEntity } from "../../utils/autoLinker";
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +17,10 @@ export function ProjectDetailPage() {
   
   const projects = useProjectsStore(state => state.projects);
   const tasks = useProjectsStore(state => state.tasks);
+  const relations = useKnowledgeStore(state => state.relations);
+  const concepts = useKnowledgeStore(state => state.concepts);
+  const notes = useNotesStore(state => state.notes);
+  const books = useLibraryStore(state => state.books);
   
   const updateProject = useProjectsStore(state => state.updateProject);
   const deleteProject = useProjectsStore(state => state.deleteProject);
@@ -38,6 +46,12 @@ export function ProjectDetailPage() {
   
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTaskTitle, setEditTaskTitle] = useState("");
+
+  // Connected relations for this project
+  const projectRelations = useMemo(() => {
+    if (!project) return [];
+    return relations.filter(r => r.sourceNodeId === project.id || r.targetNodeId === project.id);
+  }, [relations, project?.id]);
 
   if (!project) {
     return (
@@ -67,6 +81,14 @@ export function ProjectDetailPage() {
         status: editStatus,
         dueDate: editDueDate ? new Date(editDueDate).getTime() : undefined
       });
+
+      // Auto-link entities mentioned in project details
+      try {
+        autoLinkSingleEntity(project.id, `${editTitle}\n${editDescription}`, 'project', editTitle);
+      } catch (err) {
+        console.warn('Auto-link error:', err);
+      }
+
       setIsEditing(false);
     }
   };
@@ -225,6 +247,58 @@ export function ProjectDetailPage() {
              </div>
           </div>
           
+          <div className="p-6 border border-gray-200 rounded-2xl bg-white space-y-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                <Network className="w-4 h-4 text-gray-700"/> Relasi Pengetahuan ({projectRelations.length})
+              </h3>
+              <button 
+                onClick={() => navigate('/knowledge')}
+                className="text-xs text-gray-500 hover:text-gray-900 font-medium flex items-center gap-0.5"
+              >
+                Graf <ArrowUpRight className="w-3 h-3" />
+              </button>
+            </div>
+            
+            {projectRelations.length > 0 ? (
+              <div className="space-y-2.5">
+                {projectRelations.map(rel => {
+                  const targetId = rel.sourceNodeId === project.id ? rel.targetNodeId : rel.sourceNodeId;
+                  const concept = concepts.find(c => c.id === targetId);
+                  const note = notes.find(n => n.id === targetId);
+                  const book = books.find(b => b.id === targetId);
+                  
+                  const label = concept?.name || note?.title || book?.title || 'Entitas Terhubung';
+                  const type = concept ? 'concept' : note ? 'note' : book ? 'book' : 'other';
+
+                  return (
+                    <div 
+                      key={rel.id}
+                      onClick={() => {
+                        if (note) navigate(`/notes/${note.id}`);
+                        else if (book) navigate(`/library/${book.id}`);
+                        else navigate('/knowledge');
+                      }}
+                      className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 hover:border-gray-300 transition-all cursor-pointer flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        {type === 'concept' ? <Brain className="w-3.5 h-3.5 text-gray-600 shrink-0" /> :
+                         type === 'book' ? <Book className="w-3.5 h-3.5 text-gray-600 shrink-0" /> :
+                         <FileText className="w-3.5 h-3.5 text-gray-600 shrink-0" />}
+                        <span className="font-medium text-gray-900 truncate">{label}</span>
+                      </div>
+                      <span className="text-[10px] font-mono uppercase text-gray-400 shrink-0 bg-white px-1.5 py-0.5 rounded border border-gray-200">
+                        {rel.relationType}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 italic">Belum ada relasi terhubung. Disebutkan di catatan atau gunakan nama konsep pada deskripsi proyek.</p>
+            )}
+          </div>
+
           <div className="p-6 border border-gray-200 rounded-2xl bg-white space-y-4 shadow-sm">
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-2">
               <Clock className="w-4 h-4 text-gray-400"/> Riwayat & Waktu

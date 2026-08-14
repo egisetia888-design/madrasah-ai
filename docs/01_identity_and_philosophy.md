@@ -3,6 +3,20 @@
 ## 1.1 Identitas Produk
 **Madrasah — Personal Knowledge Operating System** adalah sebuah **Personal Knowledge Operating System (PKOS)** modern yang dirancang untuk mengintegrasikan seluruh siklus hidup pengetahuan individu. Lebih dari sekadar aplikasi pencatatan, Madrasah adalah platform terpadu yang menyatukan perencanaan belajar, manajemen pustaka, pencatatan berbasis Zettelkasten, penulisan terfokus, serta pengulangan berjarak (*spaced repetition*) untuk retensi ingatan jangka panjang.
 
+### 📋 Ringkasan Metadata Resmi Sistem
+| Atribut | Nilai Resmi | Keterangan |
+| :--- | :--- | :--- |
+| **Nama Aplikasi** | Madrasah | Personal Knowledge Operating System (PKOS) |
+| **Versi Rilis** | `v1.0.0-beta` | Versi stabil saat ini (Agustus 2026) |
+| **Kreator / Pemilik**| **egiistw88** | Pengembang utama dan arsitek produk |
+| **Motto Keilmuan** | *"Tuntutlah ilmu dari buaian hingga ke liang lahat."* | Hadits Riwayat / Atsar Salafus Shalih |
+| **Identitas Visual**| Ikon Otak (*Brain*) | Simbol Otak Kedua, kognisi mandiri, dan kristalisasi ilmu |
+| **Hak Cipta** | © 2026 Madrasah OS | Hak cipta terpelihara |
+| **Palet Visual** | Monokrom Minimalis (Maks. 3 Warna) | Putih Murni, Slate Grays, Hitam Arang |
+| **Gateway AI Utama**| **HCNSEC Provider Gateway** | Kompatibel dengan protokol OpenAI Chat Completions |
+
+---
+
 ## 1.2 Visi Produk
 Visi utama **Madrasah — Personal Knowledge Operating System** adalah **demokratisasi manajemen pengetahuan pribadi tingkat lanjut**. Kami percaya bahwa di era kelimpahan informasi (information overload), tantangan terbesar manusia bukan lagi mencari informasi, melainkan menyaring, menghubungkan, dan memproduksi pengetahuan yang bermakna. Madrasah hadir sebagai "Otak Kedua" (Second Brain) yang andal, sunyi, bebas dari kebisingan algoritma media sosial, dan dioptimalkan secara estetis untuk merangsang kejernihan berpikir.
 

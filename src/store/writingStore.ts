@@ -27,7 +27,7 @@ const storage = {
 interface WritingState {
   drafts: Draft[];
   
-  addDraft: (draft: Omit<Draft, 'id' | 'createdAt' | 'status' | keyof SyncMetadata>) => string;
+  addDraft: (draft: Omit<Draft, 'id' | 'createdAt' | 'status' | keyof SyncMetadata> & { status?: Draft['status'] }) => string;
   updateDraft: (id: string, draft: Partial<Draft>) => void;
   deleteDraft: (id: string) => void;
   indexDraft: (id: string) => Promise<void>;
@@ -41,12 +41,15 @@ export const useWritingStore = create<WritingState>()(
       addDraft: (draftData) => {
         const id = crypto.randomUUID();
         const newDraft: Draft = {
-          ...draftData,
+          title: draftData.title,
+          content: draftData.content,
+          icon: draftData.icon,
+          tags: draftData.tags,
+          embedding: draftData.embedding,
           id,
-          status: 'draft',
+          status: draftData.status || 'idea',
           createdAt: Date.now(),
           ...createSyncMetadata(),
-          
         };
         set((state) => ({
           drafts: [newDraft, ...state.drafts]

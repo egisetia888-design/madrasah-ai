@@ -66,3 +66,41 @@ Panel penyaringan data yang kompleks (seperti pada modul **Catatan**) secara din
 
 ### 6. Bottom Sheet Detail Simpul Graf
 Pada tampilan visualisasi Graf Pengetahuan di layar mobile, informasi detail mengenai simpul yang dipilih tidak diletakkan di sidebar samping kanan (seperti di desktop), melainkan meluncur mulus sebagai panel dari bawah layar (*bottom sheet*) untuk kegunaan satu tangan yang maksimal.
+
+---
+
+## 2.4 Pola Dialog Identitas Sistem (About Dialog Pattern)
+
+Modal informasi sistem (**AboutDialog**) dirancang sebagai representasi visual murni dari filosofi Madrasah yang tenang dan presisi:
+
+```
++-------------------------------------------------------------+
+|                                                             |
+|                          [ 🧠 ]                             |
+|                         Madrasah                            |
+|                 PERSONAL KNOWLEDGE OS                       |
+|                                                             |
+|          +-------------------+-------------------+          |
+|          |       Versi       |      Kreator      |          |
+|          |    v1.0.0-beta    |     egiistw88     |          |
+|          +-------------------+-------------------+          |
+|                                                             |
+|          +---------------------------------------+          |
+|          |  "Tuntutlah ilmu dari buaian hingga   |          |
+|          |           ke liang lahat."            |          |
+|          |           🌐 HADITS RIWAYAT           |          |
+|          +---------------------------------------+          |
+|                                                             |
+|                         [Github] [Heart]                    |
+|             © 2026 Madrasah OS. All rights reserved.        |
++-------------------------------------------------------------+
+```
+
+- **Geometri Sudut (*Corner Radius*)**: Menggunakan kurvatur `rounded-[2rem]` untuk kontainer utama modal dan `rounded-[1.5rem]` untuk badge ikon otak, memberikan kelembutan optik yang presisi.
+- **Hierarki Informasi**:
+  1. **Badge Ikon Identitas**: Kontainer `w-20 h-20 bg-gray-900` dengan ikon `Brain` putih.
+  2. **Tipografi Judul**: `font-display font-bold text-xl` (Plus Jakarta Sans) dipadukan dengan label monospace `font-mono text-[11px] tracking-[0.2em]`.
+  3. **Grid Metadata**: Menampilkan Versi (`v1.0.0-beta`) dan Kreator (`egiistw88`) dalam pembagian kolom 2-jalur yang seimbang dengan garis pemisah tipis `border-y border-gray-50`.
+  4. **Kartu Kutipan (*Quote Card*)**: Kontainer `bg-gray-50/80 rounded-2xl` membingkai kalimat hikmah dengan tipografi serif italic `text-gray-700` dan atribusi riwayat.
+  5. **Tautan Komunitas & Copyright**: Ikon tautan GitHub, apresiasi komunitas, dan klausa hak cipta resmi `© 2026 Madrasah OS`.
+

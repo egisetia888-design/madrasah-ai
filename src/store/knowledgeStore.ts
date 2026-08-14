@@ -28,7 +28,7 @@ interface KnowledgeState {
   relations: Relation[];
 
   // Concept Actions
-  addConcept: (concept: Omit<Concept, 'id' | 'createdAt' | keyof SyncMetadata>) => void;
+  addConcept: (concept: Omit<Concept, 'id' | 'createdAt' | keyof SyncMetadata>) => string;
   updateConcept: (id: string, data: Partial<Concept>) => void;
   deleteConcept: (id: string) => void;
 
@@ -38,7 +38,7 @@ interface KnowledgeState {
   deleteSourceFragment: (id: string) => void;
 
   // Relation Actions
-  addRelation: (relation: Omit<Relation, 'id' | 'createdAt' | keyof SyncMetadata>) => void;
+  addRelation: (relation: Omit<Relation, 'id' | 'createdAt' | keyof SyncMetadata>) => string;
   updateRelation: (id: string, data: Partial<Relation>) => void;
   deleteRelation: (id: string) => void;
 }
@@ -51,18 +51,21 @@ export const useKnowledgeStore = create<KnowledgeState>()(
       relations: [],
 
       // Concept Actions
-      addConcept: (conceptData) => set((state) => ({
-        concepts: [
-          ...state.concepts,
-          {
-            ...conceptData,
-            id: crypto.randomUUID(),
-            createdAt: Date.now(),
-          ...createSyncMetadata(),
-            
-          }
-        ]
-      })),
+      addConcept: (conceptData) => {
+        const newId = crypto.randomUUID();
+        set((state) => ({
+          concepts: [
+            ...state.concepts,
+            {
+              ...conceptData,
+              id: newId,
+              createdAt: Date.now(),
+              ...createSyncMetadata(),
+            }
+          ]
+        }));
+        return newId;
+      },
       updateConcept: (id, data) => set((state) => ({
         concepts: state.concepts.map((c) =>
           c.id === id ? { ...c, ...data, ...updateSyncMetadata(c) } : c
@@ -83,7 +86,7 @@ export const useKnowledgeStore = create<KnowledgeState>()(
               ...fragmentData,
               id: newId,
               createdAt: Date.now(),
-          ...createSyncMetadata(),
+              ...createSyncMetadata(),
             }
           ]
         }));
@@ -100,17 +103,21 @@ export const useKnowledgeStore = create<KnowledgeState>()(
       })),
 
       // Relation Actions
-      addRelation: (relationData) => set((state) => ({
-        relations: [
-          ...state.relations,
-          {
-            ...relationData,
-            id: crypto.randomUUID(),
-            createdAt: Date.now(),
-          ...createSyncMetadata(),
-          }
-        ]
-      })),
+      addRelation: (relationData) => {
+        const newId = crypto.randomUUID();
+        set((state) => ({
+          relations: [
+            ...state.relations,
+            {
+              ...relationData,
+              id: newId,
+              createdAt: Date.now(),
+              ...createSyncMetadata(),
+            }
+          ]
+        }));
+        return newId;
+      },
       updateRelation: (id, data) => set((state) => ({
         relations: state.relations.map((r) =>
           r.id === id ? { ...r, ...data } : r

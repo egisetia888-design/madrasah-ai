@@ -2,9 +2,14 @@
 
 > **Personal Knowledge Operating System (PKOS) — Monochrome Slate Edition**
 
+```
+Versi: v1.0.0-beta  |  Kreator: egiistw88  |  Lisensi: © 2026 Madrasah OS
+Motto: "Tuntutlah ilmu dari buaian hingga ke liang lahat." (Hadits Riwayat)
+```
+
 **Madrasah — Personal Knowledge Operating System** adalah sistem operasi pengetahuan pribadi (Personal Knowledge Operating System) modern yang dirancang khusus untuk mengintegrasikan seluruh siklus hidup intelektual individu. Aplikasi ini menggabungkan penataan kurikulum belajar, manajemen literatur pustaka, pencatatan Markdown berbasis Zettelkasten, penulisan bebas gangguan, serta pelatihan retensi ingatan jangka panjang melalui kartu flash (*spaced repetition*) dalam satu antarmuka monokromatik yang hening dan tanpa distraksi.
 
-Aplikasi ini dioptimalkan sepenuhnya untuk perangkat desktop maupun mobile secara responsif, menghadirkan harmoni visual tinggi, tipografi presisi, dan fungsionalitas cerdas berbasis AI.
+Aplikasi ini dioptimalkan sepenuhnya untuk perangkat desktop maupun mobile secara responsif, menghadirkan harmoni visual tinggi, tipografi presisi, mesin penautan entitas otomatis (*Automated Knowledge & Entity Linking*), dan fungsionalitas cerdas berbasis gateway AI HCNSEC.
 
 ---
 

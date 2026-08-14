@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState, useMemo } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
-import { Search, Network, Maximize, List, Book, FileText, Briefcase, PenTool, Hash, X, ArrowRight, User } from "lucide-react"
+import { Search, Network, Maximize, List, Book, FileText, Briefcase, PenTool, Hash, X, ArrowRight, User, Sparkles, Zap, RefreshCw, CheckCircle2 } from "lucide-react"
 import * as d3 from "d3"
 import { useKnowledgeGraph } from "../../hooks/useKnowledgeGraph"
 import { useNotesStore } from "../../store/notesStore"
 import { useWritingStore } from "../../store/writingStore"
 import { useProjectsStore } from "../../store/projectsStore"
 import { useLibraryStore } from "../../store/libraryStore"
+import { useKnowledgeStore } from "../../store/knowledgeStore"
+import { useToastStore } from "../../store/toastStore"
+import { runAutoLinker, getAutoLinkedRelationsForEntity, autoLinkSingleEntity } from "../../utils/autoLinker"
 import { cn } from "../../utils/cn"
 import Markdown from "react-markdown"
 
@@ -18,12 +21,16 @@ export function KnowledgeGraphPage() {
   const wrapperRef = useRef<HTMLDivElement>(null)
   
   const { nodes: rawNodes, edges: rawEdges } = useKnowledgeGraph();
+  const addToast = useToastStore(state => state.addToast);
+  const [isLinking, setIsLinking] = useState(false);
   
   // App Stores for details
   const notes = useNotesStore(state => state.notes)
   const drafts = useWritingStore(state => state.drafts)
   const projects = useProjectsStore(state => state.projects)
   const books = useLibraryStore(state => state.books)
+  const concepts = useKnowledgeStore(state => state.concepts)
+  const storedRelations = useKnowledgeStore(state => state.relations)
   
   // State
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "")
@@ -38,6 +45,33 @@ export function KnowledgeGraphPage() {
     author: true,
     source_fragment: true
   } as Record<string, boolean>)
+
+  const handleRunAutoLinker = () => {
+    setIsLinking(true);
+    const toastId = addToast({ type: 'loading', message: 'Menganalisis & menautkan seluruh node pengetahuan...' });
+    
+    setTimeout(() => {
+      try {
+        const result = runAutoLinker();
+        if (result.newAdded > 0) {
+          addToast({
+            type: 'success',
+            message: `Berhasil menemukan ${result.totalDiscovered} keterkaitan dan menambahkan ${result.newAdded} relasi otomatis!`
+          });
+        } else {
+          addToast({
+            type: 'info',
+            message: `Seluruh ${result.totalDiscovered} keterkaitan pengetahuan sudah tertaut dengan sinkron.`
+          });
+        }
+      } catch (err: any) {
+        addToast({ type: 'error', message: 'Gagal menjalankan penautan otomatis.' });
+      } finally {
+        setIsLinking(false);
+      }
+    }, 400);
+  };
+
 
   useEffect(() => {
     const search = searchParams.get("search");
@@ -65,10 +99,47 @@ export function KnowledgeGraphPage() {
     if (!selectedNodeId) return [];
     return edges.filter(e => e.source === selectedNodeId || e.target === selectedNodeId)
       .map(e => {
-        const connectedId = e.source === selectedNodeId ? e.target : e.source;
-        return nodes.find(n => n.id === connectedId);
-      }).filter(Boolean);
+        const isOutgoing = e.source === selectedNodeId;
+        const connectedId = isOutgoing ? e.target : e.source;
+        const node = nodes.find(n => n.id === connectedId);
+        return {
+          node,
+          edgeLabel: e.label,
+          direction: isOutgoing ? ('outgoing' as const) : ('incoming' as const)
+        };
+      }).filter(item => Boolean(item.node));
   }, [edges, nodes, selectedNodeId])
+
+  // Quick auto-link single node
+  const handleAutoLinkSelectedNode = () => {
+    if (!selectedNode) return;
+    let text = "";
+    if (selectedNode.type === 'note') {
+      const n = notes.find(x => x.id === selectedNode.id);
+      if (n) text = `${n.title}\n${n.content}`;
+    } else if (selectedNode.type === 'writing') {
+      const d = drafts.find(x => x.id === selectedNode.id);
+      if (d) text = `${d.title}\n${d.content}`;
+    } else if (selectedNode.type === 'project') {
+      const p = projects.find(x => x.id === selectedNode.id);
+      if (p) text = `${p.title}\n${p.description}`;
+    } else if (selectedNode.type === 'concept') {
+      const c = concepts.find(x => x.id === selectedNode.id);
+      if (c) text = `${c.name}\n${c.definition}\n${c.aliases.join(' ')}`;
+    }
+
+    if (!text) {
+      addToast({ type: 'info', message: 'Teks tidak mencukupi untuk pemindaian otomatis.' });
+      return;
+    }
+
+    const added = autoLinkSingleEntity(selectedNode.id, text, selectedNode.type, selectedNode.label);
+    if (added > 0) {
+      addToast({ type: 'success', message: `Berhasil menambahkan ${added} relasi baru untuk "${selectedNode.label}"!` });
+    } else {
+      addToast({ type: 'info', message: `Seluruh relasi untuk "${selectedNode.label}" sudah optimal.` });
+    }
+  };
 
   // Get rich data for selected node
   const nodeDetails = useMemo(() => {
@@ -335,10 +406,21 @@ export function KnowledgeGraphPage() {
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between shrink-0 mb-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 font-display">Knowledge Graph</h1>
-          <p className="text-gray-500 mt-0.5 text-xs sm:text-sm">Visualisasi hubungan antar catatan, konsep, dan pustaka.</p>
+          <p className="text-gray-500 mt-0.5 text-xs sm:text-sm">Visualisasi & penautan otomatis antar catatan, konsep, dan pustaka.</p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          <Button 
+            variant="outline" 
+            onClick={handleRunAutoLinker} 
+            disabled={isLinking}
+            className="gap-2 h-9 border-gray-300 text-gray-900 hover:bg-gray-100 font-medium"
+            title="Pindai dan tautkan otomatis seluruh relasi pengetahuan"
+          >
+            <Sparkles className={cn("w-4 h-4 text-gray-900", isLinking && "animate-spin")} />
+            <span>{isLinking ? "Menautkan..." : "Tautkan Otomatis"}</span>
+          </Button>
+
           <div className="flex items-center bg-gray-100 rounded-xl p-1 border border-gray-200">
             <button onClick={() => setViewMode('graph')} className={cn("p-1.5 rounded-lg transition-colors", viewMode === 'graph' ? 'bg-white shadow-sm text-gray-900 font-semibold' : 'text-gray-500 hover:text-gray-700')}>
                <Network className="w-4 h-4" />
@@ -500,19 +582,61 @@ export function KnowledgeGraphPage() {
               )}
 
               <div className="mb-6">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Relasi Langsung ({selectedNodeConnections.length})</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Relasi Terhubung ({selectedNodeConnections.length})
+                  </h3>
+                  <button 
+                    onClick={handleAutoLinkSelectedNode}
+                    className="text-xs text-gray-900 hover:text-black font-semibold flex items-center gap-1 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded-lg transition-colors"
+                    title="Pindai dan tautkan otomatis entitas yang disebut dalam node ini"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Tautkan Node</span>
+                  </button>
+                </div>
+
                 {selectedNodeConnections.length === 0 ? (
-                  <p className="text-sm text-gray-500 italic">Tidak ada relasi.</p>
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
+                    <p className="text-xs text-gray-500">Belum ada relasi terdaftar.</p>
+                    <button 
+                      onClick={handleAutoLinkSelectedNode}
+                      className="mt-2 text-xs font-semibold text-gray-900 underline"
+                    >
+                      Pindai otomatis sekarang
+                    </button>
+                  </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {selectedNodeConnections.slice(0, 8).map((conn, idx) => (
-                      <button key={`${conn?.id}-${idx}`} onClick={() => setSelectedNodeId(conn!.id)} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left group">
-                        {getTypeIcon(conn!.type)}
-                        <span className="text-sm text-gray-700 font-medium truncate group-hover:text-gray-900">{conn?.label}</span>
+                    {selectedNodeConnections.slice(0, 10).map((conn, idx) => (
+                      <button 
+                        key={`${conn.node?.id}-${idx}`} 
+                        onClick={() => setSelectedNodeId(conn.node!.id)} 
+                        className="flex flex-col p-2.5 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50/70 transition-all text-left group bg-white shadow-2xs"
+                      >
+                        <div className="flex items-center justify-between w-full mb-1">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {getTypeIcon(conn.node!.type)}
+                            <span className="text-sm text-gray-900 font-medium truncate group-hover:text-black">
+                              {conn.node?.label}
+                            </span>
+                          </div>
+                          <span className={cn(
+                            "px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-md shrink-0",
+                            conn.edgeLabel === 'contradicts' ? 'bg-gray-200 text-gray-900' :
+                            conn.edgeLabel === 'supports' ? 'bg-gray-200 text-gray-900' :
+                            'bg-gray-100 text-gray-700'
+                          )}>
+                            {conn.edgeLabel ? conn.edgeLabel.replace('_', ' ') : (conn.direction === 'outgoing' ? 'menautkan' : 'ditautkan')}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-gray-400 capitalize pl-6">
+                          Tipe: {conn.node?.type} ({conn.direction === 'outgoing' ? 'arah keluar' : 'arah masuk'})
+                        </span>
                       </button>
                     ))}
-                    {selectedNodeConnections.length > 8 && (
-                      <p className="text-xs text-gray-400 text-center pt-2">+{selectedNodeConnections.length - 8} relasi lainnya</p>
+                    {selectedNodeConnections.length > 10 && (
+                      <p className="text-xs text-gray-400 text-center pt-2">+{selectedNodeConnections.length - 10} relasi lainnya</p>
                     )}
                   </div>
                 )}

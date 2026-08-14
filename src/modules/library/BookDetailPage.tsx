@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { ArrowLeft, BookOpen, Clock, PenTool, Brain, Trash2, Edit2, Save, Image as ImageIcon, Book, CheckCircle2, Bookmark, Flame, Plus, X, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, PenTool, Brain, Trash2, Edit2, Save, Image as ImageIcon, Book, CheckCircle2, Bookmark, Flame, Plus, X, Sparkles, Loader2, Network, ArrowUpRight, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog";
 import { useLibraryStore } from "../../store/libraryStore";
 import { useNotesStore } from "../../store/notesStore";
 import { useReviewStore } from "../../store/reviewStore";
+import { useKnowledgeStore } from "../../store/knowledgeStore";
 import { BookStatus } from "../../types";
 import { cn } from "../../utils/cn";
 import { useToastStore } from "../../store/toastStore";
+import { scanTextForEntities, autoLinkSingleEntity, createExplicitRelation } from "../../utils/autoLinker";
 
 export function BookDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +25,8 @@ export function BookDetailPage() {
   const notes = useNotesStore(state => state.notes);
   const addNote = useNotesStore(state => state.addNote);
   const flashcards = useReviewStore(state => state.flashcards);
+  const relations = useKnowledgeStore(state => state.relations);
+  const concepts = useKnowledgeStore(state => state.concepts);
   
   const addToast = useToastStore(state => state.addToast);
   const updateToast = useToastStore(state => state.updateToast);
@@ -69,6 +73,12 @@ export function BookDetailPage() {
   const noteIds = bookNotes.map(n => n.id);
   const bookFlashcards = flashcards.filter(f => f.noteId && noteIds.includes(f.noteId));
 
+  // Connected relations for this book
+  const bookRelations = useMemo(() => {
+    if (!book) return [];
+    return relations.filter(r => r.sourceNodeId === book.id || r.targetNodeId === book.id);
+  }, [relations, book?.id]);
+
   const handleDelete = () => {
     if (book) {
       deleteBook(book.id);
@@ -93,7 +103,7 @@ export function BookDetailPage() {
 
   const handleSaveQuickNote = () => {
     if (book && quickNoteTitle.trim()) {
-      addNote({
+      const noteId = addNote({
         title: quickNoteTitle.trim(),
         content: quickNoteContent.trim(),
         folderId: null,
@@ -102,6 +112,27 @@ export function BookDetailPage() {
         type: 'knowledge',
         status: 'unprocessed'
       });
+
+      // Auto-link book and note
+      createExplicitRelation(
+        book.id,
+        noteId,
+        'references',
+        `Catatan cepat untuk buku "${book.title}"`
+      );
+
+      // Auto-link entities mentioned in quick note
+      try {
+        autoLinkSingleEntity(
+          noteId,
+          `${quickNoteTitle}\n${quickNoteContent}`,
+          'note',
+          quickNoteTitle.trim()
+        );
+      } catch (err) {
+        console.warn('Auto-link error:', err);
+      }
+
       setQuickNoteTitle("");
       setQuickNoteContent("");
       setIsQuickAdding(false);
@@ -321,6 +352,55 @@ export function BookDetailPage() {
              </div>
           </div>
           
+          <div className="p-6 border border-gray-200 rounded-2xl bg-white space-y-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                <Network className="w-4 h-4 text-gray-700"/> Relasi Pengetahuan ({bookRelations.length})
+              </h3>
+              <button 
+                onClick={() => navigate('/knowledge')}
+                className="text-xs text-gray-500 hover:text-gray-900 font-medium flex items-center gap-0.5"
+              >
+                Graf <ArrowUpRight className="w-3 h-3" />
+              </button>
+            </div>
+            
+            {bookRelations.length > 0 ? (
+              <div className="space-y-2.5">
+                {bookRelations.map(rel => {
+                  const targetId = rel.sourceNodeId === book.id ? rel.targetNodeId : rel.sourceNodeId;
+                  const concept = concepts.find(c => c.id === targetId);
+                  const note = notes.find(n => n.id === targetId);
+                  
+                  const label = concept?.name || note?.title || 'Entitas Terhubung';
+                  const type = concept ? 'concept' : note ? 'note' : 'other';
+
+                  return (
+                    <div 
+                      key={rel.id}
+                      onClick={() => {
+                        if (note) navigate(`/notes/${note.id}`);
+                        else navigate('/knowledge');
+                      }}
+                      className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 hover:border-gray-300 transition-all cursor-pointer flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        {type === 'concept' ? <Brain className="w-3.5 h-3.5 text-gray-600 shrink-0" /> :
+                         <FileText className="w-3.5 h-3.5 text-gray-600 shrink-0" />}
+                        <span className="font-medium text-gray-900 truncate">{label}</span>
+                      </div>
+                      <span className="text-[10px] font-mono uppercase text-gray-400 shrink-0 bg-white px-1.5 py-0.5 rounded border border-gray-200">
+                        {rel.relationType}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 italic">Belum ada konsep terhubung. Buat catatan atau tautkan konsep di Graf Pengetahuan.</p>
+            )}
+          </div>
+
           <div className="p-6 border border-gray-200 rounded-2xl bg-white space-y-4 shadow-sm">
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-2">
               <Clock className="w-4 h-4 text-gray-400"/> Riwayat & Waktu

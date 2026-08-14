@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
-import { Plus, Search, FileText, Folder as FolderIcon, MoreVertical, Sparkles, LayoutGrid, List, Tag as TagIcon, Brain, CheckCircle2, Circle, ChevronRight, Hash, FolderOpen, Filter } from "lucide-react"
+import { Plus, Search, FileText, Folder as FolderIcon, MoreVertical, Sparkles, LayoutGrid, List, Tag as TagIcon, Brain, CheckCircle2, Circle, ChevronRight, Hash, FolderOpen, Filter, Network, Zap } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog"
 import { useNotesStore } from "../../store/notesStore"
 import { useKnowledgeStore } from "../../store/knowledgeStore"
+import { autoLinkSingleEntity, scanTextForEntities, runAutoLinker } from "../../utils/autoLinker"
 import Markdown from 'react-markdown'
 import { NoteType } from "../../types"
 import { cn } from "../../utils/cn"
@@ -21,11 +22,13 @@ export function NotesPage() {
   const addFolder = useNotesStore(state => state.addFolder)
   const addToast = useToastStore(state => state.addToast)
   const updateToast = useToastStore(state => state.updateToast)
+  const storedRelations = useKnowledgeStore(state => state.relations)
 
   // State
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isAssistantOpen, setIsAssistantOpen] = useState(false)
   const [isAddFolderOpen, setIsAddFolderOpen] = useState(false)
+  const [isAutoLinking, setIsAutoLinking] = useState(false)
   
   // Note Form
   const [title, setTitle] = useState("")
@@ -42,6 +45,11 @@ export function NotesPage() {
   const [isSuggesting, setIsSuggesting] = useState(false)
   const [tagInput, setTagInput] = useState("")
   const addTag = useNotesStore(state => state.addTag)
+
+  // Live Auto-Link Entity Detection
+  const liveDetectedEntities = useMemo(() => {
+    return scanTextForEntities(`${title}\n${content}\n${rawQuote}`);
+  }, [title, content, rawQuote]);
 
   // Folder Form
   const [newFolderName, setNewFolderName] = useState("")
@@ -102,6 +110,15 @@ export function NotesPage() {
       tags: finalTags,
     })
     
+    // Automatically link mentions and concepts in this note
+    const linkedCount = autoLinkSingleEntity(id, `${title.trim()}\n${content.trim()}\n${rawQuote.trim()}`, 'note', title.trim());
+    if (linkedCount > 0) {
+      addToast({
+        type: 'success',
+        message: `Catatan disimpan & ${linkedCount} relasi otomatis ditautkan ke Knowledge Graph!`
+      });
+    }
+
     // Index for semantic search
     useNotesStore.getState().indexNote(id);
     
@@ -116,6 +133,31 @@ export function NotesPage() {
     setTagInput("")
     setIsAddOpen(false)
   }
+
+  const handleGlobalAutoLink = () => {
+    setIsAutoLinking(true);
+    const toastId = addToast({ type: 'loading', message: 'Memindai seluruh catatan & menautkan relasi...' });
+    setTimeout(() => {
+      try {
+        const result = runAutoLinker();
+        if (result.newAdded > 0) {
+          addToast({
+            type: 'success',
+            message: `Berhasil menemukan ${result.totalDiscovered} koneksi dan menambahkan ${result.newAdded} relasi baru!`
+          });
+        } else {
+          addToast({
+            type: 'info',
+            message: `Seluruh ${result.totalDiscovered} relasi catatan sudah tersinkronisasi otomatis.`
+          });
+        }
+      } catch (err: any) {
+        addToast({ type: 'error', message: 'Gagal menjalankan sinkronisasi relasi.' });
+      } finally {
+        setIsAutoLinking(false);
+      }
+    }, 400);
+  };
 
   const handleAddFolder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,11 +254,22 @@ export function NotesPage() {
           <p className="text-gray-500 mt-0.5 text-xs sm:text-sm">Zettelkasten & Catatan Pembelajaran Anda</p>
         </div>
         <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+          <Button 
+            variant="outline" 
+            className="gap-2 h-11 sm:h-9 text-gray-900 border-gray-300 hover:bg-gray-100" 
+            onClick={handleGlobalAutoLink}
+            disabled={isAutoLinking}
+            title="Pindai seluruh catatan dan tautkan entitas secara otomatis ke Knowledge Graph"
+          >
+            <Zap className={cn("w-4 h-4 text-gray-900", isAutoLinking && "animate-spin")} />
+            <span className="hidden sm:inline">{isAutoLinking ? "Menautkan..." : "Tautkan Otomatis"}</span>
+            <span className="sm:hidden">{isAutoLinking ? "..." : "Auto-Link"}</span>
+          </Button>
           <Button variant="outline" className="gap-2 h-11 sm:h-9" onClick={() => setIsAssistantOpen(true)}>
             <Sparkles className="w-4 h-4 text-gray-500" />
             <span>Tanya AI</span>
           </Button>
-          <Button className="gap-2 h-11 sm:h-9" onClick={() => setIsAddOpen(true)}>
+          <Button className="gap-2 h-11 sm:h-9 col-span-2 sm:col-span-1" onClick={() => setIsAddOpen(true)}>
             <Plus className="w-4 h-4" />
             <span>Catatan Baru</span>
           </Button>
@@ -480,7 +533,22 @@ export function NotesPage() {
                           <span className={cn("w-2 h-2 rounded-full", note.status === 'processed' ? "bg-gray-500" : "bg-gray-300")} />
                           {note.status === 'processed' ? 'Sudah Diproses' : 'Belum Diproses'}
                         </span>
-                        <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
+                        
+                        {(() => {
+                          const relCount = storedRelations.filter(r => r.sourceNodeId === note.id || r.targetNodeId === note.id).length;
+                          if (relCount === 0) return (
+                            <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
+                          );
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className="flex items-center gap-1 text-[11px] text-gray-700 font-semibold bg-gray-100 px-2 py-0.5 rounded-md">
+                                <Network className="w-3 h-3 text-gray-900" />
+                                {relCount} relasi
+                              </span>
+                              <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -609,6 +677,30 @@ export function NotesPage() {
               />
             </div>
             
+            {/* Live Auto-Link Entity Detection Box */}
+            {liveDetectedEntities.length > 0 && (
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-900">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Relasi Terdeteksi Otomatis ({liveDetectedEntities.length})</span>
+                  </div>
+                  <span className="text-[10px] text-gray-500">Auto-link aktif saat disimpan</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {liveDetectedEntities.map(ent => (
+                    <span 
+                      key={ent.id}
+                      className="px-2 py-0.5 text-xs bg-white border border-gray-200 rounded-md text-gray-800 flex items-center gap-1 shadow-2xs"
+                    >
+                      <span className="text-[10px] uppercase font-bold text-gray-500">[{ent.type}]</span>
+                      <span className="font-medium">{ent.label}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* AI Auto-tagging section */}
             <div className="space-y-4 pt-4 border-t border-gray-100">
               <div className="flex items-center justify-between">
