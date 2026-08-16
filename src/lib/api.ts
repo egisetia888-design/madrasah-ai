@@ -1,14 +1,14 @@
 import { auth } from './firebase';
+import { useAuthStore } from '../store/authStore';
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
-  const user = auth.currentUser;
-  if (!user) {
-    throw new Error('User not authenticated');
+  const user = auth.currentUser ?? useAuthStore.getState().user;
+  const headers = new Headers(options.headers ?? {});
+
+  if (user) {
+    const token = await user.getIdToken();
+    headers.set('Authorization', `Bearer ${token}`);
   }
-  const token = await user.getIdToken();
-  const headers = {
-    ...options.headers,
-    'Authorization': `Bearer ${token}`,
-  };
+
   return fetch(url, { ...options, headers });
 }
