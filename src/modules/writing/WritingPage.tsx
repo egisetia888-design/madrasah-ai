@@ -1,3 +1,4 @@
+import { SyncStatusIndicator } from '../../components/ui/SyncStatusIndicator';
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
@@ -78,6 +79,7 @@ export function WritingPage() {
         <div className="flex items-center justify-between text-[10px] text-gray-400 mt-auto pt-3 border-t border-gray-50 uppercase tracking-wider font-semibold">
           <div className="flex items-center gap-2">
             <span>{new Date(draft.updatedAt).toLocaleDateString()}</span>
+            <SyncStatusIndicator status={draft.syncStatus} />
             {relCount > 0 && (
               <span className="inline-flex items-center gap-0.5 text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded text-[9px] font-mono lowercase">
                 <Network className="w-2.5 h-2.5" /> {relCount} relasi

@@ -68,7 +68,7 @@ export function scanTextForEntities(text: string, currentEntityId?: string): Det
   }
 
   // 1. Explicit [[WikiLinks]] extraction
-  const wikilinks = text.match(/\[\[(.*?)\]\]/g) || [];
+  const wikilinks: string[] = text.match(/\[\[(.*?)\]\]/g) || [];
   wikilinks.forEach(wl => {
     const raw = wl.slice(2, -2).trim();
     if (!raw) return;

@@ -755,32 +755,123 @@ async function startServer() {
     }
   });
 
+interface OpenLibraryBookResult {
+  totalPages: number;
+  coverUrl: string;
+  isEstimated: boolean;
+}
+
+async function fetchFromOpenLibrary(title: string, author?: string): Promise<OpenLibraryBookResult | null> {
+  const cleanTitle = String(title || "").trim();
+  const cleanAuthor = String(author || "").trim();
+
+  if (!cleanTitle) return null;
+
+  let queryUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(cleanTitle)}`;
+  if (cleanAuthor) {
+    queryUrl += `&author=${encodeURIComponent(cleanAuthor)}`;
+  }
+  queryUrl += `&fields=title,author_name,cover_i,isbn,number_of_pages_median,number_of_pages`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch(queryUrl, {
+      signal: controller.signal,
+      headers: {
+        "Accept": "application/json",
+        "User-Agent": "MadrasahPKOS/1.0 (https://madrasah.remix)"
+      }
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      console.warn(`[OpenLibrary] Search returned status ${res.status}`);
+      return null;
+    }
+
+    const data = await res.json() as any;
+    const doc = data?.docs?.[0];
+    if (!doc) {
+      return null;
+    }
+
+    // 1. Extract cover URL using cover_i or fallback to ISBN
+    let coverUrl = "";
+    if (doc.cover_i) {
+      coverUrl = `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`;
+    } else if (Array.isArray(doc.isbn) && doc.isbn.length > 0 && doc.isbn[0]) {
+      coverUrl = `https://covers.openlibrary.org/b/isbn/${doc.isbn[0]}-L.jpg`;
+    }
+
+    // 2. Extract median or standard total pages
+    let totalPages = 0;
+    const rawPages = doc.number_of_pages_median ?? doc.number_of_pages ?? 0;
+    if (typeof rawPages === "number") {
+      totalPages = Math.max(0, Math.round(rawPages));
+    } else if (typeof rawPages === "string") {
+      totalPages = Math.max(0, parseInt(rawPages, 10) || 0);
+    }
+
+    if (coverUrl || totalPages > 0) {
+      return {
+        totalPages,
+        coverUrl,
+        isEstimated: false
+      };
+    }
+
+    return null;
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    console.warn("[OpenLibrary] Failed to fetch book info:", err?.message || err);
+    return null;
+  }
+}
+
   app.post("/api/ai/book-info", async (req, res) => {
     try {
       const { title, author } = req.body;
-      const cacheKey = getCacheKey("book-info", { title, author });
+      const cleanTitle = String(title || "").trim();
+      const cleanAuthor = String(author || "").trim();
+
+      if (!cleanTitle) {
+        return res.status(400).json({ error: "Judul buku wajib diisi" });
+      }
+
+      const cacheKey = getCacheKey("book-info", { title: cleanTitle, author: cleanAuthor });
       
       const cached = aiCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
         console.log(`[Cache Hit] /api/ai/book-info`);
         return res.json(cached.data);
       }
+
+      // Step 1: Direct OpenLibrary API lookup
+      const openLibResult = await fetchFromOpenLibrary(cleanTitle, cleanAuthor);
+      if (openLibResult) {
+        console.log(`[OpenLibrary Hit] Metadata found for "${cleanTitle}":`, openLibResult);
+        aiCache.set(cacheKey, { timestamp: Date.now(), data: openLibResult });
+        return res.json(openLibResult);
+      }
+
+      console.log(`[OpenLibrary Miss] Docs empty for "${cleanTitle}". Proceeding to AI fallback.`);
       
+      // Step 2: Fallback to AI estimation
       const systemInstruction = `
-      You are a smart library metadata assistant. Your task is to find the total pages and a valid book cover image URL for a given book title and author.
+      You are a smart library metadata assistant acting as a fallback for Madrasah PKOS.
+      The Open Library API returned no direct records for "${cleanTitle}".
+      Your task is to provide an ESTIMATED total page count and optional cover URL for this book.
       
-      Instructions for Cover URL:
-      1. Try to find the exact ISBN-10 or ISBN-13 for the book.
-      2. If you find a valid ISBN, return the cover URL using the Open Library API format: "https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg"
-      3. Alternatively, if you know the exact Open Library Cover ID, use: "https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"
-      4. If you cannot confidently determine the ISBN or Cover ID, return an empty string "" instead of guessing or returning an invalid URL.
-      5. The URL MUST be a direct image link (.jpg or .png) and MUST exactly match the book requested.
-      
-      Instructions for Total Pages:
-      1. Provide the exact or highly accurate estimated total pages for the book as an integer.
+      CRITICAL INSTRUCTIONS:
+      1. Since this is an AI estimate and not an official verified record, provide a realistic estimated total page count.
+      2. If you know a valid Open Library ISBN or Cover ID, you may construct "https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg" or "https://covers.openlibrary.org/b/id/{cover_id}-L.jpg".
+      3. If you cannot confidently determine the ISBN or Cover ID, return an empty string "" instead of guessing invalid URLs.
+      4. Note that results from this pathway will be flagged as an estimate ("isEstimated: true").
       
       Respond ONLY with a raw JSON object matching the schema:
-      {"totalPages": 320, "coverUrl": "https://covers.openlibrary.org/b/isbn/..."}
+      {"totalPages": 320, "coverUrl": ""}
       `;
 
       const schema = {
@@ -794,7 +885,7 @@ async function startServer() {
 
       const text = await executeAIRequest({
         systemInstruction,
-        userPrompt: `Title: ${title}\nAuthor: ${author}`,
+        userPrompt: `Title: ${cleanTitle}\nAuthor: ${cleanAuthor || "Unknown"}`,
         jsonMode: true,
         responseSchema: schema
       });
@@ -818,7 +909,7 @@ async function startServer() {
         coverUrl = "";
       }
 
-      const resultData = { totalPages, coverUrl };
+      const resultData = { totalPages, coverUrl, isEstimated: true };
       
       aiCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
       res.json(resultData);

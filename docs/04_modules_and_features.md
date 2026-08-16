@@ -69,6 +69,7 @@ Modul pematangan unit-unit pemikiran abstrak yang diekstraksi dari berbagai lite
 - **Fitur Utama**:
   - **Status Kedewasaan Konsep**: Melacak evolusi konsep dari tahap *Raw* (Mentah), *Seedling* (Bibit Tumbuh), hingga *Mature* (Kristalisasi Matang).
   - **Asal-Usul Rujukan (Source Fragments)**: Menghubungkan definisi konsep langsung ke kutipan kalimat atau halaman buku referensi di Pustaka.
+  - **Pembuat Flashcard dari Konsep**: Memungkinkan pembuatan kartu memori langsung dari sebuah Konsep (baik manual maupun via Generator AI yang menggunakan definisi konsep sebagai sumber).
   - **Auto-Sync Relations**: Menyimpan konsep secara instan menghubungkan keterkaitan dengan seluruh catatan, buku, dan draf terkait di seluruh sistem.
   - **Dukungan Graf Relasional**: Konsep otomatis terpetakan sebagai simpul sentral di dalam Graf Pengetahuan.
 

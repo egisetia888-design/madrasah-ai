@@ -1,3 +1,4 @@
+import { SyncStatusIndicator } from '../../components/ui/SyncStatusIndicator';
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"

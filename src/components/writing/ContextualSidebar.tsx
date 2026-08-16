@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Sparkles, FileText, ChevronRight, Book, Brain, ArrowUpRight, Link2 } from 'lucide-react';
+import { Sparkles, FileText, ChevronRight, Book, Brain, ArrowUpRight, Link2, Loader2 } from 'lucide-react';
 import { useNotesStore } from '../../store/notesStore';
 import { useKnowledgeStore } from '../../store/knowledgeStore';
 import { useLibraryStore } from '../../store/libraryStore';
-import { searchSemantic } from '../../lib/semanticSearch';
+import { searchSemantic, useSemanticSearchStore } from '../../lib/semanticSearch';
 import { scanTextForEntities, createExplicitRelation, DetectedEntity } from '../../utils/autoLinker';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,9 +19,10 @@ export function ContextualSidebar({ title, content, currentDraftId, onInsertWiki
   const notes = useNotesStore(state => state.notes);
   const concepts = useKnowledgeStore(state => state.concepts);
   const books = useLibraryStore(state => state.books);
-  
+
   const [semanticSuggestions, setSemanticSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const isModelLoading = useSemanticSearchStore(state => state.isModelLoading);
 
   // Live entity detection from draft text
   const detectedEntities = useMemo(() => {
@@ -41,7 +42,7 @@ export function ContextualSidebar({ title, content, currentDraftId, onInsertWiki
       try {
         const noteItems = notes.map(n => ({ id: n.id, embedding: n.embedding }));
         const results = await searchSemantic(fullText, noteItems);
-        
+
         const topResults = results.slice(0, 4).map(res => {
           const note = notes.find(n => n.id === res.id);
           return {
@@ -49,7 +50,7 @@ export function ContextualSidebar({ title, content, currentDraftId, onInsertWiki
             similarity: res.similarity
           };
         }).filter(item => item && item.id);
-        
+
         setSemanticSuggestions(topResults);
       } catch (err) {
         console.error('Contextual search failed:', err);
@@ -81,7 +82,7 @@ export function ContextualSidebar({ title, content, currentDraftId, onInsertWiki
 
   return (
     <aside className="w-80 shrink-0 hidden xl:flex flex-col border-l border-gray-200 bg-white/70 backdrop-blur-sm sticky top-0 h-[calc(100vh-64px)] overflow-y-auto p-5 animate-in fade-in duration-300">
-      
+
       {/* Detected Entities Section */}
       {detectedEntities.length > 0 && (
         <div className="mb-6 space-y-3">
@@ -91,10 +92,10 @@ export function ContextualSidebar({ title, content, currentDraftId, onInsertWiki
               <span>Entitas Terdeteksi ({detectedEntities.length})</span>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             {detectedEntities.map((entity) => (
-              <div 
+              <div
                 key={entity.id}
                 className="p-3 rounded-xl bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all flex items-center justify-between text-xs"
               >
@@ -104,7 +105,7 @@ export function ContextualSidebar({ title, content, currentDraftId, onInsertWiki
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {onInsertWikilink && (
-                    <button 
+                    <button
                       onClick={() => onInsertWikilink(entity.label)}
                       title="Sisipkan [[WikiLink]]"
                       className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300"
@@ -112,7 +113,7 @@ export function ContextualSidebar({ title, content, currentDraftId, onInsertWiki
                       [[+]]
                     </button>
                   )}
-                  <button 
+                  <button
                     onClick={() => handleQuickLink(entity)}
                     title="Tautkan ke Graf Pengetahuan"
                     className="p-1 rounded text-gray-500 hover:text-gray-900 hover:bg-gray-200/60"
@@ -128,12 +129,23 @@ export function ContextualSidebar({ title, content, currentDraftId, onInsertWiki
 
       {/* Semantic References Section */}
       <div className="space-y-3">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900 uppercase tracking-wider font-mono">
-          <Sparkles className="w-3.5 h-3.5 text-gray-700" />
-          <span>Referensi Relevan</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900 uppercase tracking-wider font-mono">
+            <Sparkles className="w-3.5 h-3.5 text-gray-700" />
+            <span>Referensi Relevan</span>
+          </div>
+          {isModelLoading && (
+            <Loader2 className="w-3 h-3 text-gray-400 animate-spin" />
+          )}
         </div>
 
-        {isSearching && semanticSuggestions.length === 0 && (
+        {isModelLoading && (
+          <div className="p-3 text-center text-[10px] text-gray-500 border border-gray-100 bg-gray-50 rounded-xl font-mono">
+            Menyiapkan pencarian semantik...
+          </div>
+        )}
+
+        {isSearching && !isModelLoading && semanticSuggestions.length === 0 && (
           <div className="space-y-2.5">
             {[1, 2, 3].map(i => (
               <div key={i} className="h-20 bg-gray-50 rounded-xl animate-pulse border border-gray-100" />
@@ -141,14 +153,14 @@ export function ContextualSidebar({ title, content, currentDraftId, onInsertWiki
           </div>
         )}
 
-        {semanticSuggestions.length === 0 && !isSearching && detectedEntities.length === 0 && (
+        {semanticSuggestions.length === 0 && !isSearching && !isModelLoading && detectedEntities.length === 0 && (
           <div className="p-5 text-center text-xs text-gray-400 border border-dashed border-gray-200 rounded-xl">
             Tuliskan lebih banyak konten untuk melihat saran relasi dan catatan terkait secara otomatis.
           </div>
         )}
 
         {semanticSuggestions.map((note) => (
-          <div 
+          <div
             key={note.id}
             onClick={() => navigate(`/notes/${note.id}`)}
             className="group p-3.5 rounded-xl bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xs transition-all cursor-pointer"

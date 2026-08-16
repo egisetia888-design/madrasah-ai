@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, FileText, PenLine, Briefcase, Book, Network, Brain, Plus, Command, CornerDownLeft } from "lucide-react";
+import { Search, FileText, PenLine, Briefcase, Book, Network, Brain, Plus, Command, CornerDownLeft, Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "../ui/Dialog";
 import { useNotesStore } from "../../store/notesStore";
 import { useWritingStore } from "../../store/writingStore";
@@ -9,7 +9,7 @@ import { useReviewStore } from "../../store/reviewStore";
 import { useLibraryStore } from "../../store/libraryStore";
 import { useUIStore } from "../../store/uiStore";
 import { cn } from "../../utils/cn";
-import { searchSemantic, SemanticSearchResult } from "../../lib/semanticSearch";
+import { searchSemantic, SemanticSearchResult, useSemanticSearchStore } from "../../lib/semanticSearch";
 
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const navigate = useNavigate();
@@ -24,6 +24,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
 
   const [semanticResults, setSemanticResults] = useState<SemanticSearchResult[]>([]);
   const [isSearchingSemantic, setIsSearchingSemantic] = useState(false);
+  const isModelLoading = useSemanticSearchStore(state => state.isModelLoading);
 
   useEffect(() => {
     const performSemanticSearch = async () => {
@@ -174,12 +175,19 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
           <kbd className="hidden sm:inline-flex items-center justify-center h-6 px-2 text-[10px] font-medium text-gray-400 bg-gray-100 rounded-md border border-gray-200">ESC</kbd>
         </div>
         
+        {isModelLoading && (
+          <div className="bg-gray-50 border-b border-gray-100 px-4 py-2 flex items-center gap-2">
+            <Loader2 className="w-3.5 h-3.5 text-gray-500 animate-spin" />
+            <span className="text-xs font-medium text-gray-600">Menyiapkan pencarian semantik...</span>
+          </div>
+        )}
+
         <div className="max-h-[350px] overflow-y-auto p-2 no-scrollbar bg-gray-50/50">
           {finalItems.length === 0 ? (
             <div className="py-12 text-center text-sm text-gray-500 flex flex-col items-center">
               <Command className="w-8 h-8 text-gray-300 mb-3" />
               Tidak ada hasil untuk "{query}"
-              {isSearchingSemantic && <p className="mt-2 text-xs text-gray-400">Sedang mencari makna...</p>}
+              {isSearchingSemantic && !isModelLoading && <p className="mt-2 text-xs text-gray-400">Sedang mencari makna...</p>}
             </div>
           ) : (
             <div className="space-y-1">

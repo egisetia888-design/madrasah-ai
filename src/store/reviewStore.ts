@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Deck, Flashcard } from '../types';
 import { createSyncMetadata, updateSyncMetadata } from './syncUtils';
+import { syncSaveDeck, syncDeleteDeck, syncSaveFlashcard, syncDeleteFlashcard } from '../lib/firestoreSync';
 import { SyncMetadata } from '../types';
 
 localforage.config({
@@ -41,42 +42,49 @@ export const useReviewStore = create<ReviewState>()(
       
       addDeck: (deckData) => {
         const id = deckData.id || crypto.randomUUID();
+        const newDeck: Deck = {
+          ...deckData,
+          id,
+          createdAt: Date.now(),
+          ...createSyncMetadata(),
+        };
         set((state) => ({
           decks: [
-            {
-              ...deckData,
-              id,
-              createdAt: Date.now(),
-          ...createSyncMetadata(),
-              
-            },
+            newDeck,
             ...state.decks
           ]
         }));
+        syncSaveDeck(newDeck);
         return id;
       },
       
-      deleteDeck: (id) => set((state) => ({
-        decks: state.decks.filter(d => d.id !== id),
-        flashcards: state.flashcards.filter(f => f.deckId !== id),
-      })),
+      deleteDeck: (id) => {
+        set((state) => ({
+          decks: state.decks.filter(d => d.id !== id),
+          flashcards: state.flashcards.filter(f => f.deckId !== id),
+        }));
+        syncDeleteDeck(id);
+      },
 
-      addFlashcard: (flashcardData) => set((state) => ({
-        flashcards: [
-          ...state.flashcards,
-          {
-            ...flashcardData,
-            id: crypto.randomUUID(),
-            interval: 0,
-            repetition: 0,
-            efactor: 2.5,
-            dueDate: Date.now(),
-            createdAt: Date.now(),
+      addFlashcard: (flashcardData) => {
+        const newFlashcard: Flashcard = {
+          ...flashcardData,
+          id: crypto.randomUUID(),
+          interval: 0,
+          repetition: 0,
+          efactor: 2.5,
+          dueDate: Date.now(),
+          createdAt: Date.now(),
           ...createSyncMetadata(),
-            
-          }
-        ]
-      })),
+        };
+        set((state) => ({
+          flashcards: [
+            ...state.flashcards,
+            newFlashcard
+          ]
+        }));
+        syncSaveFlashcard(newFlashcard);
+      },
       
       reviewFlashcard: (id, quality) => set((state) => ({
         flashcards: state.flashcards.map(f => {

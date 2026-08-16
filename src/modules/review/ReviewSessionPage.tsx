@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../lib/api';
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
@@ -79,7 +80,7 @@ export function ReviewSessionPage() {
     const toastId = addToast({ type: 'loading', message: 'AI sedang mengevaluasi jawaban Anda...' });
     
     try {
-      const res = await fetch("/api/ai/grade-flashcard", {
+      const res = await fetchWithAuth("/api/ai/grade-flashcard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

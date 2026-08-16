@@ -39,6 +39,7 @@ export interface Book extends SyncMetadata {
   progress: number;
   totalPages?: number;
   coverImage?: string;
+  isEstimatedPages?: boolean;
   createdAt: number;
 }
 ```
@@ -147,6 +148,7 @@ export interface Deck extends SyncMetadata {
   name: string;
   description: string;
   noteId?: UUID | null;
+  conceptId?: UUID | null;
   createdAt: number;
 }
 
@@ -156,6 +158,7 @@ export interface Flashcard extends SyncMetadata {
   back: string;
   deckId: UUID | null;
   noteId?: UUID | null;
+  conceptId?: UUID | null;
   interval: number;
   repetition: number;
   efactor: number;
@@ -178,7 +181,7 @@ Server backend (`server.ts`) mengekspos 7 endpoint fungsional khusus untuk mempr
 | `/api/ai/grade-flashcard` | `POST` | `{ question: string, correctAnswer: string, userAnswer: string }` | `{ isCorrect: boolean, quality: number, feedback: string }` | Menilai keselarasan konseptual jawaban pengguna dibandingkan kunci jawaban asli berdasarkan skala kualitas SuperMemo-2 (skala 0-5). |
 | `/api/ai/generate-syllabus` | `POST` | `{ topic: string }` | `{ title: string, description: string, phases: [{ title, description, order, competencies: [...] }] }` | Merancang kurikulum modular baru lengkap dengan Fase Belajar dan Kompetensi dari topik masukan pengguna. |
 | `/api/ai/summarize-literature` | `POST` | `{ content: string }` | `{ mainProblem: string, methodology: string, conclusion: string }` | Memindai dokumen akademik panjang untuk menyaring tiga intisari utama: Masalah Utama, Metodologi, dan Kesimpulan Akhir. |
-| `/api/ai/book-info` | `POST` | `{ title: string, author: string }` | `{ totalPages: number, coverUrl: string }` | Menemukan estimasi jumlah halaman yang akurat dan mencari URL gambar sampul resmi melalui Open Library API. |
+| `/api/ai/book-info` | `POST` | `{ title: string, author: string }` | `{ totalPages: number, coverUrl: string, isEstimated: boolean }` | Mengambil metadata buku (jumlah halaman & sampul) langsung dari Open Library API publik sebagai sumber utama, dan beralih ke estimasi AI (`isEstimated: true`) hanya jika data tidak ditemukan di Open Library. |
 
 ---
 

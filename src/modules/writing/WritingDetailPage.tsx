@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../lib/api';
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
@@ -96,7 +97,7 @@ export function WritingDetailPage() {
     const toastId = addToast({ type: 'loading', message: 'AI sedang menganalisis draf tulisan...' });
 
     try {
-      const res = await fetch("/api/ai/suggest-tags", {
+      const res = await fetchWithAuth("/api/ai/suggest-tags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

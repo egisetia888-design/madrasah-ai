@@ -14,6 +14,8 @@ import { runAutoLinker, getAutoLinkedRelationsForEntity, autoLinkSingleEntity } 
 import { cn } from "../../utils/cn"
 import Markdown from "react-markdown"
 
+import { ErrorBoundary } from "../../components/ErrorBoundary"
+
 export function KnowledgeGraphPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -401,7 +403,8 @@ export function KnowledgeGraphPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-13rem)] md:h-[calc(100vh-8rem)] min-h-[460px] md:min-h-[600px] animate-in fade-in duration-500 w-full min-w-0 max-w-7xl mx-auto pb-6">
+    <ErrorBoundary fallbackMessage="Gagal merender Graf Pengetahuan — coba gunakan Filter Tipe Simpul untuk mengurangi jumlah data.">
+      <div className="flex flex-col h-[calc(100vh-13rem)] md:h-[calc(100vh-8rem)] min-h-[460px] md:min-h-[600px] animate-in fade-in duration-500 w-full min-w-0 max-w-7xl mx-auto pb-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between shrink-0 mb-4">
         <div>
@@ -651,6 +654,7 @@ export function KnowledgeGraphPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </ErrorBoundary>
   )
 }

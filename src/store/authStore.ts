@@ -3,7 +3,8 @@ import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/aut
 import { auth, googleProvider } from '../lib/firebase';
 
 interface AuthState {
-  isAuthenticated: boolean;
+  hasCompletedOnboarding: boolean;
+  isCloudAuthenticated: boolean;
   user: User | null;
   login: () => void;
   loginWithGoogle: () => Promise<void>;
@@ -12,22 +13,23 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  isAuthenticated: localStorage.getItem("madrasah_auth") !== "false",
+  hasCompletedOnboarding: localStorage.getItem("madrasah_auth") !== "false",
+  isCloudAuthenticated: false,
   user: null,
   login: () => {
     localStorage.setItem("madrasah_auth", "true");
-    set({ isAuthenticated: true });
+    set({ hasCompletedOnboarding: true });
   },
   loginWithGoogle: async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       localStorage.setItem("madrasah_auth", "true");
-      set({ isAuthenticated: true, user: result.user });
+      set({ hasCompletedOnboarding: true, isCloudAuthenticated: true, user: result.user });
     } catch (error) {
       console.error("Google sign-in error:", error);
       // Fallback local login if offline or popup blocked
       localStorage.setItem("madrasah_auth", "true");
-      set({ isAuthenticated: true });
+      set({ hasCompletedOnboarding: true });
     }
   },
   logout: async () => {
@@ -37,10 +39,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       console.error("Sign out error", e);
     }
     localStorage.setItem("madrasah_auth", "false");
-    set({ isAuthenticated: false, user: null });
+    set({ hasCompletedOnboarding: false, isCloudAuthenticated: false, user: null });
   },
   setUser: (user) => {
-    set({ user, isAuthenticated: !!user || localStorage.getItem("madrasah_auth") !== "false" });
+    set({
+      user,
+      hasCompletedOnboarding: !!user || localStorage.getItem("madrasah_auth") !== "false",
+      isCloudAuthenticated: !!user
+    });
   }
 }));
 
@@ -49,6 +55,9 @@ onAuthStateChanged(auth, (firebaseUser) => {
   if (firebaseUser) {
     localStorage.setItem("madrasah_auth", "true");
     useAuthStore.getState().setUser(firebaseUser);
+  } else {
+    // We only update isCloudAuthenticated to false here if no user, leaving hasCompletedOnboarding as is
+    useAuthStore.getState().setUser(null);
   }
 });
 

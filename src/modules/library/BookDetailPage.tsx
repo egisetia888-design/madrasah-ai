@@ -339,7 +339,14 @@ export function BookDetailPage() {
              
              <div className="flex justify-between text-sm text-gray-500 font-medium">
                 <span><strong className="text-gray-900">{book.progress}</strong> hal dibaca</span>
-                <span><strong className="text-gray-900">{book.totalPages || '?'}</strong> total hal</span>
+                <span className="flex items-center gap-1.5">
+                  <strong className="text-gray-900">{book.totalPages || '?'}</strong> total hal
+                  {book.isEstimatedPages && (
+                    <span className="text-[10px] font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">
+                      perkiraan
+                    </span>
+                  )}
+                </span>
              </div>
              
              <div className="flex gap-2 pt-2">

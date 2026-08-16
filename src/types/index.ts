@@ -41,7 +41,14 @@ export interface Book extends SyncMetadata {
   progress: number;
   totalPages?: number;
   coverImage?: string;
+  isEstimatedPages?: boolean;
   createdAt: number;
+}
+
+export interface BookInfoResponse {
+  totalPages: number;
+  coverUrl: string;
+  isEstimated: boolean;
 }
 
 export type NoteType = 'knowledge' | 'project' | 'writing' | 'personal' | 'research';
@@ -194,6 +201,7 @@ export interface Deck extends SyncMetadata {
   name: string;
   description: string;
   noteId?: UUID | null;
+  conceptId?: UUID | null;
   createdAt: number;
 }
 
@@ -203,6 +211,7 @@ export interface Flashcard extends SyncMetadata {
   back: string;
   deckId: UUID | null;
   noteId?: UUID | null;
+  conceptId?: UUID | null;
   interval: number;
   repetition: number;
   efactor: number;

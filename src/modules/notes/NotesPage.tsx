@@ -1,20 +1,19 @@
 import { useState, useMemo } from "react"
-import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
-import { Plus, Search, FileText, Folder as FolderIcon, MoreVertical, Sparkles, LayoutGrid, List, Tag as TagIcon, Brain, CheckCircle2, Circle, ChevronRight, Hash, FolderOpen, Filter, Network, Zap } from "lucide-react"
-import * as LucideIcons from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/Dialog"
+import { Plus, Sparkles, Filter, Zap } from "lucide-react"
 import { useNotesStore } from "../../store/notesStore"
 import { useKnowledgeStore } from "../../store/knowledgeStore"
 import { autoLinkSingleEntity, scanTextForEntities, runAutoLinker } from "../../utils/autoLinker"
-import Markdown from 'react-markdown'
 import { NoteType } from "../../types"
 import { cn } from "../../utils/cn"
 import { useToastStore } from "../../store/toastStore"
+import { NotesSidebar } from "./components/NotesSidebar"
+import { NotesGrid } from "./components/NotesGrid"
+import { AddNoteDialog } from "./components/AddNoteDialog"
+import { AddFolderDialog } from "./components/AddFolderDialog"
+import { AIAssistantDialog } from "./components/AIAssistantDialog"
 
 export function NotesPage() {
-  const navigate = useNavigate()
-  
   const notes = useNotesStore(state => state.notes)
   const folders = useNotesStore(state => state.folders)
   const allTags = useNotesStore(state => state.tags)
@@ -24,12 +23,12 @@ export function NotesPage() {
   const updateToast = useToastStore(state => state.updateToast)
   const storedRelations = useKnowledgeStore(state => state.relations)
 
-  // State
+  // Dialog & Action States
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isAssistantOpen, setIsAssistantOpen] = useState(false)
   const [isAddFolderOpen, setIsAddFolderOpen] = useState(false)
   const [isAutoLinking, setIsAutoLinking] = useState(false)
-  
+
   // Note Form
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
@@ -37,11 +36,11 @@ export function NotesPage() {
   const [referenceCitation, setReferenceCitation] = useState("")
   const [noteType, setNoteType] = useState<NoteType>('knowledge')
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
-  
+
   // Tagging
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [suggestedTags, setSuggestedTags] = useState<string[]>([])
-  const [suggestedConnections, setSuggestedConnections] = useState<string[]>([])
+  const [, setSuggestedConnections] = useState<string[]>([])
   const [isSuggesting, setIsSuggesting] = useState(false)
   const [tagInput, setTagInput] = useState("")
   const addTag = useNotesStore(state => state.addTag)
@@ -72,7 +71,7 @@ export function NotesPage() {
       if (activeTab !== 'all' && n.type !== activeTab) return false;
       if (activeFolderId && n.folderId !== activeFolderId) return false;
       if (activeTagId && !n.tags.includes(activeTagId)) return false;
-      if (searchTerm) { 
+      if (searchTerm) {
          const searchLower = searchTerm.toLowerCase();
          return n.title.toLowerCase().includes(searchLower) || n.content.toLowerCase().includes(searchLower);
       }
@@ -83,12 +82,12 @@ export function NotesPage() {
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
-    
+
     if ((rawQuote.trim() && !referenceCitation.trim()) || (!rawQuote.trim() && referenceCitation.trim())) {
       alert("Jika Anda memasukkan Kutipan Mentah atau Sumber Referensi, keduanya wajib diisi untuk menjaga jejak epistemologis.");
       return;
     }
-    
+
     // Process tags
     const finalTags = [...selectedTags];
     if (tagInput.trim()) {
@@ -109,7 +108,7 @@ export function NotesPage() {
       folderId: selectedFolder || activeFolderId,
       tags: finalTags,
     })
-    
+
     // Automatically link mentions and concepts in this note
     const linkedCount = autoLinkSingleEntity(id, `${title.trim()}\n${content.trim()}\n${rawQuote.trim()}`, 'note', title.trim());
     if (linkedCount > 0) {
@@ -121,7 +120,7 @@ export function NotesPage() {
 
     // Index for semantic search
     useNotesStore.getState().indexNote(id);
-    
+
     setTitle("")
     setContent("")
     setRawQuote("")
@@ -136,7 +135,7 @@ export function NotesPage() {
 
   const handleGlobalAutoLink = () => {
     setIsAutoLinking(true);
-    const toastId = addToast({ type: 'loading', message: 'Memindai seluruh catatan & menautkan relasi...' });
+    addToast({ type: 'loading', message: 'Memindai seluruh catatan & menautkan relasi...' });
     setTimeout(() => {
       try {
         const result = runAutoLinker();
@@ -211,7 +210,6 @@ export function NotesPage() {
     setAiResponse("");
     const toastId = addToast({ type: 'loading', message: 'AI sedang memproses pertanyaan...' });
     try {
-      // Get knowledge base contexts
       const { concepts, sourceFragments, relations } = useKnowledgeStore.getState();
 
       const res = await fetch("/api/ai/zettelkasten", {
@@ -219,9 +217,9 @@ export function NotesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, notes, concepts, fragments: sourceFragments, relations }),
       });
-      
+
       const data = await res.json();
-      
+
       if (res.ok) {
         setAiResponse(data.result);
         updateToast(toastId, { type: 'success', message: 'Tanggapan AI selesai.' });
@@ -237,15 +235,6 @@ export function NotesPage() {
     }
   }
 
-  const getTypeLabel = (type: NoteType) => {
-    switch(type) {
-      case 'knowledge': return 'Fakta & Ilmu';
-      case 'project': return 'Proyek';
-      case 'writing': return 'Tulisan';
-      case 'personal': return 'Personal';
-    }
-  }
-
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 w-full min-w-0 max-w-7xl mx-auto pb-20">
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mb-6">
@@ -254,9 +243,9 @@ export function NotesPage() {
           <p className="text-gray-500 mt-0.5 text-xs sm:text-sm">Zettelkasten & Catatan Pembelajaran Anda</p>
         </div>
         <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
-          <Button 
-            variant="outline" 
-            className="gap-2 h-11 sm:h-9 text-gray-900 border-gray-300 hover:bg-gray-100" 
+          <Button
+            variant="outline"
+            className="gap-2 h-11 sm:h-9 text-gray-900 border-gray-300 hover:bg-gray-100 rounded-xl"
             onClick={handleGlobalAutoLink}
             disabled={isAutoLinking}
             title="Pindai seluruh catatan dan tautkan entitas secara otomatis ke Knowledge Graph"
@@ -265,11 +254,11 @@ export function NotesPage() {
             <span className="hidden sm:inline">{isAutoLinking ? "Menautkan..." : "Tautkan Otomatis"}</span>
             <span className="sm:hidden">{isAutoLinking ? "..." : "Auto-Link"}</span>
           </Button>
-          <Button variant="outline" className="gap-2 h-11 sm:h-9" onClick={() => setIsAssistantOpen(true)}>
+          <Button variant="outline" className="gap-2 h-11 sm:h-9 rounded-xl" onClick={() => setIsAssistantOpen(true)}>
             <Sparkles className="w-4 h-4 text-gray-500" />
             <span>Tanya AI</span>
           </Button>
-          <Button className="gap-2 h-11 sm:h-9 col-span-2 sm:col-span-1" onClick={() => setIsAddOpen(true)}>
+          <Button className="gap-2 h-11 sm:h-9 col-span-2 sm:col-span-1 rounded-xl" onClick={() => setIsAddOpen(true)}>
             <Plus className="w-4 h-4" />
             <span>Catatan Baru</span>
           </Button>
@@ -302,501 +291,99 @@ export function NotesPage() {
           ))}
         </div>
       </div>
-      
+
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Mobile Filter Toggle */}
-        <div className="lg:hidden flex items-center justify-between bg-white border border-gray-200 rounded-xl p-3.5 shadow-sm">
+        <div className="lg:hidden flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-3.5 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
             <Filter className="w-4 h-4 text-gray-500" />
             <span>Filter Folder & Tag</span>
           </div>
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm" 
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-            className="h-8 px-3 text-xs font-semibold"
+            className="h-8 px-3 text-xs font-semibold rounded-xl"
           >
             {mobileFiltersOpen ? "Tutup" : "Buka Filter"}
           </Button>
         </div>
 
         {/* Sidebar Filters */}
-        <div className={cn(
-          "lg:w-64 shrink-0 space-y-6",
-          mobileFiltersOpen ? "block animate-in fade-in slide-in-from-top-2 duration-200" : "hidden lg:block"
-        )}>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="relative mb-4">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input 
-                type="text" 
-                placeholder="Cari catatan..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 border-none rounded-lg text-sm focus:ring-1 focus:ring-gray-300 outline-none"
-              />
-            </div>
-            
-            <div className="space-y-1 mb-6">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Kategori</h3>
-              {[
-                { id: 'all', label: 'Semua Catatan' },
-                { id: 'knowledge', label: 'Knowledge (Ilmu)' },
-                { id: 'research', label: 'Research (Riset)' },
-                { id: 'project', label: 'Project (Proyek)' },
-                { id: 'writing', label: 'Writing (Tulisan)' },
-                { id: 'personal', label: 'Personal (Jurnal)' }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={cn(
-                    "w-full text-left px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                    activeTab === tab.id ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50"
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+        <NotesSidebar
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          folders={folders}
+          activeFolderId={activeFolderId}
+          setActiveFolderId={setActiveFolderId}
+          setIsAddFolderOpen={setIsAddFolderOpen}
+          allTags={allTags}
+          activeTagId={activeTagId}
+          setActiveTagId={setActiveTagId}
+          mobileFiltersOpen={mobileFiltersOpen}
+        />
 
-            <div className="space-y-1 mb-6">
-              <div className="flex items-center justify-between px-2 mb-2">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Folder</h3>
-                <button onClick={() => setIsAddFolderOpen(true)} className="text-gray-400 hover:text-gray-900">
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <button
-                onClick={() => setActiveFolderId(null)}
-                className={cn(
-                  "w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                  activeFolderId === null ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50"
-                )}
-              >
-                <FolderOpen className="w-4 h-4" /> Semua Folder
-              </button>
-              {folders.map(folder => (
-                <button
-                  key={folder.id}
-                  onClick={() => setActiveFolderId(folder.id)}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                    activeFolderId === folder.id ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50"
-                  )}
-                >
-                  <FolderIcon className="w-4 h-4" /> {folder.name}
-                </button>
-              ))}
-            </div>
-
-            {allTags.length > 0 && (
-              <div className="space-y-1">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Tags</h3>
-                <div className="flex flex-wrap gap-1.5 px-2">
-                  <button
-                    onClick={() => setActiveTagId(null)}
-                    className={cn(
-                      "px-2 py-1 rounded text-xs font-medium border transition-colors",
-                      activeTagId === null ? "bg-gray-900 text-white border-gray-900" : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
-                    )}
-                  >
-                    Semua
-                  </button>
-                  {allTags.map(tag => (
-                    <button
-                      key={tag.id}
-                      onClick={() => setActiveTagId(tag.id)}
-                      className={cn(
-                        "px-2 py-1 rounded text-xs font-medium border transition-colors",
-                        activeTagId === tag.id ? "bg-gray-900 text-white border-gray-900" : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
-                      )}
-                    >
-                      #{tag.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-gray-900">
-              {filteredNotes.length} Catatan ditemukan
-            </h2>
-            <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
-              <button 
-                onClick={() => setViewMode('grid')}
-                className={cn("p-1.5 rounded-md transition-colors", viewMode === 'grid' ? "bg-gray-100 text-gray-900" : "text-gray-400 hover:text-gray-900")}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => setViewMode('list')}
-                className={cn("p-1.5 rounded-md transition-colors", viewMode === 'list' ? "bg-gray-100 text-gray-900" : "text-gray-400 hover:text-gray-900")}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {filteredNotes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-gray-200 rounded-2xl bg-white">
-               <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 text-gray-400 shadow-sm border border-gray-100">
-                 <FileText className="w-8 h-8" />
-               </div>
-               <h3 className="text-base font-semibold text-gray-900">Belum ada catatan</h3>
-               <p className="text-sm text-gray-500 mt-2 mb-6 max-w-sm">
-                 Tuliskan ide, pemikiran, atau riset Anda untuk mulai membangun otak kedua Anda.
-               </p>
-               <Button onClick={() => setIsAddOpen(true)}>
-                 <Plus className="w-4 h-4 mr-2" />
-                 Buat Catatan Pertama
-               </Button>
-            </div>
-          ) : (
-            <div className={cn(
-              "grid gap-4",
-              viewMode === 'grid' ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
-            )}>
-              {filteredNotes.map(note => {
-                const folder = folders.find(f => f.id === note.folderId);
-                const noteTags = note.tags.map(id => allTags.find(t => t.id === id)).filter(Boolean);
-                
-                return (
-                  <div 
-                    key={note.id} 
-                    onClick={() => navigate(`/notes/${note.id}`)} 
-                    className={cn(
-                      "group border border-gray-200 rounded-xl bg-white hover:border-gray-300 hover:shadow-md transition-all cursor-pointer flex flex-col relative overflow-hidden",
-                      viewMode === 'grid' ? "h-64 p-5" : "p-4 sm:p-5"
-                    )}
-                  >
-                    {note.status === 'processed' && (
-                      <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden">
-                        <div className="absolute top-3 -right-6 w-24 bg-gray-500 text-white text-[10px] font-bold uppercase tracking-widest text-center py-1 rotate-45">
-                          Processed
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-start justify-between mb-3 gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          {note.icon && (
-                            (() => {
-                              const Icon = (LucideIcons as any)[note.icon] || LucideIcons.FileText;
-                              return <Icon className="w-4 h-4 text-gray-500 shrink-0" />;
-                            })()
-                          )}
-                          <h3 className="font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-gray-900 transition-colors">
-                            {note.title}
-                          </h3>
-                        </div>
-                        {folder && (
-                          <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
-                            <FolderIcon className="w-3 h-3" /> {folder.name}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <p className={cn(
-                      "text-sm text-gray-600 flex-1 leading-relaxed",
-                      viewMode === 'grid' ? "line-clamp-4 mb-4" : "line-clamp-2 sm:line-clamp-3 mb-4"
-                    )}>
-                      {note.content || "Tidak ada konten."}
-                    </p>
-                    
-                    <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-gray-50">
-                      {noteTags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {noteTags.slice(0, 3).map(tag => (
-                            <span key={tag!.id} className="text-[10px] font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
-                              #{tag!.name}
-                            </span>
-                          ))}
-                          {noteTags.length > 3 && (
-                            <span className="text-[10px] font-medium px-2 py-0.5 bg-gray-50 text-gray-400 rounded">
-                              +{noteTags.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center justify-between text-xs text-gray-400 font-medium">
-                        <span className="flex items-center gap-1.5">
-                          <span className={cn("w-2 h-2 rounded-full", note.status === 'processed' ? "bg-gray-500" : "bg-gray-300")} />
-                          {note.status === 'processed' ? 'Sudah Diproses' : 'Belum Diproses'}
-                        </span>
-                        
-                        {(() => {
-                          const relCount = storedRelations.filter(r => r.sourceNodeId === note.id || r.targetNodeId === note.id).length;
-                          if (relCount === 0) return (
-                            <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-                          );
-                          return (
-                            <div className="flex items-center gap-2">
-                              <span className="flex items-center gap-1 text-[11px] text-gray-700 font-semibold bg-gray-100 px-2 py-0.5 rounded-md">
-                                <Network className="w-3 h-3 text-gray-900" />
-                                {relCount} relasi
-                              </span>
-                              <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
+        {/* Main Content Grid/List */}
+        <NotesGrid
+          filteredNotes={filteredNotes}
+          folders={folders}
+          allTags={allTags}
+          storedRelations={storedRelations}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          setIsAddOpen={setIsAddOpen}
+        />
       </div>
 
-      <Dialog open={isAddFolderOpen} onOpenChange={setIsAddFolderOpen}>
-        <DialogHeader>
-          <DialogTitle>Folder Baru</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleAddFolder} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <DialogContent>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Nama Folder</label>
-              <input 
-                autoFocus
-                type="text" 
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900" 
-                placeholder="Contoh: Filosofi, Keuangan..."
-                required
-              />
-            </div>
-          </DialogContent>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setIsAddFolderOpen(false)}>Batal</Button>
-            <Button type="submit" disabled={!newFolderName.trim()}>Buat Folder</Button>
-          </DialogFooter>
-        </form>
-      </Dialog>
+      {/* Dialogs */}
+      <AddFolderDialog
+        isAddFolderOpen={isAddFolderOpen}
+        setIsAddFolderOpen={setIsAddFolderOpen}
+        newFolderName={newFolderName}
+        setNewFolderName={setNewFolderName}
+        handleAddFolder={handleAddFolder}
+      />
 
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogHeader>
-          <DialogTitle>Catatan Baru</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleAddNote} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <DialogContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Judul <span className="text-gray-500">*</span></label>
-              <input 
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                type="text" 
-                className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900" 
-                placeholder="Contoh: Konsep Clean Architecture"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Tipe Catatan</label>
-                <select 
-                  value={noteType}
-                  onChange={(e) => setNoteType(e.target.value as any)}
-                  className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
-                >
-                  <option value="knowledge">Knowledge (Fakta, Ilmu)</option>
-                  <option value="project">Project (Status, Dokumentasi)</option>
-                  <option value="writing">Writing (Draft, Skrip)</option>
-                  <option value="personal">Personal (Refleksi, Pengalaman)</option>
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Folder</label>
-                <select 
-                  value={selectedFolder || ""}
-                  onChange={(e) => setSelectedFolder(e.target.value || null)}
-                  className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
-                >
-                  <option value="">Tanpa Folder</option>
-                  {folders.map(f => (
-                    <option key={f.id} value={f.id}>{f.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                   <label className="text-sm font-medium text-gray-700">Kutipan Mentah <span className="text-gray-400 font-normal">(Wajib jika salah satu diisi)</span></label>
-                   <textarea
-                     value={rawQuote}
-                     onChange={(e) => setRawQuote(e.target.value)}
-                     className="flex min-h-[100px] w-full rounded-md border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 resize-none"
-                     placeholder="Kutipan langsung..."
-                   />
-                 </div>
-                 <div className="space-y-2">
-                   <label className="text-sm font-medium text-gray-700">Sumber Referensi <span className="text-gray-400 font-normal">(Wajib jika salah satu diisi)</span></label>
-                   <textarea
-                     value={referenceCitation}
-                     onChange={(e) => setReferenceCitation(e.target.value)}
-                     className="flex min-h-[100px] w-full rounded-md border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 resize-none"
-                     placeholder="Buku, artikel, url..."
-                   />
-                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Inferensi / Opini Sendiri</label>
-                <textarea 
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="flex min-h-[150px] w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 resize-none" 
-                  placeholder="Tuliskan pemikiran Anda di sini..."
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Tag Manual (Pisahkan dengan koma)</label>
-              <input 
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                type="text" 
-                className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900" 
-                placeholder="Contoh: react, design pattern, frontend"
-              />
-            </div>
-            
-            {/* Live Auto-Link Entity Detection Box */}
-            {liveDetectedEntities.length > 0 && (
-              <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-900">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Relasi Terdeteksi Otomatis ({liveDetectedEntities.length})</span>
-                  </div>
-                  <span className="text-[10px] text-gray-500">Auto-link aktif saat disimpan</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {liveDetectedEntities.map(ent => (
-                    <span 
-                      key={ent.id}
-                      className="px-2 py-0.5 text-xs bg-white border border-gray-200 rounded-md text-gray-800 flex items-center gap-1 shadow-2xs"
-                    >
-                      <span className="text-[10px] uppercase font-bold text-gray-500">[{ent.type}]</span>
-                      <span className="font-medium">{ent.label}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+      <AddNoteDialog
+        isAddOpen={isAddOpen}
+        setIsAddOpen={setIsAddOpen}
+        handleAddNote={handleAddNote}
+        title={title}
+        setTitle={setTitle}
+        content={content}
+        setContent={setContent}
+        rawQuote={rawQuote}
+        setRawQuote={setRawQuote}
+        referenceCitation={referenceCitation}
+        setReferenceCitation={setReferenceCitation}
+        noteType={noteType}
+        setNoteType={setNoteType}
+        selectedFolder={selectedFolder}
+        setSelectedFolder={setSelectedFolder}
+        folders={folders}
+        tagInput={tagInput}
+        setTagInput={setTagInput}
+        liveDetectedEntities={liveDetectedEntities}
+        handleSuggest={handleSuggest}
+        isSuggesting={isSuggesting}
+        suggestedTags={suggestedTags}
+        selectedTags={selectedTags}
+        toggleTag={toggleTag}
+        allTags={allTags}
+      />
 
-            {/* AI Auto-tagging section */}
-            <div className="space-y-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700">Asisten AI</label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleSuggest} 
-                  disabled={isSuggesting || !content.trim()}
-                  className="h-8 gap-2 bg-gray-50 text-gray-800 hover:bg-gray-100 border-gray-200 hover:border-gray-300"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  {isSuggesting ? "Menganalisis..." : "Generate Saran Tag & Relasi"}
-                </Button>
-              </div>
-              
-              {suggestedTags.length > 0 && (
-                <div className="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Saran Tag AI (Klik untuk memilih):</p>
-                  <div className="flex flex-wrap gap-2">
-                    {suggestedTags.map(tag => {
-                      const tagId = allTags.find(t => t.name.toLowerCase() === tag.toLowerCase())?.id || tag;
-                      return (
-                        <span 
-                          key={tag}
-                          onClick={() => toggleTag(tag)}
-                          className={cn(
-                            "px-2.5 py-1 text-xs font-medium rounded-md cursor-pointer transition-colors border",
-                            selectedTags.includes(tagId) 
-                              ? 'bg-gray-900 border-gray-900 text-white' 
-                              : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
-                          )}
-                        >
-                          #{tag}
-                        </span>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-          <DialogFooter className="pt-2 border-t border-gray-100">
-            <Button type="button" variant="ghost" onClick={() => setIsAddOpen(false)}>Batal</Button>
-            <Button type="submit" disabled={!title.trim()}>Simpan Catatan</Button>
-          </DialogFooter>
-        </form>
-      </Dialog>
-
-      <Dialog open={isAssistantOpen} onOpenChange={setIsAssistantOpen} maxWidthClass="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-gray-900">
-            <Sparkles className="w-5 h-5 text-gray-500" /> Asisten Pengetahuan AI
-          </DialogTitle>
-        </DialogHeader>
-        <DialogContent className="flex flex-col gap-6">
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-            <p className="text-sm text-gray-950 leading-relaxed">
-              Tanyakan apapun tentang catatan Anda. Asisten AI ini dapat menghubungkan konsep-konsep yang berbeda, merangkum pengetahuan Anda, atau membantu Anda menemukan ide tulisan baru berdasarkan apa yang sudah Anda pelajari.
-            </p>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto min-h-[200px] border border-gray-100 rounded-xl bg-gray-50/50 p-4">
-            {aiResponse ? (
-               <div className="prose prose-sm md:prose-base prose-gray max-w-none text-gray-700">
-                 <Markdown>{aiResponse}</Markdown>
-               </div>
-            ) : (
-               <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 space-y-3">
-                 <Brain className="w-10 h-10 opacity-20" />
-                 <p className="text-sm">Ketik pertanyaan Anda di bawah ini...</p>
-               </div>
-            )}
-            {isLoading && (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              </div>
-            )}
-          </div>
-          
-          <form onSubmit={handleAskAssistant} className="flex gap-3">
-            <input 
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              type="text" 
-              className="flex-1 h-11 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:border-transparent" 
-              placeholder="Contoh: Apa hubungan catatan A dan B?"
-              required
-            />
-            <Button type="submit" disabled={isLoading || !prompt.trim()} className="h-11 px-6 bg-gray-900 hover:bg-gray-800">
-              {isLoading ? 'Berpikir...' : 'Tanya AI'}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <AIAssistantDialog
+        isAssistantOpen={isAssistantOpen}
+        setIsAssistantOpen={setIsAssistantOpen}
+        prompt={prompt}
+        setPrompt={setPrompt}
+        aiResponse={aiResponse}
+        isLoading={isLoading}
+        handleAskAssistant={handleAskAssistant}
+      />
     </div>
   )
 }
