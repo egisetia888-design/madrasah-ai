@@ -4,8 +4,13 @@
  */
 import { AppRouter } from "./app/Router";
 import { useSyncMigration } from "./store/useSyncMigration";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 export default function App() {
   useSyncMigration();
-  return <AppRouter />;
+  return (
+    <ErrorBoundary>
+      <AppRouter />
+    </ErrorBoundary>
+  );
 }

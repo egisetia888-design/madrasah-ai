@@ -1,16 +1,32 @@
 import { pipeline, env } from '@xenova/transformers';
+import { create } from 'zustand';
 
-// Disable remote models for privacy and speed, though we need to download it once
+// Model (~23MB) diunduh sekali saat pertama kali dipakai, lalu di-cache oleh browser.
 env.allowRemoteModels = true;
 env.allowLocalModels = false;
+
+interface SemanticSearchState {
+  isModelLoading: boolean;
+  setIsModelLoading: (loading: boolean) => void;
+}
+
+export const useSemanticSearchStore = create<SemanticSearchState>((set) => ({
+  isModelLoading: false,
+  setIsModelLoading: (loading: boolean) => set({ isModelLoading: loading }),
+}));
 
 let embedder: any = null;
 
 export async function getEmbedder() {
   if (!embedder) {
-    // Using a small, efficient model: all-MiniLM-L6-v2
-    // It's ~23MB in ONNX format
-    embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    useSemanticSearchStore.getState().setIsModelLoading(true);
+    try {
+      // Using a small, efficient model: all-MiniLM-L6-v2
+      // It's ~23MB in ONNX format
+      embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    } finally {
+      useSemanticSearchStore.getState().setIsModelLoading(false);
+    }
   }
   return embedder;
 }

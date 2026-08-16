@@ -1,3 +1,5 @@
+import { fetchWithAuth } from '../../lib/api';
+import { SyncStatusIndicator } from '../../components/ui/SyncStatusIndicator';
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
@@ -50,7 +52,7 @@ export function CurriculumPage() {
     const toastId = addToast({ type: 'loading', message: 'AI sedang menyusun silabus...' });
     
     try {
-      const res = await fetch("/api/ai/generate-syllabus", {
+      const res = await fetchWithAuth("/api/ai/generate-syllabus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic }),

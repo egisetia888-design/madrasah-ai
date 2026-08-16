@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { Concept, SourceFragment, Relation } from '../types';
 import { createSyncMetadata, updateSyncMetadata } from './syncUtils';
+import { syncSaveConcept, syncDeleteConcept, syncSaveSourceFragment, syncDeleteSourceFragment, syncSaveRelation, syncDeleteRelation } from '../lib/firestoreSync';
 import { SyncMetadata } from '../types';
 
 localforage.config({
@@ -64,6 +65,10 @@ export const useKnowledgeStore = create<KnowledgeState>()(
             }
           ]
         }));
+
+        const state = get();
+        const concept = state.concepts.find(c => c.id === newId);
+        if (concept) syncSaveConcept(concept);
         return newId;
       },
       updateConcept: (id, data) => set((state) => ({
@@ -90,6 +95,10 @@ export const useKnowledgeStore = create<KnowledgeState>()(
             }
           ]
         }));
+
+        const state = get();
+        const fragment = state.sourceFragments.find(f => f.id === newId);
+        if (fragment) syncSaveSourceFragment(fragment);
         return newId;
       },
       updateSourceFragment: (id, data) => set((state) => ({
@@ -116,6 +125,10 @@ export const useKnowledgeStore = create<KnowledgeState>()(
             }
           ]
         }));
+
+        const state = get();
+        const relation = state.relations.find(r => r.id === newId);
+        if (relation) syncSaveRelation(relation);
         return newId;
       },
       updateRelation: (id, data) => set((state) => ({

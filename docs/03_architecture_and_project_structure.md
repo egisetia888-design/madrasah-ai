@@ -98,6 +98,9 @@ Struktur direktori Madrasah diorganisasikan secara modular untuk memastikan skal
         ├── graph/            # Visualisasi interaktif D3.js Knowledge Graph
         ├── library/          # Koleksi buku, metadata cover & ringkasan literatur
         ├── notes/            # Catatan Zettelkasten & AI Copilot Assistant
+        │   ├── NotesPage.tsx
+        │   ├── NoteDetailPage.tsx
+        │   └── components/   # Sub-komponen NotesPage & NoteDetailPage (NotesSidebar, NotesGrid, AddNoteDialog, AddFolderDialog, AIAssistantDialog, NoteEditor, NoteMetadataSidebar, AICopilotPanel, RelatedEntitiesPanel)
         ├── projects/         # Manajemen proyek dan eksekusi tugas
         ├── review/           # Modul Spaced Repetition Flashcards & AI Grader
         ├── settings/         # Pengaturan profil, tema, dan sinkronisasi

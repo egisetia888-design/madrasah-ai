@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { LearningPath, Phase, Competency } from '../types';
 import { createSyncMetadata, updateSyncMetadata } from './syncUtils';
+import { syncSaveLearningPath, syncDeleteLearningPath, syncSavePhase, syncDeletePhase, syncSaveCompetency, syncDeleteCompetency } from '../lib/firestoreSync';
 import { SyncMetadata } from '../types';
 
 localforage.config({

@@ -23,8 +23,8 @@ import { ConceptsPage } from "../modules/concepts/ConceptsPage"
 import { useAuthStore } from "../store/authStore"
 
 function ProtectedRoute() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
-  if (!isAuthenticated) {
+  const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding)
+  if (!hasCompletedOnboarding) {
     return <Navigate to="/login" replace />
   }
   return <Outlet />

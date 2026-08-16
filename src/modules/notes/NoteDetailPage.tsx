@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../lib/api';
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
@@ -190,7 +191,7 @@ export function NoteDetailPage() {
     const toastId = addToast({ type: 'loading', message: 'AI sedang menyusun kartu flash...' });
     
     try {
-      const res = await fetch("/api/ai/generate-flashcards", {
+      const res = await fetchWithAuth("/api/ai/generate-flashcards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: title + "\n\n" + content }),
@@ -242,7 +243,7 @@ export function NoteDetailPage() {
     const toastId = addToast({ type: 'loading', message: 'AI sedang menganalisis catatan...' });
 
     try {
-      const res = await fetch("/api/ai/suggest-tags", {
+      const res = await fetchWithAuth("/api/ai/suggest-tags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

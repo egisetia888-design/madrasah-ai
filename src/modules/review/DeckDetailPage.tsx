@@ -42,7 +42,8 @@ export function DeckDetailPage() {
       front,
       back,
       deckId: deck.id,
-      noteId: deck.noteId
+      noteId: deck.noteId,
+      conceptId: deck.conceptId
     });
 
     setFront("");

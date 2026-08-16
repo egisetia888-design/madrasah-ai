@@ -1,3 +1,4 @@
+import { SyncStatusIndicator } from '../../components/ui/SyncStatusIndicator';
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/Button"
@@ -15,12 +16,13 @@ export function LibraryPage() {
   const [authorName, setAuthorName] = useState("")
   const [totalPages, setTotalPages] = useState("")
   const [coverUrl, setCoverUrl] = useState("")
+  const [isEstimatedPages, setIsEstimatedPages] = useState(false)
   const [status, setStatus] = useState<BookStatus>('owned')
   const [isFetchingInfo, setIsFetchingInfo] = useState(false)
-  
+
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<BookStatus | 'all'>('all')
-  
+
   const books = useLibraryStore((state) => state.books)
   const authors = useLibraryStore((state) => state.authors)
   const addBook = useLibraryStore((state) => state.addBook)
@@ -33,22 +35,30 @@ export function LibraryPage() {
       addToast({ type: 'info', message: 'Masukkan judul dan penulis terlebih dahulu.' });
       return;
     }
-    
+
     setIsFetchingInfo(true);
-    const toastId = addToast({ type: 'loading', message: 'Mencari informasi buku...' });
-    
+    const toastId = addToast({ type: 'loading', message: 'Mencari metadata buku via Open Library...' });
+
     try {
       const res = await fetch("/api/ai/book-info", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: title.trim(), author: authorName.trim() }),
       });
-      
+
       const data = await res.json();
       if (res.ok) {
-        if (data.totalPages) setTotalPages(String(data.totalPages));
+        if (data.totalPages) {
+          setTotalPages(String(data.totalPages));
+          setIsEstimatedPages(Boolean(data.isEstimated));
+        }
         if (data.coverUrl) setCoverUrl(data.coverUrl);
-        updateToast(toastId, { type: 'success', message: 'Informasi buku berhasil ditemukan.' });
+
+        if (data.isEstimated) {
+          updateToast(toastId, { type: 'info', message: 'Data Open Library tidak ditemukan. Informasi diperkirakan AI.' });
+        } else {
+          updateToast(toastId, { type: 'success', message: 'Informasi buku berhasil diambil dari Open Library.' });
+        }
       } else {
         updateToast(toastId, { type: 'error', message: data.error || 'Gagal mencari info buku.' });
       }
@@ -80,14 +90,16 @@ export function LibraryPage() {
       categoryId: null,
       status,
       progress: 0,
-      totalPages: totalPages ? parseInt(totalPages) : undefined,
-      coverImage: coverUrl.trim() || undefined
+      totalPages: totalPages ? parseInt(totalPages, 10) : undefined,
+      coverImage: coverUrl.trim() || undefined,
+      isEstimatedPages: totalPages && isEstimatedPages ? true : undefined
     })
 
     setTitle("")
     setAuthorName("")
     setTotalPages("")
     setCoverUrl("")
+    setIsEstimatedPages(false)
     setStatus('owned')
     setIsAddOpen(false)
   }
@@ -99,12 +111,12 @@ export function LibraryPage() {
 
   const filteredBooks = useMemo(() => {
     return books.filter(book => {
-      const matchesSearch = 
-        book.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const matchesSearch =
+        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         getAuthorName(book.authorId).toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchesTab = activeTab === 'all' || book.status === activeTab;
-      
+
       return matchesSearch && matchesTab;
     });
   }, [books, searchQuery, activeTab, authors]);
@@ -127,7 +139,7 @@ export function LibraryPage() {
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   }
-  
+
   const getStatusLabel = (status: BookStatus) => {
     switch (status) {
       case 'reading': return 'Sedang Dibaca';
@@ -157,13 +169,13 @@ export function LibraryPage() {
       </div>
 
       <div className="space-y-3 border-b border-gray-200 pb-4">
-        <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-3 h-11 w-full focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent transition-all"> 
+        <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-3 h-11 w-full focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent transition-all">
            <Search className="w-4 h-4 text-gray-400 shrink-0" />
-           <input 
-               type="text" 
+           <input
+               type="text"
                value={searchQuery}
                onChange={(e) => setSearchQuery(e.target.value)}
-               placeholder="Cari judul buku, penulis..." 
+               placeholder="Cari judul buku, penulis..."
                className="bg-transparent border-none outline-none text-sm w-full text-gray-900 placeholder:text-gray-400"
            />
            {searchQuery && (
@@ -172,7 +184,7 @@ export function LibraryPage() {
              </button>
            )}
         </div>
-        
+
         {/* Horizontal Mobile-Optimized Scrollable Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto w-full no-scrollbar py-1 scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
           {tabs.map(tab => (
@@ -181,8 +193,8 @@ export function LibraryPage() {
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer",
-                activeTab === tab.id 
-                  ? "bg-gray-900 text-white shadow-sm font-semibold" 
+                activeTab === tab.id
+                  ? "bg-gray-900 text-white shadow-sm font-semibold"
                   : "bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100"
               )}
             >
@@ -215,18 +227,18 @@ export function LibraryPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
             {filteredBooks.map(book => {
-              const progressPct = book.totalPages && book.totalPages > 0 
+              const progressPct = book.totalPages && book.totalPages > 0
                 ? Math.min(100, Math.round((book.progress / book.totalPages) * 100))
                 : 0;
-                
+
               return (
                 <div key={book.id} onClick={() => navigate(`/library/${book.id}`)} className="group flex flex-col gap-2.5 cursor-pointer">
                   <div className="aspect-[2/3] w-full bg-gray-100 rounded-xl border border-gray-200 flex flex-col items-center justify-center text-center transition-all group-hover:border-gray-300 group-hover:shadow-md relative overflow-hidden">
                     {book.coverImage && (
-                      <img 
-                        src={book.coverImage} 
-                        alt={book.title} 
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 z-10" 
+                      <img
+                        src={book.coverImage}
+                        alt={book.title}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 z-10"
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     )}
@@ -252,7 +264,14 @@ export function LibraryPage() {
                         <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div className="h-full bg-gray-900 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
                         </div>
-                        <span className="text-[10px] text-gray-400 font-mono shrink-0">{progressPct}%</span>
+                        <span className="text-[10px] text-gray-400 font-mono shrink-0 flex items-center gap-1">
+                          {progressPct}%
+                          {book.isEstimatedPages && (
+                            <span className="text-[8px] font-sans px-1 py-0.2 bg-gray-100 text-gray-500 rounded border border-gray-200">
+                              perkiraan
+                            </span>
+                          )}
+                        </span>
                       </div>
                     ) : null}
                   </div>
@@ -271,48 +290,58 @@ export function LibraryPage() {
           <DialogContent className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Judul Buku <span className="text-gray-500">*</span></label>
-              <input 
+              <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                type="text" 
-                className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:border-transparent" 
+                type="text"
+                className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:border-transparent"
                 placeholder="Contoh: Atomic Habits"
                 required
               />
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Penulis</label>
-                <input 
+                <input
                   value={authorName}
                   onChange={(e) => setAuthorName(e.target.value)}
-                  type="text" 
-                  className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:border-transparent" 
+                  type="text"
+                  className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:border-transparent"
                   placeholder="Contoh: James Clear"
                 />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-700">Total Halaman</label>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-sm font-medium text-gray-700">Total Halaman</label>
+                    {isEstimatedPages && totalPages && (
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">
+                        perkiraan
+                      </span>
+                    )}
+                  </div>
                   {title.trim() && authorName.trim() && (
-                    <button 
+                    <button
                       type="button"
                       onClick={handleAutofill}
                       disabled={isFetchingInfo}
-                      className="text-[10px] font-semibold flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
+                      className="text-[10px] font-semibold flex items-center gap-1 text-gray-700 hover:text-gray-900 transition-colors disabled:opacity-50"
                     >
                       <Sparkles className="w-3 h-3" />
-                      {isFetchingInfo ? 'Mencari...' : 'Autofill AI'}
+                      {isFetchingInfo ? 'Mencari...' : 'Autofill Data'}
                     </button>
                   )}
                 </div>
-                <input 
+                <input
                   value={totalPages}
-                  onChange={(e) => setTotalPages(e.target.value)}
+                  onChange={(e) => {
+                    setTotalPages(e.target.value);
+                    if (!e.target.value) setIsEstimatedPages(false);
+                  }}
                   type="number"
                   min="1"
-                  className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:border-transparent" 
+                  className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:border-transparent"
                   placeholder="Contoh: 320"
                 />
               </div>
@@ -320,18 +349,18 @@ export function LibraryPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">URL Sampul Buku (Opsional)</label>
-              <input 
+              <input
                 value={coverUrl}
                 onChange={(e) => setCoverUrl(e.target.value)}
-                type="url" 
-                className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:border-transparent" 
+                type="url"
+                className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:border-transparent"
                 placeholder="https://example.com/cover.jpg"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Status</label>
-              <select 
+              <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as BookStatus)}
                 className="flex h-11 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:border-transparent"
@@ -343,7 +372,7 @@ export function LibraryPage() {
                 <option value="summarized">Dirangkum</option>
               </select>
             </div>
-            
+
           </DialogContent>
           <DialogFooter className="pt-4 border-t border-gray-100">
             <Button type="button" variant="ghost" onClick={() => setIsAddOpen(false)} className="w-full sm:w-auto mb-2 sm:mb-0">
